@@ -1,0 +1,237 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:dxplayer"
+                    xmlns:common="clr-namespace:io.github.toyota32k.toolkit.view;assembly=io.github.toyota32k.wpfLittleToolkit"
+                    >
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="IconButton.xaml"/>
+        <ResourceDictionary Source="IconToggleButton.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Converters -->
+    <common:BoolVisibilityConverter x:Key="BoolVisibilityConverter"/>
+    <common:NegBoolVisibilityConverter x:Key="NegBoolVisibilityConverter"/>
+    <common:NegBoolConverter x:Key="NegBoolConverter"/>
+    <common:EnumBooleanConverter x:Key="EnumBooleanConverter"/>
+    <common:NegEnumBooleanConverter x:Key="NegEnumBooleanConverter"/>
+    <common:EnumVisibilityConverter x:Key="EnumVisibilityConverter"/>
+    <common:NegEnumVisibilityConverter x:Key="NegEnumVisibilityConverter"/>
+    <common:DateStringConverter x:Key="DateStringConverter"/>
+    <common:DecimalStringConverter x:Key="DecimalStringConverter"/>
+    <common:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter"/>
+
+    <!-- Colors -->
+    <SolidColorBrush x:Key="ControlPanelBG" Color="#90404080" />
+    <SolidColorBrush x:Key="ToolBarBG" Color="#404080"/>
+
+    <SolidColorBrush x:Key="NormalBtnBG" Color="#00FFFFFF" />
+    <SolidColorBrush x:Key="MouseOverBtnBG" Color="#8080FF" />
+    <SolidColorBrush x:Key="PressedBtnBG" Color="#4040FF" />
+    <SolidColorBrush x:Key="DisabledBtnBG" Color="#00FFFFFF" />
+    <SolidColorBrush x:Key="CheckedBtnBG" Color="#00FFFFFF" />
+
+    <SolidColorBrush x:Key="NormalBtnFG" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="MouseOverBtnFG" Color="#FFFF25" />
+    <SolidColorBrush x:Key="PressedBtnFG" Color="#C4FF25" />
+    <SolidColorBrush x:Key="DisabledBtnFG" Color="#A0A0A0" />
+    <SolidColorBrush x:Key="CheckedBtnFG" Color="#80FF80" />
+    <SolidColorBrush x:Key="UncheckedBtnFG" Color="#50C4FF25" />
+
+    <Style x:Key="IconButtonStyle" TargetType="Button">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Background" Value="{StaticResource NormalBtnBG}"/>
+        <Setter Property="Foreground" Value="{StaticResource NormalBtnFG}"/>
+        <Setter Property="Padding" Value="6"/>
+        <Setter Property="Template" Value="{StaticResource CustonButton}"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    </Style>
+
+    <Style x:Key="IconToggleButtonStyle" TargetType="ToggleButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Template" Value="{StaticResource CustomToggleButton}"/>
+    </Style>
+
+    <!-- Icon Button -->
+    <ControlTemplate x:Key="IconButtonTemplate"  TargetType="Button">
+        <Border 
+            x:Name="border"
+            Background="{TemplateBinding Background}"
+            Padding="{TemplateBinding Padding}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            >
+            <ContentPresenter 
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Center"/>
+        </Border>
+    </ControlTemplate>
+
+    <Style x:Key="PushButtonStyle" TargetType="Button">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Background" Value="{StaticResource NormalBtnBG}"/>
+        <Setter Property="Foreground" Value="{StaticResource NormalBtnFG}"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="Template" Value="{StaticResource IconButtonTemplate}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource MouseOverBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource MouseOverBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource PressedBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource PressedBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{StaticResource NormalBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource DisabledBtnFG}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="SmallPushButtonStyle" TargetType="Button" BasedOn="{StaticResource PushButtonStyle}">
+        <Setter Property="Width" Value="20"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="Padding" Value="4"/>
+    </Style>
+
+    <!-- Icon Toggle Button -->
+    <ControlTemplate x:Key="IconToggleButtonTemplate"  TargetType="ToggleButton">
+        <Border 
+            x:Name="border"
+            Background="{TemplateBinding Background}"
+            Padding="{TemplateBinding Padding}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            >
+            <ContentPresenter 
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Center"/>
+        </Border>
+    </ControlTemplate>
+
+    <Style x:Key="ToggleButtonStyle" TargetType="ToggleButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Background" Value="{StaticResource NormalBtnBG}"/>
+        <Setter Property="Foreground" Value="{StaticResource UncheckedBtnFG}"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="Template" Value="{StaticResource IconToggleButtonTemplate}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource MouseOverBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource MouseOverBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource PressedBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource PressedBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{StaticResource NormalBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource DisabledBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="true">
+                <Setter Property="Background" Value="{StaticResource CheckedBtnBG}"/>
+                <Setter Property="Foreground" Value="{StaticResource CheckedBtnFG}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="RadioButton" BasedOn="{StaticResource ToggleButtonStyle}" x:Key="IconRadioButton">
+    </Style>
+
+    <!-- Icon Check Button -->
+    <ControlTemplate x:Key="IconCheckButtonTemplate"  TargetType="common:CheckButton">
+        <Border 
+            x:Name="border"
+            Background="{TemplateBinding Background}"
+            Padding="{TemplateBinding Padding}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            >
+            <ContentPresenter 
+                VerticalAlignment="Center" 
+                HorizontalAlignment="Center"/>
+        </Border>
+    </ControlTemplate>
+
+    <Style x:Key="CheckButtonStyle" TargetType="common:CheckButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Background" Value="{StaticResource NormalBtnBG}"/>
+        <Setter Property="Foreground" Value="{StaticResource NormalBtnFG}"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="Template" Value="{StaticResource IconCheckButtonTemplate}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource MouseOverBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource MouseOverBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{StaticResource PressedBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource PressedBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{StaticResource NormalBtnBG}" />
+                <Setter Property="Foreground" Value="{StaticResource DisabledBtnFG}" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="true">
+                <Setter Property="Background" Value="{StaticResource CheckedBtnBG}"/>
+                <Setter Property="Foreground" Value="{StaticResource CheckedBtnFG}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ListView Column Header Sorting Icon -->
+    <DrawingImage x:Key="AscImageSource">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <GeometryDrawing Geometry="M7,15L12,10L17,15H7Z" Brush="#35000000"/>
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <ImageBrush x:Key="AscBrush" AlignmentX="Right" AlignmentY="Center" ImageSource="{StaticResource AscImageSource}"/>
+
+    <Style x:Key="AscImage" TargetType="Image">
+        <Setter Property="Source" Value="{StaticResource AscImageSource}"/>
+    </Style>
+
+    <DrawingImage x:Key="DescImageSource">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <GeometryDrawing Geometry="M7,10L12,15L17,10H7Z" Brush="#35000000"/>
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <ImageBrush x:Key="DescBrush" AlignmentX="Right" AlignmentY="Center" ImageSource="{StaticResource DescImageSource}"/>
+
+    <Style x:Key="DescImage" TargetType="Image">
+        <Setter Property="Source" Value="{StaticResource DescImageSource}"/>
+    </Style>
+
+    <!-- Fade in/out effect -->
+    <Storyboard x:Key="MouseOverStoryboard" Duration="00:00:00.5">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="00:00:00.5" />
+    </Storyboard>
+
+    <Storyboard x:Key="MouseLeaveStoryboard" Duration="00:00:00.5">
+        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="00:00:00.5" />
+    </Storyboard>
+
+</ResourceDictionary>
