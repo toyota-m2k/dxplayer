@@ -43,6 +43,9 @@ namespace dxplayer.player {
                 CurrentIndex.Value = 0;
             }
         }
+        public void ResetList() {
+            SetList(new List<IPlayItem>());
+        }
 
         public void Add(IPlayItem item) {
             int index = CurrentIndex.Value;

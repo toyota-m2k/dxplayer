@@ -4,6 +4,7 @@ using dxplayer.data.wf;
 using dxplayer.player;
 using dxplayer.settings;
 using io.github.toyota32k.toolkit.utils;
+using io.github.toyota32k.toolkit.view;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,6 +25,8 @@ namespace dxplayer {
             set => DataContext = value;
         }
 
+        #region Initialzing
+
         public MainWindow()
         {
             InitializeComponent();
@@ -38,12 +41,18 @@ namespace dxplayer {
             ViewModel = new MainViewModel();
             ViewModel.SettingCommand.Subscribe(Setting);
             ViewModel.ImportFromWfCommand.Subscribe(ImportFromWf);
+            ViewModel.AddFolderCommand.Subscribe(AddFolders);
+            ViewModel.RefreshAllCommand.Subscribe(RefreshDB);
             ViewModel.PlayCommand.Subscribe(Play);
             ViewModel.PreviewCommand.Subscribe(Preview);
             Settings.Instance.SortInfo.SortUpdated += OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated += OnFilterChanged;
             OnSortChanged();
         }
+
+        #endregion
+
+        #region Terminating
 
         private void OnUnloaded(object sender, RoutedEventArgs e) {
 
@@ -56,17 +65,13 @@ namespace dxplayer {
             Settings.Instance.Serialize();
         }
 
-        private void OnFilterChanged() {
-            UpdateList();
-        }
+        #endregion
 
-        private void OnSortChanged() {
-            UpdateColumnHeaderOnSort();
-            UpdateList();
-        }
+        #region PlayerWindow Management
 
         private PlayerWindow mPlayerWindow = null;
         private PlayCountObserver mPlayCountObserver = null;
+        
         private PlayerWindow OpenPlayer(bool preview) {
             if (mPlayerWindow == null) {
                 mPlayerWindow = new PlayerWindow(preview);
@@ -128,7 +133,13 @@ namespace dxplayer {
             Play(true);
         }
 
+        private void OnListItemDoubleClick(object sender, MouseButtonEventArgs e) {
+            Preview();
+        }
 
+        #endregion
+
+        #region Settings
 
         private void Setting(object obj) {
             var path = OpenFileDialogBuilder.Create()
@@ -142,6 +153,8 @@ namespace dxplayer {
                 Settings.Instance.Serialize();
             }
         }
+
+        #endregion
 
         #region StatusBar Messages
 
@@ -163,17 +176,63 @@ namespace dxplayer {
 
         #endregion
 
-        private async void ImportFromWf(object obj) {
+        #region DB Management
+
+        private async void ImportFromWf() {
             var path = OpenFileDialogBuilder.Create()
                 .addFileType("wfPlayer DB", "*.wpd")
                 .defaultExtension("wpd")
                 .defaultFilename("default")
                 .GetFilePath(this);
-
+            if (string.IsNullOrEmpty(path)) return;
+            using (WaitCursor.Start(this))
             using (var wfdb = WfStorage.SafeOpen(path)) {
                 if (wfdb == null) return;
                 await wfdb.ExportTo(App.Instance.DB, this);
             }
+            UpdateList();
+        }
+
+        private async void AddFolders() {
+            var path = FolderDialogBuilder
+                            .Create()
+                            .title("Select Folder")
+                            .GetFilePath(this);
+            if (string.IsNullOrEmpty(path)) return;
+
+            using (WaitCursor.Start(this)) {
+                await App.Instance.DB.AddTargetFolder(path, this);
+            }
+            UpdateList();
+        }
+
+        private async void RefreshDB() {
+            using (WaitCursor.Start(this)) {
+                await App.Instance.DB.RefreshDB(this);
+            }
+            UpdateList();
+        }
+
+        #endregion
+
+        #region Sort / Filter
+
+        private void UpdateList() {
+            var list = App.Instance.DB.PlayListTable.List.Filter();
+            if (Settings.Instance.SortInfo.Shuffle) {
+                ViewModel.MainList.Value = Shuffle(list);
+            }
+            else {
+                ViewModel.MainList.Value = new ObservableCollection<PlayItem>(list.Sort());
+            }
+        }
+
+        private void OnSortChanged() {
+            UpdateColumnHeaderOnSort();
+            UpdateList();
+        }
+
+        private void OnFilterChanged() {
             UpdateList();
         }
 
@@ -192,17 +251,6 @@ namespace dxplayer {
             return new ObservableCollection<PlayItem>(list);
         }
 
-
-        private void UpdateList() {
-            var list = App.Instance.DB.PlayListTable.List.Filter();
-            if (Settings.Instance.SortInfo.Shuffle) {
-                ViewModel.MainList.Value = Shuffle(list);
-            } else {
-                ViewModel.MainList.Value = new ObservableCollection<PlayItem>(list.Sort());
-            }
-        }
-
-        #region Sort
 
         private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject {
             if (depObj != null) {
@@ -245,9 +293,8 @@ namespace dxplayer {
         }
         #endregion
 
-        private void OnListItemDoubleClick(object sender, MouseButtonEventArgs e) {
-            Preview();
-        }
+
+
     }
 
     public static class LinqExt {

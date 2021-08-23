@@ -1,4 +1,5 @@
 ﻿using dxplayer.player;
+using dxplayer.settings;
 using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,9 @@ namespace dxplayer.data.main {
         private long Threshold = 0;
         private long TickTotal = 0;
         private long TickStart = 0;
+
+        public long durationRatio = Settings.IsDebug ? 10 : 2;
+        public long maxThreshold = Settings.IsDebug ? 5 : 30;
 
         public PlayCountObserver(PlayerViewModel viewModel) { 
             Add(viewModel.PlayList.Current.Subscribe(OnItemChagned));
@@ -30,25 +34,32 @@ namespace dxplayer.data.main {
                     TickTotal += tick - TickStart;
                     TickStart = tick;
                 }
+                Playing = playing;
             }
+        }
+
+        private long CalcThreshold(ulong duration) {
+            return Math.Min((long)duration / durationRatio, maxThreshold * 1000);
         }
 
         private void OnItemChagned(IPlayItem obj) {
             PlayItem item = obj as PlayItem;
-            if (item == null) return;
             if(CurrentItem!=item) {
                 var tick = System.Environment.TickCount;
                 if (Playing) {
                     TickTotal += tick-TickStart;
                     TickStart = tick;
                 }
-                if(TickTotal>Threshold) {
-                    item.PlayCount++;
-                    item.LastPlayDate = DateTime.UtcNow;
+                if(CurrentItem!=null && TickTotal>Threshold) {
+                    CurrentItem.PlayCount++;
+                    CurrentItem.LastPlayDate = DateTime.UtcNow;
                 }
                 TickTotal = 0;
                 TickStart = tick;
-                Threshold = Math.Min((long)item.Duration / 2, 30 * 1000);
+                Threshold = 0;
+                if (item != null) {
+                    Threshold = CalcThreshold(item.Duration);
+                }
                 CurrentItem = item;
             }
         }
@@ -59,10 +70,10 @@ namespace dxplayer.data.main {
             }
             var duration = CurrentItem.Duration;
             var disabledLength = ranges.Aggregate(0UL, (acc, range) => {
-                return acc + ((range.End > range.Start) ? range.End - range.Start : duration - range.End);
+                return acc + range.TrueSpan(duration);
             });
             if(disabledLength<duration) {
-                Threshold = Math.Min((long)(duration-disabledLength) / 2, 30 * 1000);
+                Threshold = CalcThreshold(duration - disabledLength);
             }
         }
     }

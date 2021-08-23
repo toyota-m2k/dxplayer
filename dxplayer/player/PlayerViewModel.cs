@@ -164,7 +164,7 @@ namespace dxplayer.player {
 
             range.AdjustTrueEnd(Duration.Value);
             var del = chapterList.Values.Where(c => range.Start <= c.Position && c.Position <= range.End).ToList();
-            foreach (var e in del) {
+            foreach (var e in del) {    // chapterList.Valuesは ObservableCollection なので、RemoveAll的なやつ使えない。
                 chapterList.Values.Remove(e);
             }
             chapterList.AddChapter(new ChapterInfo(range.Start) { Skip = true });

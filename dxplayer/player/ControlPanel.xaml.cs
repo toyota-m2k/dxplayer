@@ -25,14 +25,6 @@ namespace dxplayer.player
             mDisposablePool.Add(ViewModel.ChapterEditing.Subscribe(OnChapterEditing));
         }
 
-        private void OnAddChapter(PlayRange obj) {
-            throw new NotImplementedException();
-        }
-
-        private void OnAddDisabledChapterRange(PlayRange obj) {
-            throw new NotImplementedException();
-        }
-
         private void OnChapterEditing(bool editing) {
             if(editing) {
                 mDisposablePool.Add(ViewModel.EditingChapterList.Subscribe(c => UpdateChapterLength()));

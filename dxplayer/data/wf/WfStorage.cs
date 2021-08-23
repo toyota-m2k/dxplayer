@@ -98,8 +98,8 @@ namespace dxplayer.data.wf
                             count += newItems.Count();
                             dstPlayList.Table.InsertAllOnSubmit(newItems.Select(v => v.ApplyDxx(dxdb).ComplementDuration()));
                             statusBar.OutputStatusMessage($"importing: commiting... {count}/{total}");
-                            dstPlayList.Update();
                         }
+                        dstPlayList.Update();
                         return true;
                     });
 
@@ -130,7 +130,7 @@ namespace dxplayer.data.wf
                     dstFolders.Update();
                 }
             });
-            statusBar.FlashStatusMessage("Import completed.");
+            statusBar.FlashStatusMessage("Import: completed.");
         }
 
     }

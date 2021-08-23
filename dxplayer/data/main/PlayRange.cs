@@ -53,6 +53,10 @@
         public ulong TrueEnd(ulong duration) {
             return End == 0 ? duration : End;
         }
+        public ulong TrueSpan(ulong duration) {
+            var end = TrueEnd(duration);
+            return (end > Start) ? end - Start : 0;
+        }
 
         public void AdjustTrueEnd(ulong duration) {
             if(End==0) {

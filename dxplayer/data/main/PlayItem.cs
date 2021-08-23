@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Linq.Mapping;
 using System.Data.SQLite;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -157,6 +158,9 @@ namespace dxplayer.data.main
             r.Duration = duration;
             return r;
         }
+        public static PlayItem Create(string path) {
+            return new PlayItem() { path = path };
+        }
         public static PlayItem Create(WfItem s) {
             if(!PathUtil.isFile(s.Path)) {
                 return null;
@@ -204,6 +208,14 @@ namespace dxplayer.data.main
                     TrimEnd = 0;
                 }
             }
+            return this;
+        }
+
+        public PlayItem ComplementAll() {
+            var fi = new FileInfo(path);
+            Date = fi.CreationTimeUtc;
+            size = fi.Length;
+            ComplementDuration();
             return this;
         }
     }

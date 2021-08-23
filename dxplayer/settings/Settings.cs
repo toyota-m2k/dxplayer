@@ -28,6 +28,11 @@ namespace dxplayer.settings
             }
         }
 
+#if DEBUG
+        public static bool IsDebug = true;
+#else
+        public static bool IsDebug = false;
+#endif
 
         public void Serialize() {
             System.IO.StreamWriter sw = null;

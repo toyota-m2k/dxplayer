@@ -21,7 +21,10 @@ namespace dxplayer.data.main
             : base(connection, false) {
         }
         public override bool Contains(TargetFolders item) {
-            return List.Where((c) => c.Path == item.Path).Any();
+            return Contains(item.Path);
+        }
+        public bool Contains(string path) {
+            return List.Where((c) => c.Path == path).Any();
         }
     }
 }

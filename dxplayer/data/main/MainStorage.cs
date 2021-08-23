@@ -1,9 +1,13 @@
-﻿using io.github.toyota32k.toolkit.utils;
+﻿using dxplayer.data.dxx;
+using dxplayer.settings;
+using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Data.SQLite;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace dxplayer.data.main
-{
+namespace dxplayer.data.main {
     public class MainStorage : DBBase {
         private const string APP_NAME = "DxPlayer";
         private const int DB_VERSION = 1;
@@ -74,7 +78,7 @@ namespace dxplayer.data.main
         public TargetFolderTable TargetFolderTable { get; }
         public ChapterTable ChapterTable { get; }
 
-        private MainStorage(string path, bool ro=false): base(path, ro) {
+        private MainStorage(string path, bool ro = false) : base(path, ro) {
             PlayListTable = new PlayListTable(Connection);
             TargetFolderTable = new TargetFolderTable(Connection);
             ChapterTable = new ChapterTable(Connection);
@@ -82,7 +86,7 @@ namespace dxplayer.data.main
 
         public static bool CheckDB(string path) {
             try {
-                using (new MainStorage(path, ro:true)) {
+                using (new MainStorage(path, ro: true)) {
                     return true;
                 }
             }
@@ -134,7 +138,6 @@ namespace dxplayer.data.main
             }
         }
 
-
         public string getAppName() {
             try {
                 using (var cmd = Connection.CreateCommand()) {
@@ -172,5 +175,68 @@ namespace dxplayer.data.main
             PlayListTable.Dispose();
             base.Dispose();
         }
+
+        /**
+         * 指定されたフォルダ内の新しいファイル（DB未登録なファイル）をDB追加する。
+         */
+        private void InsertAddedFiles(string folderPath, DxxStorage dxdb, IStatusBar statusBar, string prefix) {
+            var comparator = new PlayItemComparator();
+            var videoExt = new[] { ".mp4", ".wmv", ".avi", ".mov", ".avi", ".mpg", ".mpeg", ".mpe", ".ram", ".rm" };
+            var items = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                           .Where(path => videoExt.Any(x => path.EndsWith(x, StringComparison.OrdinalIgnoreCase)))
+                           .Select(path => PlayItem.Create(path))
+                           .Except(PlayListTable.List, comparator)
+                           .ToList();
+            int count = 0, totalCount = items.Count();
+            foreach (var item in items) {
+                count++;
+                statusBar.OutputStatusMessage($"{prefix} ({count}/{totalCount}) : {item.Name}");
+                PlayListTable.Insert(item.ComplementAll().ApplyDxx(dxdb), false);
+            }
+        }
+
+        /**
+         * DBに登録されているが実ファイルが消えているものがあればDBから削除する。
+         */
+        private void DeleteRemovedFiles(IStatusBar statusBar, string prefix) {
+            int count = 0;
+            var items = PlayListTable.List.Where((c) => {
+                statusBar.OutputStatusMessage($"Checking ({++count}) : {c.Name}");
+                return !PathUtil.isFile(c.Path);
+            }).ToList();
+            statusBar.OutputStatusMessage($"Deleting {items.Count} items");
+            PlayListTable.DeleteAll(items);
+        }
+
+        public async Task AddTargetFolder(string folderPath, IStatusBar statusBar) {
+            if (string.IsNullOrEmpty(folderPath)) return;
+
+            statusBar.OutputStatusMessage($"Importing from {folderPath} ...");
+            await Task.Run(() => {
+                if (!TargetFolderTable.Contains(folderPath)) {
+                    TargetFolderTable.Insert(TargetFolders.Create(folderPath));
+                }
+                using (var dxdb = DxxStorage.SafeOpen(Settings.Instance.DxxDBPath)) {
+                    InsertAddedFiles(folderPath, dxdb, statusBar, "Importing");
+                }
+                PlayListTable.Update();
+                statusBar.FlashStatusMessage($"import: completed.");
+            });
+        }
+
+        public async Task RefreshDB(IStatusBar statusBar) {
+            statusBar.OutputStatusMessage($"Refresh DB: ");
+            await Task.Run(() => {
+                using (var dxdb = DxxStorage.SafeOpen(Settings.Instance.DxxDBPath)) {
+                    foreach (var tf in TargetFolderTable.List) {
+                        InsertAddedFiles(tf.Path, dxdb, statusBar, "Appending");
+                    }
+                }
+                DeleteRemovedFiles(statusBar, "Deleting");
+                PlayListTable.Update();
+                statusBar.FlashStatusMessage($"Refresh: completed.");
+            });
+        }
+
     }
 }

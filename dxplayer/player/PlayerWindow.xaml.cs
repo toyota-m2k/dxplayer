@@ -71,8 +71,11 @@ namespace dxplayer.player
             base.OnClosing(e);
             Settings.Instance.PlayerPlacement.GetPlacementFrom(this);
             ViewModel.SaveChapterListIfNeeds();
+            ViewModel.PlayList.ResetList();     // 最後に再生中のアイテムについて、PlayCountを更新するため、Currentを変化させて、PlayCountObserverに、ItemChangedイベントを受け取らせたい。
             LoadCompletion.TrySetResult(false);
             PlayWindowClosing?.Invoke(this);
+            App.Instance.DB.ChapterTable.Update();
+            App.Instance.DB.PlayListTable.Update();
         }
 
         protected override void OnClosed(EventArgs e) {
