@@ -1,13 +1,10 @@
-﻿using dxplayer.data;
-using io.github.toyota32k.toolkit.utils;
+﻿using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace dxplayer.settings {
+namespace dxplayer.settings
+{
     public class Settings {
         public WinPlacement Placement { get; set; } = new WinPlacement();
         public WinPlacement PlayerPlacement { get; set; } = new WinPlacement();

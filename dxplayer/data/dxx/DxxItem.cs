@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.Linq.Mapping;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
-namespace dxplayer.data.dxx {
+namespace dxplayer.data.dxx
+{
     [Table(Name = "t_storage")]
     public class DxxItem {
         [Column(Name = "id", IsPrimaryKey = true)]

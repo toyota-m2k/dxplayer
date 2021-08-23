@@ -3,8 +3,6 @@ using io.github.toyota32k.toolkit.view;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace dxplayer.settings
 {

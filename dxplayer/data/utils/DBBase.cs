@@ -1,12 +1,9 @@
 ﻿using io.github.toyota32k.toolkit.utils;
 using System;
-using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace dxplayer.data {
+namespace dxplayer.data
+{
     public abstract class DBBase : IDisposable {
         static LoggerEx logger = new LoggerEx("DATA");
 

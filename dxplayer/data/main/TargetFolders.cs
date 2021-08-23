@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Linq.Mapping;
+﻿using System.Data.Linq.Mapping;
 using System.Data.SQLite;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
-namespace dxplayer.data.main {
+namespace dxplayer.data.main
+{
     [Table(Name = "t_target_folders")]
     public class TargetFolders {
         [Column(Name = "path", IsPrimaryKey = true, CanBeNull = false)]

@@ -4,14 +4,11 @@ using dxplayer.data.utils;
 using dxplayer.settings;
 using io.github.toyota32k.toolkit.utils;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
-namespace dxplayer.data.wf {
+namespace dxplayer.data.wf
+{
     public class WfStorage : DBBase {
         const string KEY_APP_NAME = "AppName";
         const string KEY_VERSION = "Version";

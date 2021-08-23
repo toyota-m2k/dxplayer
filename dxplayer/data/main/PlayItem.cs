@@ -9,13 +9,10 @@ using System.Collections.Generic;
 using System.Data.Linq.Mapping;
 using System.Data.SQLite;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Windows.Media;
-using System.Xml.Linq;
 
-namespace dxplayer.data.main {
+namespace dxplayer.data.main
+{
     public enum Rating {
         DREADFUL = 1,
         BAD = 2,

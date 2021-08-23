@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace dxplayer.player {
+﻿namespace dxplayer.player
+{
     public interface IPlayItem {
         ulong TrimStart { get; set; }
         ulong TrimEnd { get; set; }

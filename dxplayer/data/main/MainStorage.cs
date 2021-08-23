@@ -1,13 +1,9 @@
 ﻿using io.github.toyota32k.toolkit.utils;
 using System;
-using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Documents;
 
-namespace dxplayer.data.main {
+namespace dxplayer.data.main
+{
     public class MainStorage : DBBase {
         private const string APP_NAME = "DxPlayer";
         private const int DB_VERSION = 1;

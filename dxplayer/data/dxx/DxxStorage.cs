@@ -1,12 +1,8 @@
-﻿using dxplayer.data.wf;
-using io.github.toyota32k.toolkit.utils;
+﻿using io.github.toyota32k.toolkit.utils;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace dxplayer.data.dxx {
+namespace dxplayer.data.dxx
+{
     public class DxxStorage : DBBase {
         public StorageTable<DxxItem> DxxTable { get; }
         public DxxStorage(string path) : base(path, true) {

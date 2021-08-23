@@ -1,15 +1,14 @@
 ﻿using dxplayer.data;
-using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace dxplayer.player {
+namespace dxplayer.player
+{
     /// <summary>
     /// ControlPanel.xaml の相互作用ロジック
     /// </summary>

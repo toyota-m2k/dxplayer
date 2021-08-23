@@ -1,13 +1,9 @@
 ﻿using dxplayer.data.main;
 using System;
-using System.Collections.Generic;
 using System.Data.Linq.Mapping;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
-namespace dxplayer.data.wf {
+namespace dxplayer.data.wf
+{
     [Table(Name = "t_playlist")]
     public class WfItem {
         [Column(Name = "id", IsPrimaryKey = true)]

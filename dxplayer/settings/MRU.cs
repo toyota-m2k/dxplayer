@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace dxplayer.settings {
+namespace dxplayer.settings
+{
     public class MRU {
         private const int MAX_MRU = 10;
 
