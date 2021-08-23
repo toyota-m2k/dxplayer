@@ -20,7 +20,6 @@ namespace dxplayer
         #region Commands
         public ReactiveCommand PlayCommand { get; } = new ReactiveCommand();
         public ReactiveCommand PreviewCommand { get; } = new ReactiveCommand();
-        public ReactiveCommand ResetCounterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand DeleteItemCommand { get; } = new ReactiveCommand();
         public ReactiveCommand SettingCommand { get; } = new ReactiveCommand();
         public ReactiveCommand<string> CheckedFilterCommand { get; } = new ReactiveCommand<string>();
@@ -30,6 +29,14 @@ namespace dxplayer
         public ReactiveCommand ImportFromWfCommand { get; } = new ReactiveCommand();
         public ReactiveCommand RefreshAllCommand { get; } = new ReactiveCommand();
         public ReactiveCommand SelectDupCommand { get; } = new ReactiveCommand();
+
+        public ReactiveCommand CheckCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand UncheckCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand DecrementCounterCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand ResetCounterCommand { get; } = new ReactiveCommand();
+
+
+        public MainCommands CommandManager { get; }
         #endregion
 
         #region Property / Status
@@ -49,7 +56,8 @@ namespace dxplayer
             Playing = PlayingStatus.Select((c) => c == dxplayer.PlayingStatus.PLAYING).ToReadOnlyReactiveProperty();
             Checking = PlayingStatus.Select((c) => c == dxplayer.PlayingStatus.CHECKING).ToReadOnlyReactiveProperty();
             CheckedFilterCommand.Subscribe((param) => ListFilter.Checked = misc.Utils.ParseToEnum(param, ListFilter.BoolFilter.NONE));
-            CountFilterCommand.Subscribe((param) => ListFilter.PlayCountCP = misc.Utils.ParseToEnum(param, ListFilter.Comparison.NONE)); 
+            CountFilterCommand.Subscribe((param) => ListFilter.PlayCountCP = misc.Utils.ParseToEnum(param, ListFilter.Comparison.NONE));
+            CommandManager = new MainCommands(this);
         }
     }
 }

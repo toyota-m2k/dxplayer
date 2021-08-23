@@ -47,8 +47,10 @@ namespace dxplayer.player {
         public ReactivePropertySlim<bool> ChapterEditing { get; } = new ReactivePropertySlim<bool>(false);
         public ReactivePropertySlim<ObservableCollection<ChapterInfo>> EditingChapterList { get; } = new ReactivePropertySlim<ObservableCollection<ChapterInfo>>();
         public Subject<string> ReachRangeEnd { get; } = new Subject<string>();
+
         public ReactiveCommand<ulong> NotifyPosition { get; } = new ReactiveCommand<ulong>();
         public ReactiveCommand<PlayRange> NotifyRange { get; } = new ReactiveCommand<PlayRange>();
+        public ReactivePropertySlim<PlayRange?> DraggingRange { get; } = new ReactivePropertySlim<PlayRange?>(null);
 
         /**
          * 現在再生中の動画のチャプター設定が変更されていればDBに保存する。

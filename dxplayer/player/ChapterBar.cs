@@ -20,11 +20,17 @@ namespace dxplayer.player {
             get => GetValue(ActivceRangeColorProperty) as Brush;
             set => this.SetValue(ActivceRangeColorProperty, value);
         }
+        public static readonly DependencyProperty DraggingRangeColorProperty = DependencyProperty.Register("DraggingRangeColor", typeof(Brush), typeof(ChapterBar), new FrameworkPropertyMetadata(new SolidColorBrush(Colors.Orange)));
+        public Brush DraggingRangeColor {
+            get => GetValue(DraggingRangeColorProperty) as Brush;
+            set => this.SetValue(DraggingRangeColorProperty, value);
+        }
 
         PlayerViewModel ViewModel => DataContext as PlayerViewModel;
         const double TICK_WIDTH = 2;
         const int Z_RANGE = 1;
-        const int Z_TICK = 2;
+        const int Z_DRAGGING = 2;
+        const int Z_TICK = 3;
         private double PrevWidth = 0;
 
         public ChapterBar() {
@@ -37,6 +43,7 @@ namespace dxplayer.player {
         private void OnLoaded(object sender, RoutedEventArgs e) {
             ViewModel?.Chapters.Subscribe(OnChapterListChanged);
             ViewModel?.DisabledRanges.Subscribe(OnDisabledRangesChanged);
+            ViewModel?.DraggingRange.Subscribe(OnDraggingRangeChanged);
             Loaded -= OnLoaded;
         }
 
@@ -130,6 +137,35 @@ namespace dxplayer.player {
                     Tag = "R",
                 };
                 Children.Add(rc);
+            }
+        }
+
+        private Rectangle mDraggingRectangle = null;
+        private void OnDraggingRangeChanged(PlayRange? range) {
+            var duration = ViewModel.Duration.Value;
+            if (range.HasValue) {
+                var r = range.Value;
+                if(mDraggingRectangle==null) {
+                    mDraggingRectangle = new Rectangle() {
+                        Width = Time2Position(TrueEnd(r, duration) - r.Start),
+                        Height = ActualHeight / 2,
+                        Fill = DraggingRangeColor,
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        Margin = new Thickness(Time2Position(r.Start), 0, 0, 0),
+                        Tag = "D",
+                    };
+                    Children.Add(mDraggingRectangle);
+                    SetZIndex(mDraggingRectangle, Z_DRAGGING);
+                } else {
+                    mDraggingRectangle.Width = Time2Position(TrueEnd(r, duration) - r.Start);
+                    mDraggingRectangle.Margin = new Thickness(Time2Position(r.Start), 0, 0, 0);
+                }
+            } else {
+                if(mDraggingRectangle!=null) {
+                    Children.Remove(mDraggingRectangle);
+                    mDraggingRectangle = null;
+                }
             }
         }
 

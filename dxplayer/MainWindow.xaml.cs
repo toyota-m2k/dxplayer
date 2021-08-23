@@ -24,11 +24,9 @@ namespace dxplayer {
             get => (MainViewModel)DataContext;
             set => DataContext = value;
         }
-
         #region Initialzing
 
-        public MainWindow()
-        {
+        public MainWindow() {
             InitializeComponent();
         }
 
@@ -39,12 +37,18 @@ namespace dxplayer {
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
             ViewModel = new MainViewModel();
+            ViewModel.CommandManager.Enable(this, true);
             ViewModel.SettingCommand.Subscribe(Setting);
             ViewModel.ImportFromWfCommand.Subscribe(ImportFromWf);
             ViewModel.AddFolderCommand.Subscribe(AddFolders);
             ViewModel.RefreshAllCommand.Subscribe(RefreshDB);
             ViewModel.PlayCommand.Subscribe(Play);
+
             ViewModel.PreviewCommand.Subscribe(Preview);
+            ViewModel.CheckCommand.Subscribe(CheckItem);
+            ViewModel.UncheckCommand.Subscribe(UncheckItem);
+            ViewModel.ResetCounterCommand.Subscribe(ResetCounter);
+            ViewModel.DecrementCounterCommand.Subscribe(DecrementCounter);
             Settings.Instance.SortInfo.SortUpdated += OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated += OnFilterChanged;
             OnSortChanged();
@@ -71,7 +75,7 @@ namespace dxplayer {
 
         private PlayerWindow mPlayerWindow = null;
         private PlayCountObserver mPlayCountObserver = null;
-        
+
         private PlayerWindow OpenPlayer(bool preview) {
             if (mPlayerWindow == null) {
                 mPlayerWindow = new PlayerWindow(preview);
@@ -83,6 +87,7 @@ namespace dxplayer {
                 if (!preview) {
                     mPlayCountObserver = new PlayCountObserver(mPlayerWindow.ViewModel);
                 }
+                ViewModel.CommandManager.Enable(this, false);
                 mPlayerWindow.Show();
             }
             return mPlayerWindow;
@@ -95,7 +100,7 @@ namespace dxplayer {
             var item = obj as PlayItem;
             if (item != null) {
                 var index = ViewModel.MainList.Value.IndexOf(item);
-                if(index>=0) {
+                if (index >= 0) {
                     MainListView.SelectedIndex = index;
                     MainListView.ScrollIntoView(item);
                 }
@@ -109,6 +114,7 @@ namespace dxplayer {
                 mPlayerWindow.PlayWindowClosed -= OnPlayerWindowClosed;
                 mPlayerWindow = null;
             }
+            ViewModel.CommandManager.Enable(this, true);
             ViewModel.PlayingStatus.Value = PlayingStatus.IDLE;
             mPlayCountObserver?.Dispose();
             mPlayCountObserver = null;
@@ -164,11 +170,11 @@ namespace dxplayer {
             });
         }
 
-        public void FlashStatusMessage(string msg, int duration=5/*sec*/) {
+        public void FlashStatusMessage(string msg, int duration = 5/*sec*/) {
             Dispatcher.Invoke(async () => {
                 ViewModel.StatusMessage.Value = msg;
                 await Task.Delay(duration * 1000);
-                if(ViewModel.StatusMessage.Value == msg) {
+                if (ViewModel.StatusMessage.Value == msg) {
                     ViewModel.StatusMessage.Value = "";
                 }
             });
@@ -177,6 +183,8 @@ namespace dxplayer {
         #endregion
 
         #region DB Management
+
+        private MainStorage DB => App.Instance.DB;
 
         private async void ImportFromWf() {
             var path = OpenFileDialogBuilder.Create()
@@ -188,7 +196,7 @@ namespace dxplayer {
             using (WaitCursor.Start(this))
             using (var wfdb = WfStorage.SafeOpen(path)) {
                 if (wfdb == null) return;
-                await wfdb.ExportTo(App.Instance.DB, this);
+                await wfdb.ExportTo(DB, this);
             }
             UpdateList();
         }
@@ -201,24 +209,62 @@ namespace dxplayer {
             if (string.IsNullOrEmpty(path)) return;
 
             using (WaitCursor.Start(this)) {
-                await App.Instance.DB.AddTargetFolder(path, this);
+                await DB.AddTargetFolder(path, this);
             }
             UpdateList();
         }
 
         private async void RefreshDB() {
             using (WaitCursor.Start(this)) {
-                await App.Instance.DB.RefreshDB(this);
+                await DB.RefreshDB(this);
             }
             UpdateList();
         }
 
         #endregion
 
+        #region List Management
+
+        public PlayItem SelectedItem => MainListView.SelectedItem as PlayItem;
+        public IEnumerable<PlayItem> SelectedItems => MainListView.SelectedItems.ToEnumerable<PlayItem>();
+        public IEnumerable<PlayItem> ListedItems => MainListView.Items.ToEnumerable<PlayItem>();
+        public IEnumerable<PlayItem> AllItems => DB.PlayListTable.List;
+
+        private void DecrementCounter() {
+            foreach(var c in SelectedItems) {
+                c.PlayCount = Math.Max(0, c.PlayCount - 1);
+            }
+            DB.PlayListTable.Update();
+        }
+
+        private void ResetCounter() {
+            foreach (var c in SelectedItems) {
+                c.PlayCount = 0;
+            }
+            DB.PlayListTable.Update();
+        }
+
+        private void UncheckItem() {
+            foreach (var c in SelectedItems) {
+                c.Checked = false;
+            }
+            DB.PlayListTable.Update();
+        }
+
+        private void CheckItem() {
+            foreach (var c in SelectedItems) {
+                c.Checked = true;
+            }
+            DB.PlayListTable.Update();
+        }
+
+
+        #endregion
+
         #region Sort / Filter
 
         private void UpdateList() {
-            var list = App.Instance.DB.PlayListTable.List.Filter();
+            var list = DB.PlayListTable.List.Filter();
             if (Settings.Instance.SortInfo.Shuffle) {
                 ViewModel.MainList.Value = Shuffle(list);
             }
@@ -291,10 +337,38 @@ namespace dxplayer {
             }
             Settings.Instance.SortInfo.SetSortKey(header.Content.ToString());
         }
+
+
         #endregion
 
+        #region View Events
 
+        //private void OnKeyDown(object sender, KeyEventArgs e) {
+        //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");
+        //    //ViewModel.CommandManager.Down(e.Key);
+        //}
 
+        //private void OnKeyUp(object sender, KeyEventArgs e) {
+        //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");
+        //    //ViewModel.CommandManager.Up(e.Key);
+        //}
+
+        private void OnActivated(object sender, EventArgs e) {
+            ViewModel.CommandManager.Enable(this, true);
+        }
+
+        private void OnDeactivated(object sender, EventArgs e) {
+            ViewModel.CommandManager.Enable(this, false);
+        }
+        #endregion
+
+        //private void OnKeyDown2(object sender, KeyEventArgs e) {
+        //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");
+        //}
+
+        //private void OnKeyUp2(object sender, KeyEventArgs e) {
+        //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");
+        //}
     }
 
     public static class LinqExt {

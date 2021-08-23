@@ -9,6 +9,8 @@
         Loaded="OnLoaded"
         Unloaded="OnUnloaded"
         Closing="OnClosing"
+        Activated="OnActivated"
+        Deactivated="OnDeactivated"
         Title="DxPlayer" Height="450" Width="800">
     <Window.Resources>
         <ResourceDictionary Source="res/CustomResource.xaml"/>
@@ -80,7 +82,7 @@
                     IsChecked="{Binding Playing.Value}"
                     >
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="Play All"/>
+                        <ToolTip Content="Play"/>
                     </ToolTipService.ToolTip>
                 </common:CheckButton>
 
@@ -91,14 +93,14 @@
                     Style="{StaticResource CheckButtonStyle}"
                     IsChecked="{Binding Checking.Value}">
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="Play All (not to increment counter)"/>
+                        <ToolTip Content="Play to check (not to increment counter)"/>
                     </ToolTipService.ToolTip>
                 </common:CheckButton>
 
                 <!-- Reset Counter -->
-                <Button Command="{Binding ResetCounterCommand}"  Content="{StaticResource PathCounter}" Style="{StaticResource PushButtonStyle}" Margin="12,0,0,0">
+                <Button Command="{Binding DecrementCounterCommand}"  Content="{StaticResource PathCounter}" Style="{StaticResource PushButtonStyle}" Margin="12,0,0,0">
                     <ToolTipService.ToolTip>
-                        <ToolTip Content="Reset Counter"/>
+                        <ToolTip Content="Decrement Counter"/>
                     </ToolTipService.ToolTip>
                 </Button>
 

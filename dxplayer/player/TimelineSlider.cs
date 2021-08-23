@@ -107,6 +107,14 @@ namespace dxplayer.player {
 
         protected override void OnThumbDragDelta(DragDeltaEventArgs e) {
             base.OnThumbDragDelta(e);
+
+            var pos = Value;
+            if (mDragStartPos >= 0) {
+                if (Math.Abs(pos - mDragStartPos) > 1000) {
+                    var range = new PlayRange((ulong)mDragStartPos, (ulong)pos);
+                    ViewModel.DraggingRange.Value = range;
+                }
+            }
         }
 
         protected override void OnThumbDragCompleted(DragCompletedEventArgs e) {
@@ -123,6 +131,7 @@ namespace dxplayer.player {
                     }
                 }
             }
+            ViewModel.DraggingRange.Value = null;
             if (mOrgPlaying) {
                 ViewModel.PlayCommand.Execute();
             }
