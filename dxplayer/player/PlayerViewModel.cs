@@ -44,6 +44,7 @@ namespace dxplayer.player {
         public ReactivePropertySlim<ChapterList> Chapters { get; } = new ReactivePropertySlim<ChapterList>(null,ReactivePropertyMode.RaiseLatestValueOnSubscribe);
         public ReactivePropertySlim<List<PlayRange>> DisabledRanges { get; } = new ReactivePropertySlim<List<PlayRange>>(null);
         public ReadOnlyReactivePropertySlim<bool> HasDisabledRange { get; }
+        public ReadOnlyReactivePropertySlim<bool> HasTrimming { get; }
         public ReactivePropertySlim<bool> ChapterEditing { get; } = new ReactivePropertySlim<bool>(false);
         public ReactivePropertySlim<ObservableCollection<ChapterInfo>> EditingChapterList { get; } = new ReactivePropertySlim<ObservableCollection<ChapterInfo>>();
         public Subject<string> ReachRangeEnd { get; } = new Subject<string>();
@@ -82,12 +83,14 @@ namespace dxplayer.player {
             } else {
                 DisabledRanges.Value = new List<PlayRange>();
             }
-            
+            if(ChapterEditing.Value) {
+                EditingChapterList.Value = Chapters.Value.Values;
+            }
         }
 
         private void SetTrimming(object obj) {
             switch (obj as String) {
-                case "Start":   SetTrimming(SetTrimmingStart); break;
+                case "Start": SetTrimming(SetTrimmingStart); break;
                 case "End": SetTrimming(SetTrimmingEnd); break;
                 default: return;
             }
@@ -170,7 +173,9 @@ namespace dxplayer.player {
                 chapterList.Values.Remove(e);
             }
             chapterList.AddChapter(new ChapterInfo(range.Start) { Skip = true });
-            chapterList.AddChapter(new ChapterInfo(range.End));
+            if (range.End != Duration.Value) {
+                chapterList.AddChapter(new ChapterInfo(range.End));
+            }
             Chapters.Value = chapterList;
             DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
         }
@@ -238,6 +243,7 @@ namespace dxplayer.player {
         public ReactiveCommand SetTrimCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ResetTrimCommand { get; } = new ReactiveCommand();
         public ReactiveCommand CheckedCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand TrimmingToChapterCommand { get; } = new ReactiveCommand();
 
         #endregion
 
@@ -284,19 +290,24 @@ namespace dxplayer.player {
             TrimStartText = Trimming.Select((v) => FormatDuration(v.Start)).ToReadOnlyReactivePropertySlim();
             TrimEndText = Trimming.Select((v) => FormatDuration(v.End)).ToReadOnlyReactivePropertySlim();
             HasDisabledRange = DisabledRanges.Select((c) => c != null && c.Count > 0).ToReadOnlyReactivePropertySlim();
+            HasTrimming = Trimming.Select(c => c.Start > 0 || c.End > 0).ToReadOnlyReactivePropertySlim();
 
             IsPlaying = State.Select((v) => v == PlayerState.PLAYING).ToReadOnlyReactivePropertySlim();
             IsReady = State.Select((v) => v == PlayerState.READY || v == PlayerState.PLAYING).ToReadOnlyReactivePropertySlim();
 
             GoForwardCommand.Subscribe(() => {
-                if (!ChapterEditing.Value) {
-                    PlayList.Next();
+                if (ChapterEditing.Value) {
+                    EditingChapterList.Value = null;
+                    SaveChapterListIfNeeds();
                 }
+                PlayList.Next();
             });
             GoBackCommand.Subscribe(() => {
-                if (!ChapterEditing.Value) {
-                    PlayList.Prev();
+                if (ChapterEditing.Value) {
+                    EditingChapterList.Value = null;
+                    SaveChapterListIfNeeds();
                 }
+                PlayList.Prev();
             });
             TrashCommand.Subscribe(PlayList.DeleteCurrent);
             ResetSpeedCommand.Subscribe(() => Speed.Value = 0.5);
@@ -351,7 +362,19 @@ namespace dxplayer.player {
                         break;
                 }
             });
-            if(CheckMode) {
+            TrimmingToChapterCommand.Subscribe(() => {
+                var item = PlayList.Current.Value;
+                if (item == null) return;
+                if (item.TrimStart > 0) {
+                    AddDisabledChapterRange(new PlayRange(0, item.TrimStart));
+                    ResetTrimming(SetTrimmingStart);
+                }
+                if (item.TrimEnd>0) {
+                    AddDisabledChapterRange(new PlayRange(item.TrimEnd, 0));
+                    ResetTrimming(SetTrimmingEnd);
+                }
+            });
+            if (CheckMode) {
                 CheckedCommand.Subscribe(() => {
                     PlayList.Current.Value.Checked = true;
                     GoForwardCommand.Execute();

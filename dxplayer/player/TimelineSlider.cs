@@ -102,17 +102,21 @@ namespace dxplayer.player {
             base.OnThumbDragStarted(e);
             mOrgPlaying = ViewModel.IsPlaying.Value;
             ViewModel.PauseCommand.Execute();
-            mDragStartPos = (ulong)Value;
+            if (ViewModel.CheckMode) {
+                mDragStartPos = (ulong)Value;
+            }
         }
 
         protected override void OnThumbDragDelta(DragDeltaEventArgs e) {
             base.OnThumbDragDelta(e);
 
-            var pos = Value;
-            if (mDragStartPos >= 0) {
-                if (Math.Abs(pos - mDragStartPos) > 1000) {
-                    var range = new PlayRange((ulong)mDragStartPos, (ulong)pos);
-                    ViewModel.DraggingRange.Value = range;
+            if (ViewModel.CheckMode) {
+                var pos = Value;
+                if (mDragStartPos >= 0) {
+                    if (Math.Abs(pos - mDragStartPos) > 1000) {
+                        var range = new PlayRange((ulong)mDragStartPos, (ulong)pos);
+                        ViewModel.DraggingRange.Value = range;
+                    }
                 }
             }
         }
@@ -120,18 +124,20 @@ namespace dxplayer.player {
         protected override void OnThumbDragCompleted(DragCompletedEventArgs e) {
             base.OnThumbDragCompleted(e);
             var pos = Value;
-            if (KeyState.IsKeyDown(KeyState.VK_CONTROL)) {
-                if (mDragStartPos >= 0) {
-                    if (Math.Abs(pos - mDragStartPos) > 1000) {
-                        var range = new PlayRange((ulong)mDragStartPos, (ulong)pos);
-                        ViewModel.NotifyRange.Execute(range);
-                    }
-                    else {
-                        ViewModel.NotifyPosition.Execute((ulong)pos);
+            if (ViewModel.CheckMode) {
+                if (KeyState.IsKeyDown(KeyState.VK_CONTROL)) {
+                    if (mDragStartPos >= 0) {
+                        if (Math.Abs(pos - mDragStartPos) > 1000) {
+                            var range = new PlayRange((ulong)mDragStartPos, (ulong)pos);
+                            ViewModel.NotifyRange.Execute(range);
+                        }
+                        else {
+                            ViewModel.NotifyPosition.Execute((ulong)pos);
+                        }
                     }
                 }
+                ViewModel.DraggingRange.Value = null;
             }
-            ViewModel.DraggingRange.Value = null;
             if (mOrgPlaying) {
                 ViewModel.PlayCommand.Execute();
             }

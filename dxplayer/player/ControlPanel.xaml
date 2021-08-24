@@ -67,7 +67,6 @@
                         Content="{StaticResource PathPause}" Style="{StaticResource IconButtonStyle}"/>
                 <Button IsEnabled="{Binding PlayList.HasPrev.Value}" Margin="8,0,0,0"
                         Focusable="False"
-                        Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
                         Command="{Binding GoBackCommand}"  
                         Content="{StaticResource PathPrev}" Style="{StaticResource IconButtonStyle}"/>
 
@@ -80,7 +79,6 @@
 
                 <Button IsEnabled="{Binding PlayList.HasNext.Value}"
                         Focusable="False"
-                        Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
                         Command="{Binding GoForwardCommand}"  
                         Content="{StaticResource PathNext}" Style="{StaticResource IconButtonStyle}"/>
                 <ToggleButton IsEnabled="{Binding IsReady.Value}"
@@ -101,6 +99,12 @@
                         Visibility="{Binding CheckMode, Converter={StaticResource BoolVisibilityConverter}}"
                         Command="{Binding CheckedCommand}"
                         Content="{StaticResource PathCheck}" Style="{StaticResource IconButtonStyle}"/>
+                <ToggleButton 
+                    Focusable="False"
+                    IsChecked="{Binding ChapterEditing.Value, Mode=TwoWay}"
+                    Content="{StaticResource PathList}" Style="{StaticResource IconToggleButtonStyle}"
+                    VerticalAlignment="Bottom"
+                    />
             </StackPanel>
         </Grid>
 
@@ -138,12 +142,6 @@
                 Style="{StaticResource IconButtonStyle}" 
                 Command="{Binding AddChapterCommand}" 
                 Padding="4"
-                VerticalAlignment="Bottom"
-                />
-            <ToggleButton 
-                Focusable="False"
-                IsChecked="{Binding ChapterEditing.Value, Mode=TwoWay}"
-                Content="{StaticResource PathList}" Style="{StaticResource IconToggleButtonStyle}"
                 VerticalAlignment="Bottom"
                 />
             <Button 
@@ -263,7 +261,15 @@
                 Margin="0,8,0,0"
                 Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
                 Orientation="Horizontal">
-                <TextBlock 
+                <Button 
+                    Padding="8,2"
+                    Focusable="False"
+                    Command="{Binding TrimmingToChapterCommand}"
+                    IsEnabled="{Binding HasTrimming.Value}"
+                    Content="Trimming to Chapters"
+                    />
+
+                <!--<TextBlock 
                     Text="Auto Chapter"
                     Foreground="White"
                     VerticalAlignment="Center"
@@ -287,6 +293,7 @@
                     Content="{StaticResource PathAutoFix}" Style="{StaticResource IconButtonStyle}"
                     Padding="2"
                     />
+                -->
 
             </StackPanel>
         </Grid>
@@ -426,7 +433,7 @@
                 </ToolTipService.ToolTip>
             </RadioButton>
             <!-- Category -->
-            <ComboBox 
+            <!--<ComboBox 
                 FocusVisualStyle="{x:Null}"
                 MinWidth="150" Margin="10,2" ItemsSource="{Binding Categories}"
                 SelectedItem="{Binding PlayList.Current.Value.Category, Mode=TwoWay}">
@@ -442,7 +449,7 @@
                         </StackPanel>
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
-            </ComboBox>
+            </ComboBox>-->
         </StackPanel>
     </Grid>
 </UserControl>
