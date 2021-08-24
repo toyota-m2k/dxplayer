@@ -47,7 +47,7 @@ namespace dxplayer.player {
          * 当初プロパティにしていたが、プレーヤーを開いたり閉じたりしているとNPEが出たのでメソッドに変えた。
          * セッターメソッドだと ?.オペレータを使えるので、こういうときはプロパティより使いやすいのだ。
          */
-        public void Enable(bool enable) {
+        private void Enable(bool enable) {
             if (enable) {
                 Update(new Point(-1,-1));
             }
@@ -57,6 +57,7 @@ namespace dxplayer.player {
         }
 
         public void Reset() {
+            LoggerEx.debug("Show Cursor");
             if (mTimer != null) {
                 mTimer.Stop();
                 mTimer = null;
@@ -72,6 +73,7 @@ namespace dxplayer.player {
             if (mPosition != pos) {
                 mPosition = pos;
                 mCheck = System.Environment.TickCount;
+                LoggerEx.debug("Show Cursor");
                 CursorOnWin = System.Windows.Input.Cursors.Arrow;
                 if (null == mTimer) {
                     mTimer = new DispatcherTimer();
@@ -87,6 +89,7 @@ namespace dxplayer.player {
                 return;
             }
             if (System.Environment.TickCount - mCheck > WAIT_TIME) {
+                LoggerEx.debug("Hide Cursor");
                 mTimer.Stop();
                 mTimer = null;
                 CursorOnWin = System.Windows.Input.Cursors.None;

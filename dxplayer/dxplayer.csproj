@@ -157,6 +157,7 @@
     <Compile Include="player\Player.xaml.cs">
       <DependentUpon>Player.xaml</DependentUpon>
     </Compile>
+    <Compile Include="player\PlayerCommands.cs" />
     <Compile Include="player\PlayerViewModel.cs" />
     <Compile Include="player\PlayerWindow.xaml.cs">
       <DependentUpon>PlayerWindow.xaml</DependentUpon>

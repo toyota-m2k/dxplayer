@@ -36,6 +36,7 @@ namespace dxplayer.player {
 
         public ReactivePropertySlim<double> Speed { get; } = new ReactivePropertySlim<double>(0.5);
         public ReactivePropertySlim<double> Volume { get; } = new ReactivePropertySlim<double>(0.5);
+        public ReactivePropertySlim<bool> Mute { get; } = new ReactivePropertySlim<bool>(false);
 
         #endregion
 
@@ -244,6 +245,8 @@ namespace dxplayer.player {
         public ReactiveCommand ResetTrimCommand { get; } = new ReactiveCommand();
         public ReactiveCommand CheckedCommand { get; } = new ReactiveCommand();
         public ReactiveCommand TrimmingToChapterCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand ClosePlayerCommand { get; } = new ReactiveCommand();
+
 
         #endregion
 

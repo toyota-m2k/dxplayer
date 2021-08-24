@@ -21,7 +21,8 @@
                       MediaFailed="OnMediaFailed"
                       MouseLeftButtonDown="OnPlayerClicked"    
                       MouseMove="OnMouseMove"
-                      Volume="{Binding Volume.Value}"
+                      Volume="{Binding Volume.Value, Mode=OneWay}"
+                      IsMuted="{Binding Mute.Value, Mode=OneWay}"
                       />
         <Grid Background="{StaticResource ControlPanelBG}" 
               MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave"

@@ -63,7 +63,7 @@ namespace dxplayer.player
         }
 
         private void OnCurrentItemChanged(IPlayItem item) {
-            this.Title = item?.Title ?? item?.Name ?? "";
+            this.Title = item?.TitleOrName() ?? "";
             PlayItemChanged?.Invoke(item);
         }
 

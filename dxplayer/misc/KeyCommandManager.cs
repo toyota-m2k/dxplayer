@@ -3,33 +3,37 @@ using io.github.toyota32k.toolkit.view;
 using Reactive.Bindings;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Input;
 
 namespace dxplayer.misc {
     public class Command {
-        private string Name;
+        public int ID { get; private set; }
+        public string Name { get; private set; }
+        public string Description { get; private set; }
+        
         private object Executable;
 
-        private Command(string name) {
+        private Command() {
             Executable = null;
-            Name = name;
+            ID = 0;
+            Name = "NOP";
+            Description = "";
         }
 
-        public Command(string name, Action fn) {
+        public Command(int id, string name, string desc, Action fn) {
             Executable = fn;
             Name = name;
+            ID = id;
+            Description = desc;
         }
-        public Command(string name, ReactiveCommand fn) {
+        public Command(int id, string name, string desc, ReactiveCommand fn) {
             Executable = fn;
             Name = name;
-        }
-        public static Command Create(string name, Action fn) {
-            return new Command(name, fn);
-        }
-        public static Command From(string name, ReactiveCommand fn) {
-            return new Command(name, fn);
+            ID = id;
+            Description = desc;
         }
 
         public void Invoke() {
@@ -47,10 +51,11 @@ namespace dxplayer.misc {
             Logger.error("invalid executable");
         }
 
-        public static Command NOP = new Command("NOP");
+        public static Command NOP = new Command();
     }
 
     public class KeyCommandManager : ViewModelBase {
+        private Dictionary<int, Command> CommandMap = new Dictionary<int, Command>();
         private Dictionary<Key, Command> SingleKeyCommands = new Dictionary<Key, Command>();
         private Dictionary<Key, Command> ControlKeyCommands = new Dictionary<Key, Command>();
         private Dictionary<Key, Command> ShiftKeyCommands = new Dictionary<Key, Command>();
@@ -64,7 +69,7 @@ namespace dxplayer.misc {
         public ReadOnlyReactiveProperty<Command> Command { get; }
         public Action OnCommandEnd = null;
 
-        public KeyCommandManager() : base(disposeNonPublic:true) {
+        public KeyCommandManager() : base(disposeNonPublic: true) {
             Command = ActiveKey.CombineLatest(Ctrl, Shift, (k, c, s) => {
                 if (c && s) {
                     return ControlShiftKeyCommands.GetValue(k, null);
@@ -121,17 +126,38 @@ namespace dxplayer.misc {
             obj?.Invoke();
         }
 
-        public void AddSingleKeyCommand(Key key,Command command) {
-            SingleKeyCommands.Add(key, command);
+        public void AssignSingleKeyCommand(int id, Key key) {
+            SingleKeyCommands.Add(key, this[id]);
         }
-        public void AddControlKeyCommand(Key key, Command command) {
-            ControlKeyCommands.Add(key, command);
+        public void AssignControlKeyCommand(int id, Key key) {
+            ControlKeyCommands.Add(key, this[id]);
         }
-        public void AddShiftKeyCommand(Key key, Command command) {
-            ShiftKeyCommands.Add(key, command);
+        public void AssignShiftKeyCommand(int id, Key key) {
+            ShiftKeyCommands.Add(key, this[id]);
         }
-        public void AddControlShiftKeyCommand(Key key, Command command) {
-            ControlShiftKeyCommands.Add(key, command);
+        public void AssignControlShiftKeyCommand(int id, Key key) {
+            ControlShiftKeyCommands.Add(key, this[id]);
+        }
+
+        public Command CommandOf(string name) {
+            return CommandMap.Values.Where(c => c.Name == name).FirstOrDefault();
+        }
+        public Command CommandOf(int id) {
+            return CommandMap.GetValue(id);
+        }
+        public Command this[int id] {
+            get => CommandOf(id);
+        }
+        public Command this[string name] {
+            get => CommandOf(name);
+        }
+        public void RegisterCommand(Command command) {
+            CommandMap[command.ID] = command;
+        }
+        public void RegisterCommand(params Command[] commands) {
+            foreach(var cmd in commands) {
+                CommandMap[cmd.ID] = cmd;
+            }
         }
 
         public void Down(Key key) {
@@ -178,12 +204,4 @@ namespace dxplayer.misc {
         }
     }
 
-    public static class CommandExtension {
-        public static Command ToCommand(this Action fn, string name) {
-            return new Command(name, fn);
-        }
-        public static Command ToCommand(this ReactiveCommand fn, string name) {
-            return new Command(name, fn);
-        }
-    }
 }

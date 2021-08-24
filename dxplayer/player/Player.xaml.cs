@@ -29,7 +29,7 @@ namespace dxplayer.player {
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
             ViewModel.Player = this;
-            ViewModel.FitMode.Value = Stretch == Stretch.UniformToFill;
+            ViewModel.FitMode.Value = Stretch == Stretch.Uniform;
             ViewModel.FitMode.Subscribe(FitView);
             ViewModel.MaximizeCommand.Subscribe(ToggleFullscreen);
             ViewModel.Fullscreen.Value = Window.GetWindow(this).WindowStyle == WindowStyle.None;
@@ -100,9 +100,6 @@ namespace dxplayer.player {
                 }
                 MediaPlayer.Position = TimeSpan.FromMilliseconds(pos);
                 ReservePosition = 0;
-                if (!ViewModel.ReqShowControlPanel.Value && !ViewModel.ReqShowSizePanel.Value && !ViewModel.CheckMode) {
-                    CursorManager?.Enable(true);
-                }
             }
         }
 
@@ -143,7 +140,7 @@ namespace dxplayer.player {
         }
 
         public void FitView(bool mode) {
-            Stretch = mode ? Stretch.UniformToFill : Stretch.Uniform;
+            Stretch = mode ? Stretch.Uniform : Stretch.UniformToFill;
         }
 
         //public void Stop() {
@@ -165,30 +162,21 @@ namespace dxplayer.player {
             }
         }
 
-        private bool ShowPanel(FrameworkElement panel, bool show) {
-            if (ViewModel.ChapterEditing.Value) return true;
+        private void ShowPanel(FrameworkElement panel, bool show) {
             switch (panel?.Tag as string) {
                 case "ControlPanel":
-                    if (!ViewModel.CheckMode) {
-                        ViewModel.ReqShowControlPanel.Value = show;
-                    }
+                    ViewModel.ReqShowControlPanel.Value = show;
                     break;
                 case "SizingPanel":
                     ViewModel.ReqShowSizePanel.Value = show;
                     break;
                 default:
-                    return false;
+                    return;
             }
-            if (!ViewModel.CheckMode) {
-                CursorManager?.Enable(!show);
-            }
-            return true;
         }
 
         private void OnMouseEnter(object sender, MouseEventArgs e) {
-            if(!ShowPanel(sender as FrameworkElement, true)) {
-                CursorManager.Update(e.GetPosition(this));
-            }
+            ShowPanel(sender as FrameworkElement, true);
         }
 
         private void OnMouseMove(object sender, MouseEventArgs e) {
@@ -196,9 +184,7 @@ namespace dxplayer.player {
         }
 
         private void OnMouseLeave(object sender, MouseEventArgs e) {
-            if (!ShowPanel(sender as FrameworkElement, false)) {
-                CursorManager.Reset();
-            }
+            ShowPanel(sender as FrameworkElement, false);
         }
 
         private void ToggleFullscreen() {
@@ -226,7 +212,6 @@ namespace dxplayer.player {
             if(edit) {
                 ViewModel.ReqShowControlPanel.Value = true;
                 ViewModel.ReqShowSizePanel.Value = false;
-                CursorManager?.Enable(false);
             }
         }
     }

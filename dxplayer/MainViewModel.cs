@@ -34,6 +34,7 @@ namespace dxplayer
         public ReactiveCommand UncheckCommand { get; } = new ReactiveCommand();
         public ReactiveCommand DecrementCounterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ResetCounterCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand ShutdownCommand { get; } = new ReactiveCommand();
 
 
         public MainCommands CommandManager { get; }
