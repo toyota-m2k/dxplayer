@@ -247,6 +247,8 @@ namespace dxplayer.player {
         public ReactiveCommand TrimmingToChapterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ClosePlayerCommand { get; } = new ReactiveCommand();
 
+        public ReactiveCommand 
+
 
         #endregion
 

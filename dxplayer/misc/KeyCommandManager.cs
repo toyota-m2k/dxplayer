@@ -12,28 +12,40 @@ namespace dxplayer.misc {
     public class Command {
         public int ID { get; private set; }
         public string Name { get; private set; }
-        public string Description { get; private set; }
-        
+        public string Description { get; private set; } = null;
+        public Action BreakAction { get; private set; } = null;
+        public bool Repeatable { get; private set; } = false;
+
         private object Executable;
 
         private Command() {
             Executable = null;
             ID = 0;
             Name = "NOP";
-            Description = "";
         }
 
-        public Command(int id, string name, string desc, Action fn) {
+        public Command(int id, string name, Action fn) {
             Executable = fn;
             Name = name;
             ID = id;
-            Description = desc;
         }
-        public Command(int id, string name, string desc, ReactiveCommand fn) {
+        public Command(int id, string name, ReactiveCommand fn) {
             Executable = fn;
             Name = name;
             ID = id;
-            Description = desc;
+        }
+
+        public Command SetBreakAction(Action breakAction) {
+            BreakAction = breakAction;
+            return this;
+        }
+        public Command SetDescription(string description) {
+            Description = description;
+            return this;
+        }
+        public Command SetRepeatable(bool repeatable) {
+            Repeatable = repeatable;
+            return this;
         }
 
         public void Invoke() {
@@ -66,24 +78,24 @@ namespace dxplayer.misc {
         private ReactiveProperty<bool> Shift { get; } = new ReactiveProperty<bool>(false/*, ReactivePropertyMode.DistinctUntilChanged*/);
         private IDisposable enabled { get; set; } = null;
 
-        public ReadOnlyReactiveProperty<Command> Command { get; }
-        public Action OnCommandEnd = null;
+        private ReadOnlyReactiveProperty<Command> CommandFlow { get; }
+        private Command CurrentCommand = misc.Command.NOP;
 
         public KeyCommandManager() : base(disposeNonPublic: true) {
-            Command = ActiveKey.CombineLatest(Ctrl, Shift, (k, c, s) => {
+            CommandFlow = ActiveKey.CombineLatest(Ctrl, Shift, (k, c, s) => {
                 if (c && s) {
-                    return ControlShiftKeyCommands.GetValue(k, null);
+                    return ControlShiftKeyCommands.GetValue(k, misc.Command.NOP);
                 }
                 else if (c) {
-                    return ControlKeyCommands.GetValue(k, null);
+                    return ControlKeyCommands.GetValue(k, misc.Command.NOP);
                 }
                 else if (s) {
-                    return ShiftKeyCommands.GetValue(k, null);
+                    return ShiftKeyCommands.GetValue(k, misc.Command.NOP);
                 }
                 else {
-                    return SingleKeyCommands.GetValue(k, null);
+                    return SingleKeyCommands.GetValue(k, misc.Command.NOP);
                 }
-            }).ToReadOnlyReactiveProperty(mode: ReactivePropertyMode.DistinctUntilChanged);
+            }).ToReadOnlyReactiveProperty();
         }
 
         public bool Enabled {
@@ -104,7 +116,7 @@ namespace dxplayer.misc {
                     Cancel();
                     owner.AddHandler(Keyboard.PreviewKeyDownEvent, (KeyEventHandler)OnKeyDown);
                     owner.AddHandler(Keyboard.PreviewKeyUpEvent, (KeyEventHandler)OnKeyUp);
-                    enabled = Command.Subscribe(c => {
+                    enabled = CommandFlow.Subscribe(c => {
                         Execute(c);
                     });
                 }
@@ -119,11 +131,16 @@ namespace dxplayer.misc {
             }
         }
 
-        private void Execute(Command obj) {
-            LoggerEx.debug($"{obj}");
-            OnCommandEnd?.Invoke();
-            OnCommandEnd = null;
-            obj?.Invoke();
+        private void Execute(Command nextCommand) {
+            if(CurrentCommand.ID != nextCommand.ID) {
+                CurrentCommand?.BreakAction?.Invoke();
+                CurrentCommand = nextCommand;
+            }
+            else if(!CurrentCommand.Repeatable) {
+                return;
+            }
+            LoggerEx.debug($"{CurrentCommand.Name}");
+            CurrentCommand.Invoke();
         }
 
         public void AssignSingleKeyCommand(int id, Key key) {

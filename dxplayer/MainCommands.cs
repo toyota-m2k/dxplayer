@@ -36,11 +36,24 @@ namespace dxplayer {
         #region Private
 
         private static Command CMD(ID id, string name, ReactiveCommand fn, string desc = null) {
-            return new Command((int)id, name, desc, fn);
+            return new Command((int)id, name, fn).SetDescription(desc);
         }
         private static Command CMD(ID id, string name, Action fn, string desc = null) {
-            return new Command((int)id, name, desc, fn);
+            return new Command((int)id, name, fn).SetDescription(desc);
         }
+        private static Command REP_CMD(ID id, string name, ReactiveCommand fn, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetRepeatable(true);
+        }
+        private static Command REP_CMD(ID id, string name, Action fn, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetRepeatable(true);
+        }
+        private static Command CNT_CMD(ID id, string name, ReactiveCommand fn, Action brk, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetBreakAction(brk);
+        }
+        private static Command CNT_CMD(ID id, string name, Action fn, Action brk, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetBreakAction(brk);
+        }
+
         private void AssignSingleKeyCommand(ID id, Key key) {
             AssignSingleKeyCommand((int)id, key);
         }

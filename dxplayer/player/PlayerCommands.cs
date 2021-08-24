@@ -58,16 +58,61 @@ namespace dxplayer.player {
                 , CMD(ID.UNMUTE, "Unmute", () => viewModel.Mute.Value = false)
                 , CMD(ID.TOGGLE_MUTE, "ToggleMute", () => viewModel.Mute.Value = !viewModel.Mute.Value)
                 , CMD(ID.CLOSE, "Close", viewModel.ClosePlayerCommand, "Close Player")
+                , REP_CMD(ID.SEEK_FORWARD_1, "SeekForward1", 
+
+            //SEEK_FORWARD_1,
+            //SEEK_FORWARD_5,
+            //SEEK_FORWARD_10,
+            //SEEK_BACK_1,
+            //SEEK_BACK_5,
+            //SEEK_BACK_10,
+
+            //SLOW_SPEED,
+            //NORMAL_SPEED,
+            //DOUBLE_SPEED,
+            //SUPER_HIGH_SPEED,
+
+            //CONTINUOUS_DOUBLE_SPEED,
+            //CONTINUOUS_SUPER_HIGH_SPEED,
+
+            //RATING_EXCELLENT,
+            //RATING_GOOD,
+            //RATING_NORMAL,
+            //RATING_BAD,
+            //RATING_DREADFUL,
+
+            //TOGGLE_STRECH_MODE,
+
+            //TRIM_SET_START,
+            //TRIM_SET_END,
+            //TRIM_RESET_START,
+            //TRIM_RESET_END,
+
+            //PIN_SLIDER,
+            //KICKOUT_MOUSE,
+
                 );
         }
 
         #region Private
 
         private static Command CMD(ID id, string name, ReactiveCommand fn, string desc = null) {
-            return new Command((int)id, name, desc, fn);
+            return new Command((int)id, name, fn).SetDescription(desc);
         }
         private static Command CMD(ID id, string name, Action fn, string desc = null) {
-            return new Command((int)id, name, desc, fn);
+            return new Command((int)id, name, fn).SetDescription(desc);
+        }
+        private static Command REP_CMD(ID id, string name, ReactiveCommand fn, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetRepeatable(true);
+        }
+        private static Command REP_CMD(ID id, string name, Action fn, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetRepeatable(true);
+        }
+        private static Command CNT_CMD(ID id, string name, ReactiveCommand fn, Action brk, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetBreakAction(brk);
+        }
+        private static Command CNT_CMD(ID id, string name, Action fn, Action brk, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetBreakAction(brk);
         }
         private void AssignSingleKeyCommand(ID id, Key key) {
             AssignSingleKeyCommand((int)id, key);
