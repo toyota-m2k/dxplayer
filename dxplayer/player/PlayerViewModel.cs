@@ -251,9 +251,17 @@ namespace dxplayer.player {
 
         // Window
         public ReactivePropertySlim<bool> FitMode { get; } = new ReactivePropertySlim<bool>();
-        public ReactivePropertySlim<bool> ShowPanel { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<bool> ShowSizePanel { get; } = new ReactivePropertySlim<bool>(false);
         public ReactivePropertySlim<bool> Fullscreen { get; } = new ReactivePropertySlim<bool>(false);
+
+        public ReactivePropertySlim<bool> ReqShowControlPanel { get; } = new ReactivePropertySlim<bool>(false);
+        public ReactivePropertySlim<bool> ReqShowSizePanel { get; } = new ReactivePropertySlim<bool>(false);
+        public ReactivePropertySlim<bool> PinControlPanel { get; } = new ReactivePropertySlim<bool>(false);
+
+        public ReadOnlyReactivePropertySlim<bool> ShowControlPanel { get; }
+        public ReadOnlyReactivePropertySlim<bool> ShowSizePanel { get; }
+        public ReadOnlyReactivePropertySlim<bool> MinimumPanel { get; }
+        public ReadOnlyReactivePropertySlim<bool> CursorManagerActivity { get; }
+
         public ReactiveCommand MaximizeCommand { get; } = new ReactiveCommand();
         public bool CheckMode { get; }
 
@@ -291,9 +299,17 @@ namespace dxplayer.player {
             TrimEndText = Trimming.Select((v) => FormatDuration(v.End)).ToReadOnlyReactivePropertySlim();
             HasDisabledRange = DisabledRanges.Select((c) => c != null && c.Count > 0).ToReadOnlyReactivePropertySlim();
             HasTrimming = Trimming.Select(c => c.Start > 0 || c.End > 0).ToReadOnlyReactivePropertySlim();
-
             IsPlaying = State.Select((v) => v == PlayerState.PLAYING).ToReadOnlyReactivePropertySlim();
             IsReady = State.Select((v) => v == PlayerState.READY || v == PlayerState.PLAYING).ToReadOnlyReactivePropertySlim();
+
+            ShowSizePanel = ReqShowSizePanel.ToReadOnlyReactivePropertySlim();
+            ShowControlPanel = ReqShowControlPanel.CombineLatest(PinControlPanel, ChapterEditing, (req, pin, editing) => {
+                return CheckMode || req || pin || editing;
+            }).ToReadOnlyReactivePropertySlim();
+            MinimumPanel = PinControlPanel.CombineLatest(IsPlaying, ChapterEditing, ReqShowControlPanel, (pin, playing, editing, req) => {
+                return pin && playing && !CheckMode && !req && !editing;
+            }).ToReadOnlyReactivePropertySlim();
+            CursorManagerActivity = ShowControlPanel.CombineLatest(ShowSizePanel, (c, s) => !c && !s).ToReadOnlyReactivePropertySlim();
 
             GoForwardCommand.Subscribe(() => {
                 if (ChapterEditing.Value) {

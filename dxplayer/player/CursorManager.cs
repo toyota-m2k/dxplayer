@@ -1,4 +1,5 @@
 ﻿using io.github.toyota32k.toolkit.utils;
+using Reactive.Bindings;
 using System;
 using System.Windows;
 using System.Windows.Threading;
@@ -13,7 +14,20 @@ namespace dxplayer.player {
         private long mCheck = 0;
         private DispatcherTimer mTimer = null;
         private WeakReference<Window> mWin;
-        private bool Enabled = false;
+
+        private IReadOnlyReactiveProperty<bool> Activator { get; set; } = null;
+        private bool Enabled => Activator?.Value ?? false;
+
+        public IDisposable SetActivator(IReadOnlyReactiveProperty<bool> activator) {
+            Activator?.Dispose();
+            Activator = activator;
+            if(activator==null) {
+                return null;
+            }
+            return Activator.Subscribe(Enable);
+        }
+
+
 
         public CursorManager(Window owner) {
             mWin = new WeakReference<Window>(owner);
@@ -34,13 +48,11 @@ namespace dxplayer.player {
          * セッターメソッドだと ?.オペレータを使えるので、こういうときはプロパティより使いやすいのだ。
          */
         public void Enable(bool enable) {
-            if (enable!= Enabled) {
-                Enabled = enable;
-                if (enable) {
-                    //Update();
-                } else {
-                    Reset();
-                }
+            if (enable) {
+                Update(new Point(-1,-1));
+            }
+            else {
+                Reset();
             }
         }
 

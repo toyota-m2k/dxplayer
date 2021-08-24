@@ -129,10 +129,8 @@ namespace dxplayer.player {
             foreach (var r in activeRanges) {
                 var rc = new Rectangle() {
                     Width = Time2Position(TrueEnd(r,duration) - r.Start),
-                    Height = ActualHeight / 2,
                     Fill = ActiveRangeColor,
                     HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Bottom,
                     Margin = new Thickness(Time2Position(r.Start), 0, 0, 0),
                     Tag = "R",
                 };
@@ -148,10 +146,8 @@ namespace dxplayer.player {
                 if(mDraggingRectangle==null) {
                     mDraggingRectangle = new Rectangle() {
                         Width = Time2Position(TrueEnd(r, duration) - r.Start),
-                        Height = ActualHeight / 2,
                         Fill = DraggingRangeColor,
                         HorizontalAlignment = HorizontalAlignment.Left,
-                        VerticalAlignment = VerticalAlignment.Bottom,
                         Margin = new Thickness(Time2Position(r.Start), 0, 0, 0),
                         Tag = "D",
                     };

@@ -1,6 +1,7 @@
 ﻿using dxplayer.data;
 using dxplayer.settings;
 using io.github.toyota32k.toolkit.utils;
+using Reactive.Bindings;
 using System;
 using System.Reactive.Linq;
 using System.Windows;
@@ -45,9 +46,8 @@ namespace dxplayer.player {
             ViewModel.PlayCommand.Subscribe(Play);
             ViewModel.PauseCommand.Subscribe(Pause);
             ViewModel.ChapterEditing.Subscribe(OnChapterEditing);
-            if (ViewModel.CheckMode) {
-                ViewModel.ShowPanel.Value = true;
-            }
+
+            CursorManager.SetActivator(ViewModel.CursorManagerActivity);
         }
 
         private void OnCurrentItemChanged(IPlayItem item) {
@@ -100,7 +100,7 @@ namespace dxplayer.player {
                 }
                 MediaPlayer.Position = TimeSpan.FromMilliseconds(pos);
                 ReservePosition = 0;
-                if (!ViewModel.ShowPanel.Value && !ViewModel.ShowSizePanel.Value && !ViewModel.CheckMode) {
+                if (!ViewModel.ReqShowControlPanel.Value && !ViewModel.ReqShowSizePanel.Value && !ViewModel.CheckMode) {
                     CursorManager?.Enable(true);
                 }
             }
@@ -170,11 +170,11 @@ namespace dxplayer.player {
             switch (panel?.Tag as string) {
                 case "ControlPanel":
                     if (!ViewModel.CheckMode) {
-                        ViewModel.ShowPanel.Value = show;
+                        ViewModel.ReqShowControlPanel.Value = show;
                     }
                     break;
                 case "SizingPanel":
-                    ViewModel.ShowSizePanel.Value = show;
+                    ViewModel.ReqShowSizePanel.Value = show;
                     break;
                 default:
                     return false;
@@ -224,8 +224,8 @@ namespace dxplayer.player {
 
         private void OnChapterEditing(bool edit) {
             if(edit) {
-                ViewModel.ShowPanel.Value = true;
-                ViewModel.ShowSizePanel.Value = false;
+                ViewModel.ReqShowControlPanel.Value = true;
+                ViewModel.ReqShowSizePanel.Value = false;
                 CursorManager?.Enable(false);
             }
         }

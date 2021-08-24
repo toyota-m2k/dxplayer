@@ -19,8 +19,7 @@
             <RowDefinition Height="Auto"/>  <!-- 1: Position Sider -->
             <RowDefinition Height="Auto"/>  <!-- 2: Chapter -->
             <RowDefinition Height="*"/>  <!-- 3: Trimming -->
-            <RowDefinition Height="Auto"/>  <!-- 4: Volume/Speed -->
-            <RowDefinition Height="Auto"/>  <!-- 5: Rating/Category -->
+            <RowDefinition Height="Auto"/>  <!-- 4: Volume/Speed/Rating -->
         </Grid.RowDefinitions>
         <Grid.Resources>
             <Path x:Key="PathPlay" Data="M8,5.14V19.14L19,12.14L8,5.14Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
@@ -45,10 +44,13 @@
             <Path x:Key="PathSync" Data="M9,3L5,7H8V14H10V7H13M16,17V10H14V17H11L15,21L19,17H16Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
             <Path x:Key="PathExpand" Data="M9,11H15V8L19,12L15,16V13H9V16L5,12L9,8V11M2,20V4H4V20H2M20,20V4H22V20H20Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
             <Path x:Key="PathCheck" Data="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
+            <Path x:Key="PathPin" Data="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
 
         </Grid.Resources>
         <!-- Row:0 再生関連ボタン類 -->
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="0"
+              Visibility="{Binding MinimumPanel.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+              >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -109,31 +111,55 @@
         </Grid>
 
         <!-- ポジション（Timeline） Slider -->
-        <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Stretch">
-            <local:ChapterBar x:Name="ChapterView" Margin="5,0"
-                Height="12"
+        <Grid Grid.Row="1" HorizontalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <local:ChapterBar 
+                Grid.Row="0" Grid.Column="0"
+                x:Name="ChapterView" Margin="5,0"
+                Height="6"
+                VerticalAlignment="Bottom"
                 Background="Transparent"
                 />
             <local:TimelineSlider Style="{DynamicResource TimelineSliderStyle}" 
+                Grid.Row="1" Grid.Column="0"
                 x:Name="Slider"
                 FocusVisualStyle="{x:Null}"
-                VerticalAlignment="Center"
+                VerticalAlignment="Top"
                 HorizontalAlignment="Stretch"
                 MinWidth="300"
                 SmallChange="1000" LargeChange="5000"
                 Margin="0,-15,0,0"
                 Value="{Binding Position.Value, Mode=TwoWay}"
                 />
-            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+            <ToggleButton
+                Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                Focusable="False"
+                VerticalAlignment="Center"
+                Visibility="{Binding CheckMode, Converter={StaticResource NegBoolVisibilityConverter}}"
+                IsChecked="{Binding PinControlPanel.Value, Mode=TwoWay}"
+                Content="{StaticResource PathPin}" Style="{StaticResource IconToggleButtonStyle}"/>
+            <StackPanel 
+                Grid.Row="2" Grid.Column="0"
+                HorizontalAlignment="Center" Orientation="Horizontal">
                 <TextBlock Text="{Binding PositionText.Value}" Foreground="White"/>
                 <TextBlock Text=" / " Foreground="White"/>
                 <TextBlock Text="{Binding DurationText.Value}" Foreground="White"/>
             </StackPanel>
 
-        </StackPanel>
+        </Grid>
 
         <!-- Chapter -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal">
+        <StackPanel Grid.Row="2" Orientation="Horizontal"
+            Visibility="{Binding MinimumPanel.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+            >
             <TextBlock Text="Chapter" VerticalAlignment="Center" Foreground="White"/>
             <Button 
                 Focusable="False"
@@ -153,8 +179,7 @@
                 />
 
         </StackPanel>
-        <Button
-            Grid.Row="2"
+        <Button Grid.Row="2"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
             Focusable="False"
@@ -165,8 +190,7 @@
             Padding="4"
             />
         <!-- Edit Chapters-->
-        <Grid
-            Grid.Row="3"
+        <Grid Grid.Row="3"
             Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
             >
             <Grid.RowDefinitions>
@@ -297,159 +321,152 @@
 
             </StackPanel>
         </Grid>
-        <!-- Trimming -->
-        <Grid 
-            Grid.Row="3" 
-            Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
-            Margin="0,10,0,0"
-            >
+        
+        <!-- Trimming/Volume/Speed/Ratings -->
+        <Grid Grid.Row="3"
+              Visibility="{Binding MinimumPanel.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+              >
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Play From" Foreground="White" HorizontalAlignment="Left"/>
-            <TextBlock Grid.Row="0" Grid.Column="1" Text="Play To" Foreground="White" HorizontalAlignment="Left"/>
-            <Grid Grid.Row="1" Grid.Column="0">
+
+            <!-- Trimming -->
+            <Grid Grid.Row="0" 
+                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+                Margin="0,10,0,0"
+                >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
-                <Grid Grid.Column="0" Background="White" Height="16" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding TrimStartText.Value}" HorizontalAlignment="Right" Margin="4,2" VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Play From" Foreground="White" HorizontalAlignment="Left"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="Play To" Foreground="White" HorizontalAlignment="Left"/>
+                <Grid Grid.Row="1" Grid.Column="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0" Background="White" Height="16" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding TrimStartText.Value}" HorizontalAlignment="Right" Margin="4,2" VerticalAlignment="Center"/>
+                    </Grid>
+                    <Button Grid.Column="1" Style="{StaticResource IconButtonStyle}" Command="{Binding SetTrimCommand}" CommandParameter="Start" RenderTransformOrigin="0.5,0.5" Padding="4">
+                        <Button.RenderTransform>
+                            <ScaleTransform ScaleY="-1"/>
+                        </Button.RenderTransform>
+                        <common:PathView Path="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
+                    </Button>
+                    <Button Grid.Column="2" Style="{StaticResource IconButtonStyle}" Command="{Binding ResetTrimCommand}" CommandParameter="Start" Padding="4">
+                        <common:PathView Path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                    </Button>
                 </Grid>
-                <Button Grid.Column="1" Style="{StaticResource IconButtonStyle}" Command="{Binding SetTrimCommand}" CommandParameter="Start" RenderTransformOrigin="0.5,0.5" Padding="4">
-                    <Button.RenderTransform>
-                        <ScaleTransform ScaleY="-1"/>
-                    </Button.RenderTransform>
-                    <common:PathView Path="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
-                </Button>
-                <Button Grid.Column="2" Style="{StaticResource IconButtonStyle}" Command="{Binding ResetTrimCommand}" CommandParameter="Start" Padding="4">
-                    <common:PathView Path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-                </Button>
+                <Grid Grid.Row="1" Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0" Background="White" Height="16" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding TrimEndText.Value}" HorizontalAlignment="Right" Margin="4,2" VerticalAlignment="Center"/>
+                    </Grid>
+                    <Button Grid.Column="1" Style="{StaticResource IconButtonStyle}" Command="{Binding SetTrimCommand}" CommandParameter="End" RenderTransformOrigin="0.5,0.5" Padding="4">
+                        <Button.RenderTransform>
+                            <ScaleTransform ScaleY="-1"/>
+                        </Button.RenderTransform>
+                        <common:PathView Path="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
+                    </Button>
+                    <Button Grid.Column="2" Style="{StaticResource IconButtonStyle}" Command="{Binding ResetTrimCommand}" CommandParameter="End" Padding="4">
+                        <common:PathView Path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                    </Button>
+                </Grid>
+
             </Grid>
-            <Grid Grid.Row="1" Grid.Column="1">
+            <!-- Volume/Speed -->
+            <Grid Grid.Row="1"
+                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+                 >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="1*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Grid Grid.Column="0" Background="White" Height="16" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding TrimEndText.Value}" HorizontalAlignment="Right" Margin="4,2" VerticalAlignment="Center"/>
-                </Grid>
-                <Button Grid.Column="1" Style="{StaticResource IconButtonStyle}" Command="{Binding SetTrimCommand}" CommandParameter="End" RenderTransformOrigin="0.5,0.5" Padding="4">
-                    <Button.RenderTransform>
-                        <ScaleTransform ScaleY="-1"/>
-                    </Button.RenderTransform>
-                    <common:PathView Path="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"/>
-                </Button>
-                <Button Grid.Column="2" Style="{StaticResource IconButtonStyle}" Command="{Binding ResetTrimCommand}" CommandParameter="End" Padding="4">
-                    <common:PathView Path="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-                </Button>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Speed" Foreground="White" HorizontalAlignment="Left"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="Volume" Foreground="White" HorizontalAlignment="Left"/>
+                <Slider Grid.Row="1" Grid.Column="0" Minimum="0" Maximum="1" Value="{Binding Speed.Value, Mode=TwoWay}" SmallChange="0.1" LargeChange="0.1" VerticalAlignment="Center" FocusVisualStyle="{x:Null}"/>
+                <Slider Grid.Row="1" Grid.Column="2" Minimum="0" Maximum="1" Value="{Binding Volume.Value, Mode=TwoWay}" SmallChange="0.1" LargeChange="0.1" VerticalAlignment="Center"  FocusVisualStyle="{x:Null}"/>
+                <Button Grid.Row="1" Grid.Column="1" Command="{Binding ResetSpeedCommand}" Content="{StaticResource PathResetSpeed}" Style="{StaticResource IconButtonStyle}" Focusable="False"/>
+                <Button Grid.Row="1" Grid.Column="3" Command="{Binding ResetVolumeCommand}" Content="{StaticResource PathResetVolume}" Style="{StaticResource IconButtonStyle}" Focusable="False"/>
             </Grid>
 
-        </Grid>
-        
-        <!-- Volume/Speed -->
-        <Grid
-            Grid.Row="4"
-            Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
-             >
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="1*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Speed" Foreground="White" HorizontalAlignment="Left"/>
-            <TextBlock Grid.Row="0" Grid.Column="2" Text="Volume" Foreground="White" HorizontalAlignment="Left"/>
-            <Slider Grid.Row="1" Grid.Column="0" Minimum="0" Maximum="1" Value="{Binding Speed.Value, Mode=TwoWay}" SmallChange="0.1" LargeChange="0.1" VerticalAlignment="Center" FocusVisualStyle="{x:Null}"/>
-            <Slider Grid.Row="1" Grid.Column="2" Minimum="0" Maximum="1" Value="{Binding Volume.Value, Mode=TwoWay}" SmallChange="0.1" LargeChange="0.1" VerticalAlignment="Center"  FocusVisualStyle="{x:Null}"/>
-            <Button Grid.Row="1" Grid.Column="1" Command="{Binding ResetSpeedCommand}" Content="{StaticResource PathResetSpeed}" Style="{StaticResource IconButtonStyle}" Focusable="False"/>
-            <Button Grid.Row="1" Grid.Column="3" Command="{Binding ResetVolumeCommand}" Content="{StaticResource PathResetVolume}" Style="{StaticResource IconButtonStyle}" Focusable="False"/>
-        </Grid>
-        
-        <!-- Rating / Category -->
-        <StackPanel 
-            Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" Orientation="Horizontal"
-            Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
-            >
-            <RadioButton 
+            <!-- Rating -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                HorizontalAlignment="Left"         
+                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+                >
+                <RadioButton 
                 Focusable="False"
                 IsChecked="{Binding PlayList.Current.Value.Rating, 
                     Converter={StaticResource EnumBooleanConverter}, ConverterParameter=DREADFUL, Mode=TwoWay}"  
                     Content="{StaticResource PathDreadful}" 
                 Style="{StaticResource RatingDreadfulButtonStyle}" GroupName="Rating">
-                <ToolTipService.ToolTip>
-                    <ToolTip Content="Rating: Dreadful"/>
-                </ToolTipService.ToolTip>
-            </RadioButton>
-            <RadioButton 
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Rating: Dreadful"/>
+                    </ToolTipService.ToolTip>
+                </RadioButton>
+                <RadioButton 
                 Focusable="False"
                 IsChecked="{Binding PlayList.Current.Value.Rating, 
                     Converter={StaticResource EnumBooleanConverter}, ConverterParameter=BAD, Mode=TwoWay}"  
                     Content="{StaticResource PathBad}" 
                 Style="{StaticResource RatingBadButtonStyle}" GroupName="Rating">
-                <ToolTipService.ToolTip>
-                    <ToolTip Content="Rating: Bad"/>
-                </ToolTipService.ToolTip>
-            </RadioButton>
-            <RadioButton 
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Rating: Bad"/>
+                    </ToolTipService.ToolTip>
+                </RadioButton>
+                <RadioButton 
                 Focusable="False"
                 IsChecked="{Binding PlayList.Current.Value.Rating, 
                     Converter={StaticResource EnumBooleanConverter}, ConverterParameter=NORMAL, Mode=TwoWay}"  
                     Content="{StaticResource PathNormal}" 
                 Style="{StaticResource RatingNormalButtonStyle}" GroupName="Rating">
-                <ToolTipService.ToolTip>
-                    <ToolTip Content="Rating: Normal"/>
-                </ToolTipService.ToolTip>
-            </RadioButton>
-            <RadioButton 
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Rating: Normal"/>
+                    </ToolTipService.ToolTip>
+                </RadioButton>
+                <RadioButton 
                 Focusable="False"
                 IsChecked="{Binding PlayList.Current.Value.Rating, 
                     Converter={StaticResource EnumBooleanConverter}, ConverterParameter=GOOD, Mode=TwoWay}"  
                     Content="{StaticResource PathGood}" 
                 Style="{StaticResource RatingGoodButtonStyle}" GroupName="Rating">
-                <ToolTipService.ToolTip>
-                    <ToolTip Content="Rating: Good"/>
-                </ToolTipService.ToolTip>
-            </RadioButton>
-            <RadioButton 
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Rating: Good"/>
+                    </ToolTipService.ToolTip>
+                </RadioButton>
+                <RadioButton 
                 Focusable="False"
                 IsChecked="{Binding PlayList.Current.Value.Rating, 
                     Converter={StaticResource EnumBooleanConverter}, ConverterParameter=EXCELLENT, Mode=TwoWay}"  
                     Content="{StaticResource PathExcellent}" 
                 Style="{StaticResource RatingExcellentButtonStyle}" GroupName="Rating">
-                <ToolTipService.ToolTip>
-                    <ToolTip Content="Rating: Excellent"/>
-                </ToolTipService.ToolTip>
-            </RadioButton>
-            <!-- Category -->
-            <!--<ComboBox 
-                FocusVisualStyle="{x:Null}"
-                MinWidth="150" Margin="10,2" ItemsSource="{Binding Categories}"
-                SelectedItem="{Binding PlayList.Current.Value.Category, Mode=TwoWay}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <Viewbox Width="20" Height="20">
-                                <Canvas Width="24" Height="24">
-                                    <Path Fill="{Binding Brush}" Data="{Binding SvgPath}"/>
-                                </Canvas>
-                            </Viewbox>
-                            <TextBlock Text="{Binding Label}" Margin="10,0,0,0" VerticalAlignment="Center" FontSize="14"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>-->
-        </StackPanel>
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Rating: Excellent"/>
+                    </ToolTipService.ToolTip>
+                </RadioButton>
+            </StackPanel>
+        </Grid>
+        
+        
     </Grid>
 </UserControl>
