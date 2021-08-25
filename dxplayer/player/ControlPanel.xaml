@@ -46,6 +46,11 @@
             <Path x:Key="PathCheck" Data="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
             <Path x:Key="PathPin" Data="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
 
+            <Path x:Key="PathAttachLeft" Data="M11,16V13H21V11H11V8L7,12L11,16M3,20H5V4H3V20Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
+            <Path x:Key="PathAttachRight" Data="M13,8V11H3V13H13V16L17,12L13,8M19,20H21V4H19V20Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
+            <Path x:Key="PathAttachTop" Data="M8,11H11V21H13V11H16L12,7L8,11M4,3V5H20V3H4Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
+            <Path x:Key="PathAttachBottom" Data="M16,13H13V3H11V13H8L12,17L16,13M4,19V21H20V19H4Z" Stretch="Fill" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ButtonBase}}"/>
+
         </Grid.Resources>
         <!-- Row:0 再生関連ボタン類 -->
         <Grid Grid.Row="0"
