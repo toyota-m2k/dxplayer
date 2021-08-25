@@ -160,7 +160,10 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal"
             Visibility="{Binding MinimumPanel.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
             >
-            <TextBlock Text="Chapter" VerticalAlignment="Center" Foreground="White"/>
+            <TextBlock 
+                Text="Chapter" VerticalAlignment="Center" Foreground="White"
+                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
+                />
             <Button 
                 Focusable="False"
                 Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
@@ -219,7 +222,7 @@
                 VerticalAlignment="Stretch"
                 SelectionChanged="OnChapterSelected"
                 SelectionMode="Single"
-                StretchColumnIndex="4" StretchColumnMinWidth="200" ItemsSource="{Binding EditingChapterList.Value}">
+                StretchColumnIndex="4" StretchColumnMinWidth="75" ItemsSource="{Binding EditingChapterList.Value}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Skip" Width="40">
@@ -243,7 +246,7 @@
                         <GridViewColumn Header="No." Width="25" DisplayMemberBinding="{Binding Index}"/>
                         <GridViewColumn Header="Position" Width="60" DisplayMemberBinding="{Binding PositionText}"/>
                         <GridViewColumn Header="Length" Width="60" DisplayMemberBinding="{Binding LengthText}"/>
-                        <GridViewColumn Header="Label" Width="200">
+                        <GridViewColumn Header="Label" Width="75">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBox 

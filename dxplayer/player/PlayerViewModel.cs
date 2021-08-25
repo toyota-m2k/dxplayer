@@ -247,7 +247,6 @@ namespace dxplayer.player {
         public ReactiveCommand TrimmingToChapterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ClosePlayerCommand { get; } = new ReactiveCommand();
 
-        public ReactiveCommand 
 
 
         #endregion
@@ -374,9 +373,16 @@ namespace dxplayer.player {
                     default:
                     case HorizontalAlignment.Right:
                         PanelHorzAlign.Value = HorizontalAlignment.Stretch;
+                        PanelVertAlign.Value = VerticalAlignment.Bottom;
                         break;
                     case HorizontalAlignment.Stretch:
-                        PanelHorzAlign.Value = HorizontalAlignment.Left;
+                        if (PanelVertAlign.Value == VerticalAlignment.Bottom) {
+                            PanelVertAlign.Value = VerticalAlignment.Top;
+                        }
+                        else {
+                            PanelHorzAlign.Value = HorizontalAlignment.Left;
+                            PanelHorzAlign.Value = HorizontalAlignment.Stretch;
+                        }
                         break;
                     case HorizontalAlignment.Left:
                         PanelHorzAlign.Value = HorizontalAlignment.Right;

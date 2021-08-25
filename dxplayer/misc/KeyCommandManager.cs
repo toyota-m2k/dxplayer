@@ -29,7 +29,17 @@ namespace dxplayer.misc {
             Name = name;
             ID = id;
         }
+        public Command(int id, string name, Action<int> fn) {
+            Executable = fn;
+            Name = name;
+            ID = id;
+        }
         public Command(int id, string name, ReactiveCommand fn) {
+            Executable = fn;
+            Name = name;
+            ID = id;
+        }
+        public Command(int id, string name, ReactiveCommand<int> fn) {
             Executable = fn;
             Name = name;
             ID = id;
@@ -48,16 +58,25 @@ namespace dxplayer.misc {
             return this;
         }
 
-        public void Invoke() {
+        public void Invoke(int count) {
             if (Executable == null) return;
             var action = Executable as Action;
             if(action!=null) {
                 action();
                 return;
             }
+            var action1 = Executable as Action<int>;
+            if(action!=null) {
+                action1(count);
+            }
             var command = Executable as ReactiveCommand;
             if (command != null) {
                 command.Execute();
+                return;
+            }
+            var command1 = Executable as ReactiveCommand<int>;
+            if (command != null) {
+                command.Execute(count);
                 return;
             }
             Logger.error("invalid executable");
@@ -77,6 +96,7 @@ namespace dxplayer.misc {
         private ReactiveProperty<bool> Ctrl { get; } = new ReactiveProperty<bool>(false/*, ReactivePropertyMode.DistinctUntilChanged*/);
         private ReactiveProperty<bool> Shift { get; } = new ReactiveProperty<bool>(false/*, ReactivePropertyMode.DistinctUntilChanged*/);
         private IDisposable enabled { get; set; } = null;
+        private int RepeatCount = 0;
 
         private ReadOnlyReactiveProperty<Command> CommandFlow { get; }
         private Command CurrentCommand = misc.Command.NOP;
@@ -133,6 +153,7 @@ namespace dxplayer.misc {
 
         private void Execute(Command nextCommand) {
             if(CurrentCommand.ID != nextCommand.ID) {
+                RepeatCount = 0;
                 CurrentCommand?.BreakAction?.Invoke();
                 CurrentCommand = nextCommand;
             }
@@ -140,7 +161,7 @@ namespace dxplayer.misc {
                 return;
             }
             LoggerEx.debug($"{CurrentCommand.Name}");
-            CurrentCommand.Invoke();
+            CurrentCommand.Invoke(RepeatCount++);
         }
 
         public void AssignSingleKeyCommand(int id, Key key) {

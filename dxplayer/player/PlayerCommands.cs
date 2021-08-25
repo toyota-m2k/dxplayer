@@ -58,7 +58,7 @@ namespace dxplayer.player {
                 , CMD(ID.UNMUTE, "Unmute", () => viewModel.Mute.Value = false)
                 , CMD(ID.TOGGLE_MUTE, "ToggleMute", () => viewModel.Mute.Value = !viewModel.Mute.Value)
                 , CMD(ID.CLOSE, "Close", viewModel.ClosePlayerCommand, "Close Player")
-                , REP_CMD(ID.SEEK_FORWARD_1, "SeekForward1", 
+                //, REP_CMD(ID.SEEK_FORWARD_1, "SeekForward1", 
 
             //SEEK_FORWARD_1,
             //SEEK_FORWARD_5,
@@ -102,14 +102,14 @@ namespace dxplayer.player {
         private static Command CMD(ID id, string name, Action fn, string desc = null) {
             return new Command((int)id, name, fn).SetDescription(desc);
         }
-        private static Command REP_CMD(ID id, string name, ReactiveCommand fn, string desc = null) {
+        private static Command REP_CMD(ID id, string name, ReactiveCommand fn, Action brk=null, string desc = null) {
             return new Command((int)id, name, fn).SetDescription(desc).SetRepeatable(true);
         }
-        private static Command REP_CMD(ID id, string name, Action fn, string desc = null) {
-            return new Command((int)id, name, fn).SetDescription(desc).SetRepeatable(true);
+        private static Command REP_CMD(ID id, string name, Action fn, Action brk=null, string desc = null) {
+            return new Command((int)id, name, fn).SetDescription(desc).SetRepeatable(true).SetBreakAction(brk);
         }
         private static Command CNT_CMD(ID id, string name, ReactiveCommand fn, Action brk, string desc = null) {
-            return new Command((int)id, name, fn).SetDescription(desc).SetBreakAction(brk);
+            return new Command((int)id, name, fn).SetDescription(desc).SetBreakAction(brk).SetBreakAction(brk);
         }
         private static Command CNT_CMD(ID id, string name, Action fn, Action brk, string desc = null) {
             return new Command((int)id, name, fn).SetDescription(desc).SetBreakAction(brk);
