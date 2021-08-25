@@ -381,7 +381,7 @@ namespace dxplayer.player {
                         }
                         else {
                             PanelHorzAlign.Value = HorizontalAlignment.Left;
-                            PanelHorzAlign.Value = HorizontalAlignment.Stretch;
+                            PanelVertAlign.Value = VerticalAlignment.Stretch;
                         }
                         break;
                     case HorizontalAlignment.Left:
