@@ -53,6 +53,7 @@ namespace dxplayer.player {
 
             TOGGLE_CHAPTER_EDIT_MODE,
 
+            TOGGLE_FULLSCREEN,
             TOGGLE_PIN_SLIDER,
             KICKOUT_MOUSE,
         }
@@ -98,13 +99,14 @@ namespace dxplayer.player {
                 , CMD(ID.CHAPTER_SET_BEGIN, "ChapterSetBegin", viewModel.BeginChapterSetting, "Begin disabled chapter from current position")
                 , CMD(ID.CHAPTER_SET_COMMIT, "ChapterSetCommit", viewModel.CommitChapterSetting, "Commit disabled chapter to current position")
                 , CMD(ID.CHAPTER_SET_CANCEL, "ChapterSetCommit", viewModel.CancelChapterSetting, "Cancel setting chapter")
+                , CMD(ID.TOGGLE_FULLSCREEN, "ToggleFullscreen", ()=>viewModel.Fullscreen.Value = !viewModel.Fullscreen.Value, "Fullscreen Mode")
                 );
 
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.F);
             AssignShiftKeyCommand(ID.CONTINUOUS_HIGH_SPEED, Key.F);
             AssignControlShiftKeyCommand(ID.CONTINUOUS_SUPER_HIGH_SPEED, Key.F);
 
-                        AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
+            AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
 
             AssignSingleKeyCommand(ID.CLOSE, Key.Escape);
 
