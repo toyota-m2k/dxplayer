@@ -1,4 +1,5 @@
 ﻿using dxplayer.data;
+using dxplayer.data.main;
 using io.github.toyota32k.toolkit.utils;
 using io.github.toyota32k.toolkit.view;
 using Reactive.Bindings;
@@ -19,10 +20,19 @@ namespace dxplayer.player {
         ENDED,
         ERROR,
     }
+    public enum PanelPosition {
+        LEFT,
+        RIGHT,
+        TOP,
+        BOTTOM,
+    }
     public class PlayerViewModel : ViewModelBase {
         #region Control Panel Position
-        public ReactivePropertySlim<HorizontalAlignment> PanelHorzAlign { get; } = new ReactivePropertySlim<HorizontalAlignment>(HorizontalAlignment.Right);
-        public ReactivePropertySlim<VerticalAlignment> PanelVertAlign { get; } = new ReactivePropertySlim<VerticalAlignment>(VerticalAlignment.Bottom);
+        const double DEF_PANEL_WIDTH = 320;
+        public ReactivePropertySlim<PanelPosition> PanelPosition { get; } = new ReactivePropertySlim<PanelPosition>(player.PanelPosition.RIGHT);
+        public ReadOnlyReactivePropertySlim<HorizontalAlignment> PanelHorzAlign { get; }
+        public ReadOnlyReactivePropertySlim<VerticalAlignment> PanelVertAlign { get; }
+        public ReadOnlyReactivePropertySlim<double> PanelWidth { get; }
         #endregion
 
         #region Properties of Item Entry
@@ -41,8 +51,9 @@ namespace dxplayer.player {
         #endregion
 
         #region Trimming/Chapters
+
         public ReactivePropertySlim<PlayRange> Trimming { get; } = new ReactivePropertySlim<PlayRange>(PlayRange.Empty);
-        public ReactivePropertySlim<ChapterList> Chapters { get; } = new ReactivePropertySlim<ChapterList>(null,ReactivePropertyMode.RaiseLatestValueOnSubscribe);
+        public ReactivePropertySlim<ChapterList> Chapters { get; } = new ReactivePropertySlim<ChapterList>(null, ReactivePropertyMode.RaiseLatestValueOnSubscribe);
         public ReactivePropertySlim<List<PlayRange>> DisabledRanges { get; } = new ReactivePropertySlim<List<PlayRange>>(null);
         public ReadOnlyReactivePropertySlim<bool> HasDisabledRange { get; }
         public ReadOnlyReactivePropertySlim<bool> HasTrimming { get; }
@@ -78,28 +89,41 @@ namespace dxplayer.player {
             if (item == null) return;
             Trimming.Value = new PlayRange(item.TrimStart, item.TrimEnd);
             var chapterList = App.Instance.DB.ChapterTable.GetChapterList(item.Path);
-            if(chapterList!=null) {
+            if (chapterList != null) {
                 Chapters.Value = chapterList;
                 DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
             } else {
                 DisabledRanges.Value = new List<PlayRange>();
             }
-            if(ChapterEditing.Value) {
+            if (ChapterEditing.Value) {
                 EditingChapterList.Value = Chapters.Value.Values;
             }
         }
 
+        public void CurrentToTrimmingStart() {
+            SetTrimming(SetTrimmingStart);
+        }
+        public void CurrentToTrimmingEnd() {
+            SetTrimming(SetTrimmingEnd);
+        }
+        public void ResetTrimmingStart() {
+            ResetTrimming(SetTrimmingStart);
+        }
+        public void ResetTrimmingEnd() {
+            ResetTrimming(SetTrimmingEnd);
+        }
+
         private void SetTrimming(object obj) {
             switch (obj as String) {
-                case "Start": SetTrimming(SetTrimmingStart); break;
-                case "End": SetTrimming(SetTrimmingEnd); break;
+                case "Start": CurrentToTrimmingStart(); break;
+                case "End": CurrentToTrimmingEnd(); break;
                 default: return;
             }
         }
         private void ResetTrimming(object obj) {
             switch (obj as String) {
-                case "Start": ResetTrimming(SetTrimmingStart); break;
-                case "End": ResetTrimming(SetTrimmingEnd); break;
+                case "Start": ResetTrimmingStart(); break;
+                case "End": ResetTrimmingEnd(); break;
                 default: return;
             }
         }
@@ -126,7 +150,7 @@ namespace dxplayer.player {
         }
         private PlayRange? SetTrimmingStart(IPlayItem item, ulong pos) {
             var trimming = Trimming.Value;
-            if(trimming.TrySetStart(pos)) {
+            if (trimming.TrySetStart(pos)) {
                 item.TrimStart = pos;
                 return trimming;
             }
@@ -153,7 +177,7 @@ namespace dxplayer.player {
         }
 
         private void AddChapter(ulong pos) {
-            if(PlayList.Current.Value==null) return;
+            if (PlayList.Current.Value == null) return;
             var chapterList = Chapters.Value;
             if (chapterList == null) return;
             if (pos > Duration.Value) return;
@@ -184,9 +208,9 @@ namespace dxplayer.player {
         private void NextChapter() {
             var chapterList = Chapters.Value;
             chapterList.GetNeighbourChapterIndex(PlayerPosition, out var prev, out var next);
-            if(next>=0) {
+            if (next >= 0) {
                 var c = chapterList.Values[next].Position;
-                if(Trimming.Value.Contains(c)) {
+                if (Trimming.Value.Contains(c)) {
                     Position.Value = c;
                     return;
                 }
@@ -240,12 +264,13 @@ namespace dxplayer.player {
         public ReactiveCommand PrevChapterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand NextChapterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand SyncChapterCommand { get; } = new ReactiveCommand();
-        public ReactiveCommand PanelPositionCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand<string> PanelPositionCommand { get; } = new ReactiveCommand<string>();
         public ReactiveCommand SetTrimCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ResetTrimCommand { get; } = new ReactiveCommand();
         public ReactiveCommand CheckedCommand { get; } = new ReactiveCommand();
         public ReactiveCommand TrimmingToChapterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ClosePlayerCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand KickOutMouseCommand { get; } = new ReactiveCommand();
 
 
 
@@ -269,6 +294,8 @@ namespace dxplayer.player {
         public ReactiveCommand MaximizeCommand { get; } = new ReactiveCommand();
         public bool CheckMode { get; }
 
+        public PlayerCommands CommandManager { get; }
+
         #endregion
 
         #region PlayList
@@ -287,7 +314,7 @@ namespace dxplayer.player {
         }
         public ulong PlayerPosition {
             get => (ulong)(Player?.SeekPosition ?? 0);
-            set { Player?.Apply((player)=>player.SeekPosition = value); }
+            set { Player?.Apply((player) => player.SeekPosition = value); }
         }
 
         #endregion
@@ -341,13 +368,11 @@ namespace dxplayer.player {
             NextChapterCommand.Subscribe(NextChapter);
 
             ChapterEditing.Subscribe((c) => {
-                if(c) {
+                if (c) {
                     EditingChapterList.Value = Chapters.Value.Values;
-                    PanelVertAlign.Value = VerticalAlignment.Stretch;
+                    PanelPosition.Value = player.PanelPosition.RIGHT;
                 } else {
                     EditingChapterList.Value = null;
-                    PanelHorzAlign.Value = HorizontalAlignment.Right;
-                    PanelVertAlign.Value = VerticalAlignment.Bottom;
                     SaveChapterListIfNeeds();
                 }
             });
@@ -358,7 +383,7 @@ namespace dxplayer.player {
 
             string prevId = null;
             ReachRangeEnd.Subscribe((prev) => {
-                if(prevId == prev) {
+                if (prevId == prev) {
                     LoggerEx.error("Next more than twice.");
                 }
                 if (PlayList.HasNext.Value) {
@@ -368,27 +393,43 @@ namespace dxplayer.player {
                 }
             });
 
-            PanelPositionCommand.Subscribe(() => {
-                switch(PanelHorzAlign.Value) {
-                    default:
-                    case HorizontalAlignment.Right:
-                        PanelHorzAlign.Value = HorizontalAlignment.Stretch;
-                        PanelVertAlign.Value = VerticalAlignment.Bottom;
-                        break;
-                    case HorizontalAlignment.Stretch:
-                        if (PanelVertAlign.Value == VerticalAlignment.Bottom) {
-                            PanelVertAlign.Value = VerticalAlignment.Top;
-                        }
-                        else {
-                            PanelHorzAlign.Value = HorizontalAlignment.Left;
-                            PanelVertAlign.Value = VerticalAlignment.Stretch;
-                        }
-                        break;
-                    case HorizontalAlignment.Left:
-                        PanelHorzAlign.Value = HorizontalAlignment.Right;
-                        break;
+            PanelHorzAlign = PanelPosition.CombineLatest(ChapterEditing, (pos, ed) => {
+                if (!ed) {
+                    return HorizontalAlignment.Right;
+                } else {
+                    switch (pos) {
+                        case player.PanelPosition.RIGHT: return HorizontalAlignment.Right;
+                        case player.PanelPosition.LEFT: return HorizontalAlignment.Left;
+                        default: return HorizontalAlignment.Stretch;
+                    }
                 }
+            }).ToReadOnlyReactivePropertySlim();
+            PanelVertAlign = PanelPosition.CombineLatest(ChapterEditing, (pos, ed) => {
+                if (!ed) {
+                    return VerticalAlignment.Bottom;
+                }
+                else {
+                    switch (pos) {
+                        case player.PanelPosition.TOP: return VerticalAlignment.Top;
+                        case player.PanelPosition.BOTTOM: return VerticalAlignment.Bottom;
+                        default: return VerticalAlignment.Stretch;
+                    }
+                }
+            }).ToReadOnlyReactivePropertySlim();
+
+            PanelWidth = PanelPosition.Select(pos => {
+                switch (pos) {
+                    case player.PanelPosition.RIGHT:
+                    case player.PanelPosition.LEFT:
+                        return DEF_PANEL_WIDTH;
+                    default: return double.NaN;
+                }
+            }).ToReadOnlyReactivePropertySlim();
+
+            PanelPositionCommand.Subscribe((pos) => {
+                PanelPosition.Value = misc.Utils.ParseToEnum(pos, player.PanelPosition.RIGHT);
             });
+
             TrimmingToChapterCommand.Subscribe(() => {
                 var item = PlayList.Current.Value;
                 if (item == null) return;
@@ -396,7 +437,7 @@ namespace dxplayer.player {
                     AddDisabledChapterRange(new PlayRange(0, item.TrimStart));
                     ResetTrimming(SetTrimmingStart);
                 }
-                if (item.TrimEnd>0) {
+                if (item.TrimEnd > 0) {
                     AddDisabledChapterRange(new PlayRange(item.TrimEnd, 0));
                     ResetTrimming(SetTrimmingEnd);
                 }
@@ -407,12 +448,84 @@ namespace dxplayer.player {
                     GoForwardCommand.Execute();
                 });
             }
+            CommandManager = new PlayerCommands(this);
         }
 
         public override void Dispose() {
             base.Dispose();
         }
 
+        // command handlers
+
+        public void SeekRelative(long delta) {
+            var pos = (ulong)Math.Min((long)Duration.Value, Math.Max(0, (long)Position.Value + delta));
+            Position.Value = pos;
+        }
+        public void SetRating(Rating rating) {
+            var item = PlayList.Current.Value as PlayItem;
+            if (item != null) {
+                item.Rating = rating;
+            }
+        }
+
+        #endregion
+
+        #region Setting Chapter By Keyboard
+
+        private double DeferedChapterPosition = 0;
+        private DisposablePool ChapterSettingDisposables = new DisposablePool();
+        public bool ChapterSettingByKeyboard { get; private set; }
+
+        public void BeginChapterSetting() {
+            var current = PlayList.Current.Value;
+            if (current == null) {
+                CancelChapterSetting();
+                return;
+            }
+            CancelChapterSetting();
+            ChapterSettingByKeyboard = true;
+            DeferedChapterPosition = (double)Position.Value;
+            ChapterSettingDisposables.Add(Position.Subscribe(UpdateChapterSetting));
+            ChapterSettingDisposables.Add(PlayList.Current.Subscribe(item => {
+                if (current != item) {
+                    CancelChapterSetting();
+                }
+            }));
+        }
+
+        private void UpdateChapterSetting(ulong position) {
+            if (!ChapterSettingByKeyboard) {
+                return;
+            }
+            if (PlayList.Current.Value == null) {
+                CancelChapterSetting();
+                return;
+            }
+            DraggingRange.Value = new PlayRange((ulong)DeferedChapterPosition, position);
+        }
+
+        public void CancelChapterSetting() {
+            ChapterSettingByKeyboard = false;
+            ChapterSettingDisposables.Dispose();
+            DraggingRange.Value = null;
+        }
+
+        public void CommitChapterSetting() {
+            if (!ChapterSettingByKeyboard) {
+                return;
+            }
+            if (PlayList.Current.Value == null) {
+                CancelChapterSetting();
+                return;
+            }
+            var endPos = (double)Position.Value;
+            if (Math.Abs(endPos - DeferedChapterPosition) > 1000) {
+                NotifyRange.Execute(new PlayRange((ulong)DeferedChapterPosition, (ulong)endPos));
+            } else {
+                NotifyPosition.Execute((ulong)DeferedChapterPosition);
+            }
+            CancelChapterSetting();
+        }
         #endregion
     }
 }

@@ -34,6 +34,8 @@ namespace dxplayer.player {
             ViewModel.MaximizeCommand.Subscribe(ToggleFullscreen);
             ViewModel.Fullscreen.Value = Window.GetWindow(this).WindowStyle == WindowStyle.None;
             CursorManager = new CursorManager( Window.GetWindow(this));
+            ViewModel.KickOutMouseCommand.Subscribe(CursorManager.KickOutMouse);
+
             ViewModel.Speed.Subscribe((speed) => {
                 double sr = (speed >= 0.5) ? 1 + (speed - 0.5) * 2 /* 1 ～ 2 */ : 0.2 + 0.8 * (speed * 2)/*0.2 ～ 1*/;
                 MediaPlayer.SpeedRatio = sr;

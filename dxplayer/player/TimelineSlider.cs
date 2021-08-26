@@ -102,7 +102,7 @@ namespace dxplayer.player {
             base.OnThumbDragStarted(e);
             mOrgPlaying = ViewModel.IsPlaying.Value;
             ViewModel.PauseCommand.Execute();
-            if (ViewModel.CheckMode) {
+            if (ViewModel.CheckMode && !ViewModel.ChapterSettingByKeyboard) {
                 mDragStartPos = (ulong)Value;
             }
         }
@@ -110,7 +110,7 @@ namespace dxplayer.player {
         protected override void OnThumbDragDelta(DragDeltaEventArgs e) {
             base.OnThumbDragDelta(e);
 
-            if (ViewModel.CheckMode) {
+            if (ViewModel.CheckMode && !ViewModel.ChapterSettingByKeyboard) {
                 var pos = Value;
                 if (mDragStartPos >= 0) {
                     if (Math.Abs(pos - mDragStartPos) > 1000) {
@@ -124,7 +124,7 @@ namespace dxplayer.player {
         protected override void OnThumbDragCompleted(DragCompletedEventArgs e) {
             base.OnThumbDragCompleted(e);
             var pos = Value;
-            if (ViewModel.CheckMode) {
+            if (ViewModel.CheckMode && !ViewModel.ChapterSettingByKeyboard) {
                 if (KeyState.IsKeyDown(KeyState.VK_CONTROL)) {
                     if (mDragStartPos >= 0) {
                         if (Math.Abs(pos - mDragStartPos) > 1000) {

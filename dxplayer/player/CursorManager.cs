@@ -99,7 +99,7 @@ namespace dxplayer.player {
                 }
             }
         }
-        private void KickOutMouse() {
+        public void KickOutMouse() {
             System.Windows.Forms.Cursor.Position = new System.Drawing.Point(0, (int)System.Windows.SystemParameters.PrimaryScreenHeight);
         }
     }

@@ -8,6 +8,7 @@ using io.github.toyota32k.toolkit.view;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -37,7 +38,6 @@ namespace dxplayer {
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
             ViewModel = new MainViewModel();
-            ViewModel.CommandManager.Enable(this, true);
             ViewModel.SettingCommand.Subscribe(Setting);
             ViewModel.ImportFromWfCommand.Subscribe(ImportFromWf);
             ViewModel.AddFolderCommand.Subscribe(AddFolders);
@@ -52,23 +52,25 @@ namespace dxplayer {
             Settings.Instance.SortInfo.SortUpdated += OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated += OnFilterChanged;
             OnSortChanged();
+
+            MainListView.Focus();
         }
 
         #endregion
 
         #region Terminating
 
-        private void OnUnloaded(object sender, RoutedEventArgs e) {
-
-        }
-
-        private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e) {
+        protected override void OnClosing(CancelEventArgs e) {
+            base.OnClosing(e);
             Settings.Instance.SortInfo.SortUpdated -= OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated -= OnFilterChanged;
             Settings.Instance.Placement.GetPlacementFrom(this);
             Settings.Instance.Serialize();
         }
-
+        protected override void OnClosed(EventArgs e) {
+            base.OnClosed(e);
+            ViewModel.Dispose();
+        }
         #endregion
 
         #region PlayerWindow Management
@@ -87,7 +89,6 @@ namespace dxplayer {
                 if (!preview) {
                     mPlayCountObserver = new PlayCountObserver(mPlayerWindow.ViewModel);
                 }
-                ViewModel.CommandManager.Enable(this, false);
                 mPlayerWindow.Show();
             }
             return mPlayerWindow;
@@ -114,7 +115,6 @@ namespace dxplayer {
                 mPlayerWindow.PlayWindowClosed -= OnPlayerWindowClosed;
                 mPlayerWindow = null;
             }
-            ViewModel.CommandManager.Enable(this, true);
             ViewModel.PlayingStatus.Value = PlayingStatus.IDLE;
             mPlayCountObserver?.Dispose();
             mPlayCountObserver = null;
@@ -353,13 +353,17 @@ namespace dxplayer {
         //    //ViewModel.CommandManager.Up(e.Key);
         //}
 
-        private void OnActivated(object sender, EventArgs e) {
+        protected override void OnActivated(EventArgs e) {
+            base.OnActivated(e);
             ViewModel.CommandManager.Enable(this, true);
+            mPlayerWindow?.Activate();
         }
 
-        private void OnDeactivated(object sender, EventArgs e) {
+        protected override void OnDeactivated(EventArgs e) {
+            base.OnDeactivated(e);
             ViewModel.CommandManager.Enable(this, false);
         }
+
         #endregion
 
         //private void OnKeyDown2(object sender, KeyEventArgs e) {

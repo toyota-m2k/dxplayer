@@ -92,9 +92,9 @@ namespace dxplayer.misc {
         private Dictionary<Key, Command> ShiftKeyCommands = new Dictionary<Key, Command>();
         private Dictionary<Key, Command> ControlShiftKeyCommands = new Dictionary<Key, Command>();
 
-        private ReactiveProperty<Key> ActiveKey { get; } = new ReactiveProperty<Key>(Key.None/*, ReactivePropertyMode.DistinctUntilChanged*/);
-        private ReactiveProperty<bool> Ctrl { get; } = new ReactiveProperty<bool>(false/*, ReactivePropertyMode.DistinctUntilChanged*/);
-        private ReactiveProperty<bool> Shift { get; } = new ReactiveProperty<bool>(false/*, ReactivePropertyMode.DistinctUntilChanged*/);
+        private ReactiveProperty<Key> ActiveKey { get; } = new ReactiveProperty<Key>(Key.None, ReactivePropertyMode.None);
+        private ReactiveProperty<bool> Ctrl { get; } = new ReactiveProperty<bool>(false, ReactivePropertyMode.None);
+        private ReactiveProperty<bool> Shift { get; } = new ReactiveProperty<bool>(false, ReactivePropertyMode.None);
         private IDisposable enabled { get; set; } = null;
         private int RepeatCount = 0;
 
@@ -103,6 +103,7 @@ namespace dxplayer.misc {
 
         public KeyCommandManager() : base(disposeNonPublic: true) {
             CommandFlow = ActiveKey.CombineLatest(Ctrl, Shift, (k, c, s) => {
+                //LoggerEx.debug($"key changed:{k}");
                 if (c && s) {
                     return ControlShiftKeyCommands.GetValue(k, misc.Command.NOP);
                 }
@@ -115,7 +116,7 @@ namespace dxplayer.misc {
                 else {
                     return SingleKeyCommands.GetValue(k, misc.Command.NOP);
                 }
-            }).ToReadOnlyReactiveProperty();
+            }).ToReadOnlyReactiveProperty(Command.NOP, ReactivePropertyMode.None);
         }
 
         public bool Enabled {

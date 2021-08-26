@@ -60,5 +60,9 @@ namespace dxplayer
             CountFilterCommand.Subscribe((param) => ListFilter.PlayCountCP = misc.Utils.ParseToEnum(param, ListFilter.Comparison.NONE));
             CommandManager = new MainCommands(this);
         }
+
+        public override void Dispose() {
+            base.Dispose();
+        }
     }
 }

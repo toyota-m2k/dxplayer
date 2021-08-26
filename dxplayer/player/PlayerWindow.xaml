@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:dxplayer.player"
         Loaded="OnLoaded"
-        PreviewKeyDown="OnKeyDown"
         AllowDrop="True"
         mc:Ignorable="d"
         Title="PlayerWindow" Height="450" Width="800">

@@ -58,13 +58,10 @@ namespace dxplayer.player
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
+            ViewModel.CommandManager.Enable(this, true);
             ViewModel.PlayList.Current.Subscribe(OnCurrentItemChanged);
+            ViewModel.ClosePlayerCommand.Subscribe(Close);
             LoadCompletion.TrySetResult(true);
-        }
-
-        private void OnCurrentItemChanged(IPlayItem item) {
-            this.Title = item?.TitleOrName() ?? "";
-            PlayItemChanged?.Invoke(item);
         }
 
         protected override void OnClosing(CancelEventArgs e) {
@@ -104,15 +101,19 @@ namespace dxplayer.player
             ViewModel.PlayList.Add(item);
         }
 
-        private void OnKeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
-            switch (e.Key) {
-                case Key.Escape:
-                    Close();
-                    break;
-                default:
-                    return;
-            }
-            e.Handled = true;
+        private void OnCurrentItemChanged(IPlayItem item) {
+            this.Title = item?.TitleOrName() ?? "";
+            PlayItemChanged?.Invoke(item);
+        }
+
+        protected override void OnActivated(EventArgs e) {
+            base.OnActivated(e);
+            ViewModel.CommandManager.Enable(this, true);
+        }
+
+        protected override void OnDeactivated(EventArgs e) {
+            base.OnDeactivated(e);
+            ViewModel.CommandManager.Enable(this, false);
         }
 
         //private void AddTextToRichEdit(string text, Brush fg) {

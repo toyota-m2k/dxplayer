@@ -187,16 +187,42 @@
                 />
 
         </StackPanel>
-        <StackPanel Grid.Row="2"
+        <StackPanel Grid.Row="2" Orientation="Horizontal"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
             Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
             >
-            <ToggleButton
+            <common:CheckButton
                 Focusable="False"
+                IsChecked="{Binding PanelPosition.Value, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=LEFT}"
                 Content="{StaticResource PathAttachLeft}"
-                Style="{StaticResource IconToggleButtonStyle}"
+                Style="{StaticResource CheckButtonStyle}"
                 Command="{Binding PanelPositionCommand}" 
+                CommandParameter="LEFT"
+                />
+            <common:CheckButton
+                Focusable="False"
+                IsChecked="{Binding PanelPosition.Value, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=TOP}"
+                Content="{StaticResource PathAttachTop}"
+                Style="{StaticResource CheckButtonStyle}"
+                Command="{Binding PanelPositionCommand}" 
+                CommandParameter="TOP"
+                />
+            <common:CheckButton
+                Focusable="False"
+                IsChecked="{Binding PanelPosition.Value, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=BOTTOM}"
+                Content="{StaticResource PathAttachBottom}"
+                Style="{StaticResource CheckButtonStyle}"
+                Command="{Binding PanelPositionCommand}" 
+                CommandParameter="BOTTOM"
+                />
+            <common:CheckButton
+                Focusable="False"
+                IsChecked="{Binding PanelPosition.Value, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=RIGHT}"
+                Content="{StaticResource PathAttachRight}"
+                Style="{StaticResource CheckButtonStyle}"
+                Command="{Binding PanelPositionCommand}" 
+                CommandParameter="RIGHT"
                 />
 
         </StackPanel>
@@ -228,6 +254,7 @@
                 x:Name="chapterListView"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
+                MinHeight="80"
                 SelectionChanged="OnChapterSelected"
                 SelectionMode="Single"
                 StretchColumnIndex="4" StretchColumnMinWidth="75" ItemsSource="{Binding EditingChapterList.Value}">
