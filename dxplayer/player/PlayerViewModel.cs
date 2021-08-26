@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace dxplayer.player {
     public enum PlayerState {
@@ -20,12 +21,14 @@ namespace dxplayer.player {
         ENDED,
         ERROR,
     }
+
     public enum PanelPosition {
         LEFT,
         RIGHT,
         TOP,
         BOTTOM,
     }
+
     public class PlayerViewModel : ViewModelBase {
         #region Control Panel Position
         const double DEF_PANEL_WIDTH = 320;
@@ -473,7 +476,7 @@ namespace dxplayer.player {
         #region Setting Chapter By Keyboard
 
         private double DeferedChapterPosition = 0;
-        private DisposablePool ChapterSettingDisposables = new DisposablePool();
+        public DisposablePool ChapterSettingDisposables { get; } = new DisposablePool();
         public bool ChapterSettingByKeyboard { get; private set; }
 
         public void BeginChapterSetting() {
@@ -526,6 +529,37 @@ namespace dxplayer.player {
             }
             CancelChapterSetting();
         }
+        #endregion
+
+        #region Super High Speed Mode
+
+        private DispatcherTimer mSuperHighSpeedPlayTimer = null;
+        public DisposablePool SuperSpeedModeDisposables { get; } = new DisposablePool();
+        public bool IsSuperHighSpeedMode => mSuperHighSpeedPlayTimer != null;
+        public void SetSuperHighSpeedMode() {
+            if (null == mSuperHighSpeedPlayTimer) {
+                Speed.Value = 1;
+                mSuperHighSpeedPlayTimer = new DispatcherTimer();
+                mSuperHighSpeedPlayTimer.Interval = TimeSpan.FromSeconds(0.1);
+                mSuperHighSpeedPlayTimer.Tick += (s, e) => {
+                    if (IsPlaying.Value) {
+                        SeekRelative(1 * 1000);
+                    }
+                };
+                mSuperHighSpeedPlayTimer.Start();
+                SuperSpeedModeDisposables.Add(Speed.Subscribe(_ => ResetSuperHighSpeedMode()));
+            }
+        }
+
+        public void ResetSuperHighSpeedMode() {
+            SuperSpeedModeDisposables.Dispose();
+            if (mSuperHighSpeedPlayTimer != null) {
+                Speed.Value = 0.5;
+                mSuperHighSpeedPlayTimer.Stop();
+                mSuperHighSpeedPlayTimer = null;
+            }
+        }
+
         #endregion
     }
 }

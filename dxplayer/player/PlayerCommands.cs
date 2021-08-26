@@ -76,7 +76,7 @@ namespace dxplayer.player {
                 , CMD(ID.SPEED_NORMAL, "SpeedSlow", () => viewModel.Speed.Value = 0.5, "Normal speed")
                 , CMD(ID.SPEED_SUPER_HIGH, "SpeedSuperHigh", () => { throw new NotImplementedException("super high speed mode"); }, "Super high speed")
                 , CNT_CMD(ID.CONTINUOUS_HIGH_SPEED, "ContHighSpeed", () => viewModel.Speed.Value = 1, brk: () => viewModel.Speed.Value = 0.5, "Fast forward")
-                , CNT_CMD(ID.CONTINUOUS_SUPER_HIGH_SPEED, "ContSuperHighSpeed", () => { throw new NotImplementedException("continuous super high speed mode"); }, brk: () => { }, "Super fast forward")
+                , CNT_CMD(ID.CONTINUOUS_SUPER_HIGH_SPEED, "ContSuperHighSpeed", viewModel.SetSuperHighSpeedMode, brk: viewModel.ResetSuperHighSpeedMode, "Super fast forward")
 
                 , CMD(ID.RATING_EXCELLENT, "RatingExcellent", () => viewModel.SetRating(Rating.EXCELLENT), "Rating:Excellent")
                 , CMD(ID.RATING_GOOD, "RatingGood", () => viewModel.SetRating(Rating.GOOD), "Rating:Good")
@@ -101,8 +101,11 @@ namespace dxplayer.player {
                 );
 
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.F);
-            AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
             AssignShiftKeyCommand(ID.CONTINUOUS_HIGH_SPEED, Key.F);
+            AssignControlShiftKeyCommand(ID.CONTINUOUS_SUPER_HIGH_SPEED, Key.F);
+
+                        AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
+
             AssignSingleKeyCommand(ID.CLOSE, Key.Escape);
 
             AssignSingleKeyCommand(ID.CHAPTER_SET_BEGIN, Key.U);
