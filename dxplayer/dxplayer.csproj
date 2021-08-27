@@ -139,6 +139,7 @@
     <Compile Include="data\wf\WfTargetFolders.cs" />
     <Compile Include="data\wf\WfItem.cs" />
     <Compile Include="data\wf\WfStorage.cs" />
+    <Compile Include="DialogViewModel.cs" />
     <Compile Include="interop\KeyState.cs" />
     <Compile Include="MainCommands.cs" />
     <Compile Include="misc\KeyCommandManager.cs" />
@@ -165,8 +166,11 @@
     <Compile Include="player\PlayList.cs" />
     <Compile Include="player\TimelineSlider.cs" />
     <Compile Include="res\DxConverter.cs" />
-    <Compile Include="server\DxRestCommands.cs" />
+    <Compile Include="server\cmd\DxCommands.cs" />
+    <Compile Include="server\cmd\WfCommands.cs" />
+    <Compile Include="server\cmd\YtCommands.cs" />
     <Compile Include="server\DxServer.cs" />
+    <Compile Include="server\IPlayListSource.cs" />
     <Compile Include="server\lib\HttpBuilder.cs" />
     <Compile Include="server\lib\HttpProcessor.cs" />
     <Compile Include="server\lib\HttpServer.cs" />
@@ -174,6 +178,8 @@
     <Compile Include="server\lib\model\HttpResponse.cs" />
     <Compile Include="server\lib\model\Route.cs" />
     <Compile Include="server\lib\QueryParser.cs" />
+    <Compile Include="server\ServerCommandCenter.cs" />
+    <Compile Include="server\ServerCommandListBase.cs" />
     <Compile Include="settings\MRU.cs" />
     <Compile Include="settings\SortInfo.cs" />
     <Compile Include="settings\Settings.cs" />
@@ -265,9 +271,7 @@
   <ItemGroup>
     <Resource Include="license.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="dialog\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

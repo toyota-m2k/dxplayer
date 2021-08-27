@@ -15,6 +15,8 @@ namespace dxplayer.settings
         public string DxxDBPath { get; set; } = "";
         public string LastPlayingPath { get; set; } = "";
         public ulong LastPlayingPos { get; set; } = 0;
+        public bool UseServer { get; set; } = false;
+        public int ServerPort { get; set; } = 5000;
 
         private static readonly string SETTINGS_FILE = "dxplayer.settings";
 

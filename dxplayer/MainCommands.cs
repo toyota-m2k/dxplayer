@@ -1,4 +1,5 @@
 ﻿using dxplayer.misc;
+using dxplayer.server;
 using Reactive.Bindings;
 using System;
 using System.Windows.Input;
@@ -31,6 +32,17 @@ namespace dxplayer {
             AssignControlKeyCommand(ID.CHECK,                Key.J);
             AssignControlShiftKeyCommand(ID.UNCHECK,         Key.J);
             AssignControlKeyCommand(ID.DECREMENT_COUNTER,    Key.T);
+
+            ServerCommandCenter.Instance.Attach(this);
+        }
+
+        public override void Dispose() {
+            ServerCommandCenter.Instance.Detach(this);
+            base.Dispose();
+        }
+
+        public Command this[ID id] {
+            get => CommandOf((int)id);
         }
 
         #region Private

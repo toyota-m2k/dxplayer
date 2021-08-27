@@ -38,6 +38,9 @@ namespace dxplayer
 
 
         public MainCommands CommandManager { get; }
+
+        public DialogViewModel Dialog { get; } = new DialogViewModel();
+
         #endregion
 
         #region Property / Status

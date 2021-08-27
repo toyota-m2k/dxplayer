@@ -2,6 +2,7 @@
 using dxplayer.data.main;
 using dxplayer.data.wf;
 using dxplayer.player;
+using dxplayer.server;
 using dxplayer.settings;
 using io.github.toyota32k.toolkit.utils;
 using io.github.toyota32k.toolkit.view;
@@ -20,11 +21,13 @@ namespace dxplayer {
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class MainWindow : Window, IStatusBar {
+    public partial class MainWindow : Window, IStatusBar, IPlayListSource {
         private MainViewModel ViewModel {
             get => (MainViewModel)DataContext;
             set => DataContext = value;
         }
+        private DxServer mServer;
+
         #region Initialzing
 
         public MainWindow() {
@@ -38,7 +41,6 @@ namespace dxplayer {
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
             ViewModel = new MainViewModel();
-            ViewModel.SettingCommand.Subscribe(Setting);
             ViewModel.ImportFromWfCommand.Subscribe(ImportFromWf);
             ViewModel.AddFolderCommand.Subscribe(AddFolders);
             ViewModel.RefreshAllCommand.Subscribe(RefreshDB);
@@ -49,11 +51,37 @@ namespace dxplayer {
             ViewModel.UncheckCommand.Subscribe(UncheckItem);
             ViewModel.ResetCounterCommand.Subscribe(ResetCounter);
             ViewModel.DecrementCounterCommand.Subscribe(DecrementCounter);
+
+            ViewModel.SettingCommand.Subscribe(async () => {
+                if(await ViewModel.Dialog.ShowSettingDialog()) {
+                    mServer.Stop();
+                    if(Settings.Instance.UseServer) {
+                        mServer.Start(Settings.Instance.ServerPort);
+                    }
+                }
+            });
+
+            ViewModel.Dialog.SettingDialog.RefDxxDBPathCommand.Subscribe(() => {
+                var path = OpenFileDialogBuilder.Create()
+                    .addFileType("DxxBrowser DB", "*.db")
+                    .defaultExtension("db")
+                    .defaultFilename("dxxStorage")
+                    .GetFilePath(this);
+                if (path == null) return;
+                ViewModel.Dialog.SettingDialog.DxxDBPath.Value = path;
+            });
+
             Settings.Instance.SortInfo.SortUpdated += OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated += OnFilterChanged;
             OnSortChanged();
 
             MainListView.Focus();
+
+            ServerCommandCenter.Instance.Dispatcher = this.Dispatcher;
+            mServer = new DxServer(this);
+            if(Settings.Instance.UseServer) {
+                mServer.Start(Settings.Instance.ServerPort);
+            }
         }
 
         #endregion
@@ -147,18 +175,18 @@ namespace dxplayer {
 
         #region Settings
 
-        private void Setting(object obj) {
-            var path = OpenFileDialogBuilder.Create()
-                .addFileType("DxxBrowser DB", "*.db")
-                .defaultExtension("db")
-                .defaultFilename("dxxStorage")
-                .GetFilePath(this);
-            if (path == null) return;
-            if (Settings.Instance.DxxDBPath != path) {
-                Settings.Instance.DxxDBPath = path;
-                Settings.Instance.Serialize();
-            }
-        }
+        //private void Setting(object obj) {
+        //    var path = OpenFileDialogBuilder.Create()
+        //        .addFileType("DxxBrowser DB", "*.db")
+        //        .defaultExtension("db")
+        //        .defaultFilename("dxxStorage")
+        //        .GetFilePath(this);
+        //    if (path == null) return;
+        //    if (Settings.Instance.DxxDBPath != path) {
+        //        Settings.Instance.DxxDBPath = path;
+        //        Settings.Instance.Serialize();
+        //    }
+        //}
 
         #endregion
 

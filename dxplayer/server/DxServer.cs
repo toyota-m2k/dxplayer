@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace dxplayer.server {
     public class DxServer : IDisposable {
-        private int mPort;
         private HttpServer mServer;
         private WeakReference<IStatusBar> mStatusBar;
         private List<Route> Routes { get; set; } = null;
@@ -18,24 +17,23 @@ namespace dxplayer.server {
         private IStatusBar StatusBar => mStatusBar.GetValue();
         private bool IsListening { get; set; } = false;
 
-        public DxServer(IStatusBar statusBar, int port = 5000) {
+        public DxServer(IStatusBar statusBar) {
             mStatusBar = new WeakReference<IStatusBar>(statusBar);
-            mPort = port;
             InitRoutes();
         }
 
-        public void Start() {
+        public void Start(int port) {
             if (!IsListening) {
                 if (null == mServer) {
-                    mServer = new HttpServer(mPort, Routes);
+                    mServer = new HttpServer(port, Routes);
                 }
                 if (mServer.Start()) {
                     IsListening = true;
-                    StatusBar?.OutputStatusMessage($"DxPlayListServer has been started: port={mPort}");
+                    StatusBar?.OutputStatusMessage($"DxPlayListServer has been started: port={port}");
                 }
                 else {
                     mServer = null;
-                    StatusBar?.OutputStatusMessage($"DxPlayListServer cannot be started: port={mPort}");
+                    StatusBar?.OutputStatusMessage($"DxPlayListServer cannot be started: port={port}");
                 }
             }
         }
@@ -44,7 +42,7 @@ namespace dxplayer.server {
             if (mServer != null) {
                 mServer.Stop();
                 IsListening = false;
-                StatusBar?.OutputStatusMessage($"DxPlayListServer was stopped: port={mPort}");
+                StatusBar?.OutputStatusMessage($"DxPlayListServer was stopped");
             }
         }
 
@@ -55,10 +53,7 @@ namespace dxplayer.server {
 
         private void InitRoutes() {
             if (null == Routes) {
-                Routes = new List<Route> {
-
-
-                };
+                Routes = ServerCommandCenter.Instance.Routes.ToList();
             }
         }
     }

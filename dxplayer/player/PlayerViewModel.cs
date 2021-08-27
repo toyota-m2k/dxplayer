@@ -32,41 +32,41 @@ namespace dxplayer.player {
     public class PlayerViewModel : ViewModelBase {
         #region Control Panel Position
         const double DEF_PANEL_WIDTH = 320;
-        public ReactivePropertySlim<PanelPosition> PanelPosition { get; } = new ReactivePropertySlim<PanelPosition>(player.PanelPosition.RIGHT);
-        public ReadOnlyReactivePropertySlim<HorizontalAlignment> PanelHorzAlign { get; }
-        public ReadOnlyReactivePropertySlim<VerticalAlignment> PanelVertAlign { get; }
-        public ReadOnlyReactivePropertySlim<double> PanelWidth { get; }
+        public ReactiveProperty<PanelPosition> PanelPosition { get; } = new ReactiveProperty<PanelPosition>(player.PanelPosition.RIGHT);
+        public ReadOnlyReactiveProperty<HorizontalAlignment> PanelHorzAlign { get; }
+        public ReadOnlyReactiveProperty<VerticalAlignment> PanelVertAlign { get; }
+        public ReadOnlyReactiveProperty<double> PanelWidth { get; }
         #endregion
 
         #region Properties of Item Entry
 
-        public ReactivePropertySlim<ulong> Duration { get; } = new ReactivePropertySlim<ulong>(1000);
-        public ReactivePropertySlim<ulong> Position { get; } = new ReactivePropertySlim<ulong>(0);
-        public ReactivePropertySlim<PlayerState> State { get; } = new ReactivePropertySlim<PlayerState>(PlayerState.UNAVAILABLE);
+        public ReactiveProperty<ulong> Duration { get; } = new ReactiveProperty<ulong>(1000);
+        public ReactiveProperty<ulong> Position { get; } = new ReactiveProperty<ulong>(0);
+        public ReactiveProperty<PlayerState> State { get; } = new ReactiveProperty<PlayerState>(PlayerState.UNAVAILABLE);
 
-        public ReadOnlyReactivePropertySlim<bool> IsReady { get; }
-        public ReadOnlyReactivePropertySlim<bool> IsPlaying { get; }
+        public ReadOnlyReactiveProperty<bool> IsReady { get; }
+        public ReadOnlyReactiveProperty<bool> IsPlaying { get; }
 
-        public ReactivePropertySlim<double> Speed { get; } = new ReactivePropertySlim<double>(0.5);
-        public ReactivePropertySlim<double> Volume { get; } = new ReactivePropertySlim<double>(0.5);
-        public ReactivePropertySlim<bool> Mute { get; } = new ReactivePropertySlim<bool>(false);
+        public ReactiveProperty<double> Speed { get; } = new ReactiveProperty<double>(0.5);
+        public ReactiveProperty<double> Volume { get; } = new ReactiveProperty<double>(0.5);
+        public ReactiveProperty<bool> Mute { get; } = new ReactiveProperty<bool>(false);
 
         #endregion
 
         #region Trimming/Chapters
 
-        public ReactivePropertySlim<PlayRange> Trimming { get; } = new ReactivePropertySlim<PlayRange>(PlayRange.Empty);
-        public ReactivePropertySlim<ChapterList> Chapters { get; } = new ReactivePropertySlim<ChapterList>(null, ReactivePropertyMode.RaiseLatestValueOnSubscribe);
-        public ReactivePropertySlim<List<PlayRange>> DisabledRanges { get; } = new ReactivePropertySlim<List<PlayRange>>(null);
-        public ReadOnlyReactivePropertySlim<bool> HasDisabledRange { get; }
-        public ReadOnlyReactivePropertySlim<bool> HasTrimming { get; }
-        public ReactivePropertySlim<bool> ChapterEditing { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<ObservableCollection<ChapterInfo>> EditingChapterList { get; } = new ReactivePropertySlim<ObservableCollection<ChapterInfo>>();
+        public ReactiveProperty<PlayRange> Trimming { get; } = new ReactiveProperty<PlayRange>(PlayRange.Empty);
+        public ReactiveProperty<ChapterList> Chapters { get; } = new ReactiveProperty<ChapterList>(null, ReactivePropertyMode.RaiseLatestValueOnSubscribe);
+        public ReactiveProperty<List<PlayRange>> DisabledRanges { get; } = new ReactiveProperty<List<PlayRange>>(initialValue:null);
+        public ReadOnlyReactiveProperty<bool> HasDisabledRange { get; }
+        public ReadOnlyReactiveProperty<bool> HasTrimming { get; }
+        public ReactiveProperty<bool> ChapterEditing { get; } = new ReactiveProperty<bool>(false);
+        public ReactiveProperty<ObservableCollection<ChapterInfo>> EditingChapterList { get; } = new ReactiveProperty<ObservableCollection<ChapterInfo>>();
         public Subject<string> ReachRangeEnd { get; } = new Subject<string>();
 
         public ReactiveCommand<ulong> NotifyPosition { get; } = new ReactiveCommand<ulong>();
         public ReactiveCommand<PlayRange> NotifyRange { get; } = new ReactiveCommand<PlayRange>();
-        public ReactivePropertySlim<PlayRange?> DraggingRange { get; } = new ReactivePropertySlim<PlayRange?>(null);
+        public ReactiveProperty<PlayRange?> DraggingRange { get; } = new ReactiveProperty<PlayRange?>(initialValue:null);
 
         /**
          * 現在再生中の動画のチャプター設定が変更されていればDBに保存する。
@@ -241,10 +241,10 @@ namespace dxplayer.player {
 
         #region Display Text
 
-        public ReadOnlyReactivePropertySlim<string> TrimStartText { get; }
-        public ReadOnlyReactivePropertySlim<string> TrimEndText { get; }
-        public ReadOnlyReactivePropertySlim<string> DurationText { get; }
-        public ReadOnlyReactivePropertySlim<string> PositionText { get; }
+        public ReadOnlyReactiveProperty<string> TrimStartText { get; }
+        public ReadOnlyReactiveProperty<string> TrimEndText { get; }
+        public ReadOnlyReactiveProperty<string> DurationText { get; }
+        public ReadOnlyReactiveProperty<string> PositionText { get; }
 
         static public string FormatDuration(ulong duration) {
             var t = TimeSpan.FromMilliseconds(duration);
@@ -282,17 +282,17 @@ namespace dxplayer.player {
         #region Window Managements
 
         // Window
-        public ReactivePropertySlim<bool> FitMode { get; } = new ReactivePropertySlim<bool>();
-        public ReactivePropertySlim<bool> Fullscreen { get; } = new ReactivePropertySlim<bool>(false);
+        public ReactiveProperty<bool> FitMode { get; } = new ReactiveProperty<bool>();
+        public ReactiveProperty<bool> Fullscreen { get; } = new ReactiveProperty<bool>(false);
 
-        public ReactivePropertySlim<bool> ReqShowControlPanel { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<bool> ReqShowSizePanel { get; } = new ReactivePropertySlim<bool>(false);
-        public ReactivePropertySlim<bool> PinControlPanel { get; } = new ReactivePropertySlim<bool>(false);
+        public ReactiveProperty<bool> ReqShowControlPanel { get; } = new ReactiveProperty<bool>(false);
+        public ReactiveProperty<bool> ReqShowSizePanel { get; } = new ReactiveProperty<bool>(false);
+        public ReactiveProperty<bool> PinControlPanel { get; } = new ReactiveProperty<bool>(false);
 
-        public ReadOnlyReactivePropertySlim<bool> ShowControlPanel { get; }
-        public ReadOnlyReactivePropertySlim<bool> ShowSizePanel { get; }
-        public ReadOnlyReactivePropertySlim<bool> MinimumPanel { get; }
-        public ReadOnlyReactivePropertySlim<bool> CursorManagerActivity { get; }
+        public ReadOnlyReactiveProperty<bool> ShowControlPanel { get; }
+        public ReadOnlyReactiveProperty<bool> ShowSizePanel { get; }
+        public ReadOnlyReactiveProperty<bool> MinimumPanel { get; }
+        public ReadOnlyReactiveProperty<bool> CursorManagerActivity { get; }
 
         public ReactiveCommand MaximizeCommand { get; } = new ReactiveCommand();
         public bool CheckMode { get; }
@@ -327,23 +327,23 @@ namespace dxplayer.player {
         public PlayerViewModel(bool checkMode) {
             CheckMode = checkMode;
             AutoPlay = !checkMode;
-            DurationText = Duration.Select((v) => FormatDuration(v)).ToReadOnlyReactivePropertySlim();
-            PositionText = Position.Select((v) => FormatDuration(v)).ToReadOnlyReactivePropertySlim();
-            TrimStartText = Trimming.Select((v) => FormatDuration(v.Start)).ToReadOnlyReactivePropertySlim();
-            TrimEndText = Trimming.Select((v) => FormatDuration(v.End)).ToReadOnlyReactivePropertySlim();
-            HasDisabledRange = DisabledRanges.Select((c) => c != null && c.Count > 0).ToReadOnlyReactivePropertySlim();
-            HasTrimming = Trimming.Select(c => c.Start > 0 || c.End > 0).ToReadOnlyReactivePropertySlim();
-            IsPlaying = State.Select((v) => v == PlayerState.PLAYING).ToReadOnlyReactivePropertySlim();
-            IsReady = State.Select((v) => v == PlayerState.READY || v == PlayerState.PLAYING).ToReadOnlyReactivePropertySlim();
+            DurationText = Duration.Select((v) => FormatDuration(v)).ToReadOnlyReactiveProperty();
+            PositionText = Position.Select((v) => FormatDuration(v)).ToReadOnlyReactiveProperty();
+            TrimStartText = Trimming.Select((v) => FormatDuration(v.Start)).ToReadOnlyReactiveProperty();
+            TrimEndText = Trimming.Select((v) => FormatDuration(v.End)).ToReadOnlyReactiveProperty();
+            HasDisabledRange = DisabledRanges.Select((c) => c != null && c.Count > 0).ToReadOnlyReactiveProperty();
+            HasTrimming = Trimming.Select(c => c.Start > 0 || c.End > 0).ToReadOnlyReactiveProperty();
+            IsPlaying = State.Select((v) => v == PlayerState.PLAYING).ToReadOnlyReactiveProperty();
+            IsReady = State.Select((v) => v == PlayerState.READY || v == PlayerState.PLAYING).ToReadOnlyReactiveProperty();
 
-            ShowSizePanel = ReqShowSizePanel.ToReadOnlyReactivePropertySlim();
+            ShowSizePanel = ReqShowSizePanel.ToReadOnlyReactiveProperty();
             ShowControlPanel = ReqShowControlPanel.CombineLatest(PinControlPanel, ChapterEditing, (req, pin, editing) => {
                 return CheckMode || req || pin || editing;
-            }).ToReadOnlyReactivePropertySlim();
+            }).ToReadOnlyReactiveProperty();
             MinimumPanel = PinControlPanel.CombineLatest(IsPlaying, ChapterEditing, ReqShowControlPanel, (pin, playing, editing, req) => {
                 return pin && playing && !CheckMode && !req && !editing;
-            }).ToReadOnlyReactivePropertySlim();
-            CursorManagerActivity = ShowControlPanel.CombineLatest(ShowSizePanel, (c, s) => !c && !s).ToReadOnlyReactivePropertySlim();
+            }).ToReadOnlyReactiveProperty();
+            CursorManagerActivity = ShowControlPanel.CombineLatest(ShowSizePanel, (c, s) => !c && !s).ToReadOnlyReactiveProperty();
 
             GoForwardCommand.Subscribe(() => {
                 if (ChapterEditing.Value) {
@@ -406,7 +406,7 @@ namespace dxplayer.player {
                         default: return HorizontalAlignment.Stretch;
                     }
                 }
-            }).ToReadOnlyReactivePropertySlim();
+            }).ToReadOnlyReactiveProperty();
             PanelVertAlign = PanelPosition.CombineLatest(ChapterEditing, (pos, ed) => {
                 if (!ed) {
                     return VerticalAlignment.Bottom;
@@ -418,7 +418,7 @@ namespace dxplayer.player {
                         default: return VerticalAlignment.Stretch;
                     }
                 }
-            }).ToReadOnlyReactivePropertySlim();
+            }).ToReadOnlyReactiveProperty();
 
             PanelWidth = PanelPosition.Select(pos => {
                 switch (pos) {
@@ -427,7 +427,7 @@ namespace dxplayer.player {
                         return DEF_PANEL_WIDTH;
                     default: return double.NaN;
                 }
-            }).ToReadOnlyReactivePropertySlim();
+            }).ToReadOnlyReactiveProperty();
 
             PanelPositionCommand.Subscribe((pos) => {
                 PanelPosition.Value = misc.Utils.ParseToEnum(pos, player.PanelPosition.RIGHT);
@@ -529,6 +529,7 @@ namespace dxplayer.player {
             }
             CancelChapterSetting();
         }
+
         #endregion
 
         #region Super High Speed Mode
@@ -536,6 +537,14 @@ namespace dxplayer.player {
         private DispatcherTimer mSuperHighSpeedPlayTimer = null;
         public DisposablePool SuperSpeedModeDisposables { get; } = new DisposablePool();
         public bool IsSuperHighSpeedMode => mSuperHighSpeedPlayTimer != null;
+        public void ToggleSuperHighSpeedMode() {
+            if(IsSuperHighSpeedMode) {
+                ResetSuperHighSpeedMode();
+            } else {
+                SetSuperHighSpeedMode();
+            }
+        }
+
         public void SetSuperHighSpeedMode() {
             if (null == mSuperHighSpeedPlayTimer) {
                 Speed.Value = 1;
@@ -547,7 +556,7 @@ namespace dxplayer.player {
                     }
                 };
                 mSuperHighSpeedPlayTimer.Start();
-                SuperSpeedModeDisposables.Add(Speed.Subscribe(_ => ResetSuperHighSpeedMode()));
+                SuperSpeedModeDisposables.Add(Speed.ToReadOnlyReactiveProperty(mode:ReactivePropertyMode.DistinctUntilChanged).Subscribe(_ => ResetSuperHighSpeedMode()));
             }
         }
 
