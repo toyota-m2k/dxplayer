@@ -1,5 +1,6 @@
 ﻿using dxplayer.data.main;
 using dxplayer.player;
+using dxplayer.settings;
 using io.github.toyota32k.server;
 using io.github.toyota32k.server.model;
 using io.github.toyota32k.toolkit.utils;
@@ -135,6 +136,20 @@ namespace dxplayer.server.cmd {
                         }
                     };
 
+        private static void UpdatePlayCounterIfNeed(PlayItem item) {
+            if(Settings.Instance.PlayCountFromServer) {
+                var now = DateTime.UtcNow;
+                var prev = item.LastPlayDate;
+                var d = now - prev;
+                if(d.TotalMinutes < 60) {
+                    return;     // 60分以内に複数回再生された場合は1回とみなす。
+                }
+                item.LastPlayDate = now;
+                item.PlayCount++;
+                DB.PlayListTable.Update();
+            }
+        }
+
         private static Regex RegRange = new Regex(@"bytes=(?<start>\d+)(?:-(?<end>\d+))?");
         public Route MovieStream { get; } = // VIDEO:ビデオストリーム要求
                     new Route {
@@ -146,9 +161,13 @@ namespace dxplayer.server.cmd {
                             if (null == source) {
                                 return HttpBuilder.ServiceUnavailable();
                             }
-
                             var id = Convert.ToInt64(QueryParser.Parse(request.Url)["id"]);
-                            var entry = source.Where((e) => e.ID  == id).Single();
+                            var entry = source.Where((e) => e.ID  == id).SingleOrDefault();
+                            if(null==entry) {
+                                return HttpBuilder.NotFound();
+                            }
+                            UpdatePlayCounterIfNeed(entry);
+
                             var range = request.Headers.GetValue("Range");
                             if (null == range) {
                                 //Source?.StandardOutput($"BooServer: cmd=video({id})");

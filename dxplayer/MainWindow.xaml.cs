@@ -38,7 +38,7 @@ namespace dxplayer {
 
         protected override void OnSourceInitialized(EventArgs e) {
             base.OnSourceInitialized(e);
-            Settings.Instance.Placement.ApplyPlacementTo(this);
+                Settings.Instance.Placement.ApplyPlacementTo(this);
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
