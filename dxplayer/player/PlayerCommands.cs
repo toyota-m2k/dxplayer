@@ -98,7 +98,7 @@ namespace dxplayer.player {
                 , CMD(ID.RATING_BAD, "RatingBad", () => viewModel.SetRating(Rating.BAD), "Rating:Bad")
                 , CMD(ID.RATING_DREADFUL, "RatingDreadful", () => viewModel.SetRating(Rating.DREADFUL), "Rating:Dreadful")
                 , CMD(ID.RATING_BAD_AND_NEXT, "RatingBadAndNext", () => { viewModel.SetRating(Rating.BAD); viewModel.PlayList.Next(); }, "Rating:Bad and next movie")
-                , CMD(ID.RATING_DREADFUL_AND_EXT, "RatingDreadfulAndNext", () => { viewModel.SetRating(Rating.DREADFUL); ; viewModel.PlayList.Next(); }, "Rating:Dreadful and naxt movie.")
+                , CMD(ID.RATING_DREADFUL_AND_NEXT, "RatingDreadfulAndNext", () => { viewModel.SetRating(Rating.DREADFUL); ; viewModel.PlayList.Next(); }, "Rating:Dreadful and naxt movie.")
 
                 , CMD(ID.TOGGLE_STRECH_MODE, "ToggleStrechMode", () => viewModel.FitMode.Value = !viewModel.FitMode.Value, "Change fitting mode")
                 , CMD(ID.TOGGLE_CHAPTER_EDIT_MODE, "ToggleChapterEditMode", () => viewModel.ChapterEditing.Value = !viewModel.ChapterEditing.Value, "Edit chapters")

@@ -22,6 +22,8 @@ namespace dxplayer {
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
     public partial class MainWindow : Window, IStatusBar, IPlayListSource {
+        static private LoggerEx logger = new LoggerEx("MainWindow");
+
         private MainViewModel ViewModel {
             get => (MainViewModel)DataContext;
             set => DataContext = value;
@@ -40,6 +42,7 @@ namespace dxplayer {
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
+            logger.info("called");
             ViewModel = new MainViewModel();
             ViewModel.ImportFromWfCommand.Subscribe(ImportFromWf);
             ViewModel.AddFolderCommand.Subscribe(AddFolders);
@@ -77,11 +80,12 @@ namespace dxplayer {
 
             MainListView.Focus();
 
-            ServerCommandCenter.Instance.Dispatcher = this.Dispatcher;
+            ServerCommandCenter.Instance.MainWindow = this;
             mServer = new DxServer(this);
             if(Settings.Instance.UseServer) {
                 mServer.Start(Settings.Instance.ServerPort);
             }
+            ViewModel?.CommandManager?.Enable(this, true);
         }
 
         #endregion
@@ -253,10 +257,29 @@ namespace dxplayer {
 
         #region List Management
 
-        public PlayItem SelectedItem => MainListView.SelectedItem as PlayItem;
+        public PlayItem SelectedItem {
+            get => MainListView.SelectedItem as PlayItem;
+            set {
+                MainListView.SelectedItem = value;
+                if (value != null) {
+                    MainListView.ScrollIntoView(value);
+                }
+            }
+        }
         public IEnumerable<PlayItem> SelectedItems => MainListView.SelectedItems.ToEnumerable<PlayItem>();
         public IEnumerable<PlayItem> ListedItems => MainListView.Items.ToEnumerable<PlayItem>();
         public IEnumerable<PlayItem> AllItems => DB.PlayListTable.List;
+
+        public long CurrentId {
+            get => SelectedItem?.ID ?? 0;
+            set {
+                var item = AllItems.Where(c => c.ID == value).SingleOrDefault();
+                if(item!=null) {
+                    MainListView.SelectedItem = item;
+                    MainListView.ScrollIntoView(item);
+                }
+            }
+        }
 
         private void DecrementCounter() {
             foreach(var c in SelectedItems) {
@@ -343,7 +366,7 @@ namespace dxplayer {
         private void UpdateColumnHeaderOnSort() {
             var sorter = Settings.Instance.SortInfo;
             foreach (var header in FindVisualChildren<GridViewColumnHeader>(MainListView)) {
-                LoggerEx.debug(header.ToString());
+                logger.debug(header.ToString());
                 var textBox = FindVisualChildren<TextBlock>(header).FirstOrDefault();
                 if (null != textBox) {
                     var key = SortInfo.SortKeyFromString(textBox.Text);
@@ -382,12 +405,14 @@ namespace dxplayer {
         //}
 
         protected override void OnActivated(EventArgs e) {
+            logger.info("called");
             base.OnActivated(e);
-            ViewModel.CommandManager.Enable(this, true);
+            ViewModel?.CommandManager?.Enable(this, true);
             mPlayerWindow?.Activate();
         }
 
         protected override void OnDeactivated(EventArgs e) {
+            logger.info("called");
             base.OnDeactivated(e);
             ViewModel.CommandManager.Enable(this, false);
         }

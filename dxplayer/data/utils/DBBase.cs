@@ -74,7 +74,7 @@ namespace dxplayer.data
             }
         }
 
-        //private static readonly DateTime EpochDate = new DateTime(1970, 1, 1, 0, 0, 0);
+        private static readonly DateTime EpochDate = new DateTime(1970, 1, 1, 0, 0, 0);
         public static DateTime AsTime(object obj) {
             try {
                 if (obj != null && obj != DBNull.Value) {
@@ -87,7 +87,7 @@ namespace dxplayer.data
             catch (Exception e) {
                 Logger.error(e);
             }
-            return DateTime.MinValue;
+            return EpochDate;
         }
     }
 }

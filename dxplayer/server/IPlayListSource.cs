@@ -10,5 +10,6 @@ namespace dxplayer.server {
         IEnumerable<PlayItem> SelectedItems { get; }
         IEnumerable<PlayItem> ListedItems { get; }
         IEnumerable<PlayItem> AllItems { get; }
+        long CurrentId { get; set; }
     }
 }

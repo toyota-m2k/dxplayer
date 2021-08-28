@@ -7,10 +7,10 @@ namespace dxplayer.data {
     [Table(Name = "t_chapter")]
     public class ChapterEntry {
         [Column(Name = "id", IsPrimaryKey = true)]
-        private int? id { get; set; } = null;
+        private long? id { get; set; } = null;
 
         [Column(Name = "owner", CanBeNull = false)]
-        public string Owner { get; private set; }
+        public long Owner { get; private set; }
 
         [Column(Name = "position", CanBeNull = false)]
         public ulong Position{ get; private set; }
@@ -26,16 +26,16 @@ namespace dxplayer.data {
         }
 
         public ChapterEntry() {
-            Owner = "";
+            Owner = 0;
             Position = 0;
             Label = null;
             skip = 0;
         }
 
-        static public ChapterEntry Create(string owner, ulong pos, bool skip=false, string label=null) {
+        static public ChapterEntry Create(long owner, ulong pos, bool skip=false, string label=null) {
             return new ChapterEntry() { Owner = owner, Position = pos, Skip = skip, Label = label };
         }
-        static public ChapterEntry Create(string owner, ChapterInfo info) {
+        static public ChapterEntry Create(long owner, ChapterInfo info) {
             return new ChapterEntry() { Owner = owner, Position = info.Position, Skip = info.Skip, Label = info.Label };
         }
 
@@ -60,11 +60,11 @@ namespace dxplayer.data {
             }
         };
 
-        public IEnumerable<ChapterEntry> GetChapterEntries(string owner) {
+        public IEnumerable<ChapterEntry> GetChapterEntries(long owner) {
             return Table.Where((c) => c.Owner == owner);
         }
 
-        public ChapterList GetChapterList(string owner) {
+        public ChapterList GetChapterList(long owner) {
             return new ChapterList(owner, Table.Where((c) => c.Owner == owner).Select((c)=>c.ToChapterInfo()));
         }
 

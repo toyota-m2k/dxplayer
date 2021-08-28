@@ -27,7 +27,8 @@ namespace dxplayer.data.main {
         protected override void initTables(bool created) {
             executeSql(
                 @"CREATE TABLE IF NOT EXISTS t_play_list (
-                    path TEXT NOT NULL UNIQUE PRIMARY KEY,
+                    id INTEGER PRIMARY KEY,
+                    path TEXT NOT NULL UNIQUE,
                     date INTEGER NOT NULL,
                     size INTEGER NOT NULL,
                     checked INTEGER NOT NULL,
@@ -54,7 +55,7 @@ namespace dxplayer.data.main {
                 )",
                 @"CREATE TABLE IF NOT EXISTS t_chapter (
 	                id	INTEGER NOT NULL PRIMARY KEY,
-                    owner TEXT NOT NULL,
+                    owner INTEGER NOT NULL,
                     position  INTEGER NOT NULL,
                     label TEXT,
                     skip INTEGER NOT NULL DEFAULT 0,
@@ -193,6 +194,7 @@ namespace dxplayer.data.main {
                 statusBar.OutputStatusMessage($"{prefix} ({count}/{totalCount}) : {item.Name}");
                 PlayListTable.Insert(item.ComplementAll().ApplyDxx(dxdb), false);
             }
+            PlayListTable.Update();
         }
 
         /**
@@ -215,11 +217,11 @@ namespace dxplayer.data.main {
             await Task.Run(() => {
                 if (!TargetFolderTable.Contains(folderPath)) {
                     TargetFolderTable.Insert(TargetFolders.Create(folderPath));
+                    TargetFolderTable.Update();
                 }
                 using (var dxdb = DxxStorage.SafeOpen(Settings.Instance.DxxDBPath)) {
                     InsertAddedFiles(folderPath, dxdb, statusBar, "Importing");
                 }
-                PlayListTable.Update();
                 statusBar.FlashStatusMessage($"import: completed.");
             });
         }

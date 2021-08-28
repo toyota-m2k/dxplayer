@@ -39,6 +39,14 @@ namespace dxplayer.data {
 
         public IEnumerable<T> List => Table;
 
+        private void RefreshContext() {
+            Update();
+            var connection = Context.Connection;
+            Context.Dispose();
+            Context = new DataContext(connection);
+            Table = Context.GetTable<T>();
+        }
+
         public bool Insert(T add, bool update=true) {
             try {
                 if(Contains(add)) {
@@ -46,11 +54,7 @@ namespace dxplayer.data {
                 }
                 Table.InsertOnSubmit(add);
                 if(UseAutoIncrement) {
-                    Update();
-                    var connection = Context.Connection;
-                    Context.Dispose();
-                    Context = new DataContext(connection);
-                    Table = Context.GetTable<T>();
+                    RefreshContext();
                 } else if(update) {
                     Update();
                 }
@@ -63,15 +67,22 @@ namespace dxplayer.data {
             }
         }
 
-        //public void InsertAll(IEnumerable<T> adds) {
-        //    try {
-        //        Table.InsertAllOnSubmit(adds);
-        //        Table.Context.SubmitChanges();
-        //        foreach (var a in adds) {
-        //            AddEvent.OnNext(a);
-        //        }
-        //    }
-        //}
+        public bool InsertAll(IEnumerable<T> adds, bool update=true) {
+            try {
+                Table.InsertAllOnSubmit(adds);
+                if (UseAutoIncrement) {
+                    RefreshContext();
+                }
+                else if (update) {
+                    Update();
+                }
+                return false;
+            }
+            catch (Exception e) {
+                Logger.error(e);
+                return false;
+            }
+        }
 
         public void Delete(T del, bool update = true) {
             Table.DeleteOnSubmit(del);

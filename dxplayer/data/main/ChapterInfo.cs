@@ -64,14 +64,14 @@ namespace dxplayer.data {
     public class ChapterList {
         public ObservableCollection<ChapterInfo> Values { get; } = new ObservableCollection<ChapterInfo>();
         const ulong MIN_CHAPTER_SPAN = 1000;
-        public string Owner { get; }
+        public long Owner { get; }
 
         private bool mIsModified = false;
         public bool IsModified {
             get { return mIsModified || Values.Where((c) => c.IsModified).Any(); }
             private set { mIsModified = value; }
         }
-        public ChapterList(string owner, IEnumerable<ChapterInfo> src) {
+        public ChapterList(long owner, IEnumerable<ChapterInfo> src) {
             Owner = owner;
             foreach (var c in src) {
                 AddChapter(c);

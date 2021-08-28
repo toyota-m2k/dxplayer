@@ -71,6 +71,14 @@ namespace dxplayer.server {
             });
         }
 
+        public void RunOnMainThread(Action fn) {
+            Dispatcher.Invoke(fn);
+        }
+
+        public T RunOnMainThread<T>(Func<T> fn) {
+            return Dispatcher.Invoke(fn);
+        }
+
         private DxCommands DxCommands = new DxCommands();
         private WfCommands WfCommands = new WfCommands();
         private YtCommands YtCommands = new YtCommands();

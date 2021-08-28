@@ -44,4 +44,21 @@ namespace dxplayer.res
             throw new NotImplementedException();
         }
     }
+
+    public class DateStringConverter : IValueConverter {
+        private readonly DateTime EpochDate = new DateTime(1970, 1, 1, 0, 0, 0);
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            if (value is DateTime) {
+                if (((DateTime)value)>EpochDate) {
+                    return ((DateTime)value).ToLocalTime().ToString("yyyy/MM/dd HH:mm:ss");
+                }
+            }
+            return "";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            throw new NotImplementedException();
+        }
+    }
+
 }

@@ -31,7 +31,11 @@ namespace dxplayer.data.main
 
     [Table(Name = "t_play_list")]
     public class PlayItem : PropertyChangeNotifier, IPlayItem {
-        [Column(Name = "path", IsPrimaryKey = true, CanBeNull = false)]
+        [Column(Name = "id", IsPrimaryKey = true, CanBeNull = false)]
+        private long? id = null;
+        public long ID => id ?? 0;
+
+        [Column(Name = "path", CanBeNull = false)]
         private string path = "";
         public string Path => path;
 
@@ -162,9 +166,6 @@ namespace dxplayer.data.main
             return new PlayItem() { path = path };
         }
         public static PlayItem Create(WfItem s) {
-            if(!PathUtil.isFile(s.Path)) {
-                return null;
-            }
             var r = Create(s.Path, s.Date, s.Size, 0);
             r.Aspect = s.Aspect;
             r.LastPlayDate = s.LastPlayDate;
@@ -222,7 +223,7 @@ namespace dxplayer.data.main
 
     public class PlayListTable : StorageTable<PlayItem> {
         public PlayListTable(SQLiteConnection connection)
-            : base(connection, false) {
+            : base(connection, useAutoIncrement:true) {
         }
         public override bool Contains(PlayItem item) {
             return List.Where((c) => c.Path == item.Path).Any();

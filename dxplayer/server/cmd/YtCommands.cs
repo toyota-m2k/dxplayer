@@ -3,11 +3,13 @@ using dxplayer.player;
 using io.github.toyota32k.server;
 using io.github.toyota32k.server.model;
 using io.github.toyota32k.toolkit.utils;
+using io.github.toyota32k.toolkit.view;
 using System;
 using System.Collections.Generic;
 using System.Json;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace dxplayer.server.cmd {
@@ -18,8 +20,9 @@ namespace dxplayer.server.cmd {
             Selected = 2,
         }
 
+        private static IPlayListSource Source => ServerCommandCenter.Instance.PlayListSource;
         private static IEnumerable<PlayItem> SourceOf(int type) {
-            var source = ServerCommandCenter.Instance.PlayListSource;
+            var source = Source;
             if (source == null) return null;
             switch (type) {
                 case (int)SourceType.DB:
@@ -31,6 +34,7 @@ namespace dxplayer.server.cmd {
                     return source.SelectedItems;
             }
         }
+        private static MainStorage DB = App.Instance.DB;
 
         public Route PlayList { get; } =                     // list: プレイリスト要求
                     new Route {
@@ -69,7 +73,7 @@ namespace dxplayer.server.cmd {
                                     .Where((e) => string.IsNullOrEmpty(search) || (e.Name?.ContainsIgnoreCase(search) ?? false) || (e.Desc?.ContainsIgnoreCase(search) ?? false))
                                     .Where((e) => e.Date.ToFileTimeUtc() > date)
                                     .Select((v) => new JsonObject(new Dictionary<string, JsonValue>() {
-                                        {"id", v.Path },
+                                        {"id", v.ID },
                                         {"name", v.TitleOrName() ?? "untitled" },
                                         {"start", $"{v.TrimStart}"},
                                         {"end", $"{v.TrimEnd}" },
@@ -103,7 +107,120 @@ namespace dxplayer.server.cmd {
                             return new TextHttpResponse(json.ToString(), "application/json");
                         }
                     };
+        public Route ChapterList { get; } =  // chapter: チャプターリスト要求
+                    new Route {
+                        Name = "ytPlayer chapters",
+                        UrlRegex = @"/ytplayer/chapter\?\w+",
+                        Method = "GET",
+                        Callable = (HttpRequest request) => {
+                            var id = Convert.ToInt64(QueryParser.Parse(request.Url)["id"]);
+                            var chapters = DB.ChapterTable.List.Where(c => c.Owner == id);
+                            if (null == chapters) {
+                                logger.error($"YT: cmd=chapter ({id}).");
+                                return HttpBuilder.ServiceUnavailable();
+                            }
+                            //Source?.StandardOutput($"BooServer: cmd=chapter ({id})");
+                            var json = new JsonObject(new Dictionary<string, JsonValue>() {
+                                            { "cmd", "chapter"},
+                                            { "id", $"{id}" },
+                                            { "chapters", new JsonArray(
+                                                chapters.Select((c) => new JsonObject(new Dictionary<string,JsonValue>(){
+                                                        { "position", c.Position },
+                                                        { "label", c.Label },
+                                                        { "skip", c.Skip }
+                                                }))) },
+                                            }
+                            );
+                            return new TextHttpResponse(json.ToString(), "application/json");
+                        }
+                    };
 
+        private static Regex RegRange = new Regex(@"bytes=(?<start>\d+)(?:-(?<end>\d+))?");
+        public Route MovieStream { get; } = // VIDEO:ビデオストリーム要求
+                    new Route {
+                        Name = "ytPlayer video",
+                        UrlRegex = @"/ytplayer/video\?\w+",
+                        Method = "GET",
+                        Callable = (HttpRequest request) => {
+                            var source = DB.PlayListTable.List;
+                            if (null == source) {
+                                return HttpBuilder.ServiceUnavailable();
+                            }
+
+                            var id = Convert.ToInt64(QueryParser.Parse(request.Url)["id"]);
+                            var entry = source.Where((e) => e.ID  == id).Single();
+                            var range = request.Headers.GetValue("Range");
+                            if (null == range) {
+                                //Source?.StandardOutput($"BooServer: cmd=video({id})");
+                                return new StreamingHttpResponse(entry.Path, "video/mp4", 0, 0);
+                            }
+                            else {
+                                var m = RegRange.Match(range);
+                                var s = m.Groups["start"];
+                                var e = m.Groups["end"];
+                                var start = s.Success ? Convert.ToInt64(s.Value) : 0;
+                                var end = e.Success ? Convert.ToInt64(s.Value) : 0;
+                                return new StreamingHttpResponse(entry.Path, "video/mp4", start, end);
+                            }
+                        }
+                    };
+        public Route GetCurrent { get; } = // current: カレントアイテムのget/set
+                    new Route {
+                        Name = "ytPlayer Current Item",
+                        UrlRegex = @"/ytplayer/current",
+                        Method = "GET",
+                        Callable = (HttpRequest request) => {
+                            //Source?.StandardOutput("BooServer: cmd=current (get)");
+                            Logger.debug("YtServer: Current (Get)");
+                            var nid = ServerCommandCenter.Instance.RunOnMainThread(()=>Source.CurrentId);
+                            var id = nid != 0 ? $"{nid}" : "";
+                            var json = new JsonObject(new Dictionary<string, JsonValue>() {
+                                { "cmd", "current"},
+                                { "id", id },
+                            });
+                            return new TextHttpResponse(json.ToString(), "application/json");
+                        }
+                    };
+        public Route PutCurrent { get; } =
+                    new Route {
+                        Name = "ytPlayer Current Item",
+                        UrlRegex = @"/ytplayer/current",
+                        Method = "PUT",
+                        Callable = (HttpRequest request) => {
+                            //Source?.StandardOutput("BooServer: cmd=current (put)");
+                            Logger.debug("YtServer: Current (Put)");
+                            if (!request.Headers.TryGetValue("Content-Type", out string type)) {
+                                return HttpBuilder.BadRequest();
+                            }
+                            try {
+                                var json = new JsonHelper(request.Content);
+                                var id = json.GetLong("id");
+                                ServerCommandCenter.Instance.RunOnMainThread(() => {
+                                    Source.CurrentId = id;
+                                });
+                                return new TextHttpResponse(json.ToString(), "application/json");
+                            }
+                            catch (Exception e) {
+                                Logger.error(e);
+                                return HttpBuilder.InternalServerError();
+                            }
+                        }
+                    };
+        public Route Categories = // category：全カテゴリリストの要求
+                    new Route {
+                        Name = "ytPlayer Not Supported",
+                        UrlRegex = @"/ytplayer/category",
+                        Method = "GET",
+                        Callable = (HttpRequest request) => {
+                            //Source?.StandardOutput("BooServer: cmd=category");
+                            Logger.debug("YtServer: Category");
+                            var json = new JsonObject(new Dictionary<string, JsonValue>() {
+                                            {"cmd", "category"},
+                                            {"categories", new JsonArray() }
+                                        });
+                            return new TextHttpResponse(json.ToString(), "application/json");
+                        }
+                    };
 
     }
 

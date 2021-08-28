@@ -1,4 +1,5 @@
 ﻿using io.github.toyota32k.server.model;
+using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
 using System.Json;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace dxplayer.server {
     public abstract class ServerCommandListBase {
+        protected static LoggerEx logger = new LoggerEx("ServerCommand");
         protected static IHttpResponse Result(string cmd, bool result) {
             var json = new JsonObject(new Dictionary<string, JsonValue>() {
                                 {"cmd", cmd },

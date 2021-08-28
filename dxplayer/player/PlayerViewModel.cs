@@ -91,7 +91,7 @@ namespace dxplayer.player {
             var item = PlayList.Current.Value;
             if (item == null) return;
             Trimming.Value = new PlayRange(item.TrimStart, item.TrimEnd);
-            var chapterList = App.Instance.DB.ChapterTable.GetChapterList(item.Path);
+            var chapterList = App.Instance.DB.ChapterTable.GetChapterList(item.ID);
             if (chapterList != null) {
                 Chapters.Value = chapterList;
                 DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();

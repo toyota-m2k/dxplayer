@@ -80,7 +80,6 @@ namespace dxplayer.data.wf
         public async Task ExportTo(MainStorage dst, IStatusBar statusBar) {
             int count = 0;
             int total = 0;
-            int chunkSize = 100;
             var comparator = new PlayItemComparator();
             statusBar.OutputStatusMessage("importing ...");
             await Task.Run(() => {
@@ -93,15 +92,26 @@ namespace dxplayer.data.wf
                                         .Except(dstPlayList.List, comparator)
                                         .ToList();
                     total = appended.Count;
-                    dstPlayList.WithTransaction(() => {
-                        foreach (var newItems in appended.Split(chunkSize)) {
-                            count += newItems.Count();
-                            dstPlayList.Table.InsertAllOnSubmit(newItems.Select(v => v.ApplyDxx(dxdb).ComplementDuration()));
-                            statusBar.OutputStatusMessage($"importing: commiting... {count}/{total}");
+
+                    // 1件ずつ
+                    foreach(var item in appended) {
+                        count++;
+                        statusBar.OutputStatusMessage($"importing: commiting... {count}/{total}");
+                        if(PathUtil.isFile(item.Path)) {
+                            item.ApplyDxx(dxdb).ComplementDuration();
+                            dstPlayList.Insert(item);
                         }
-                        dstPlayList.Update();
-                        return true;
-                    });
+                    }
+
+                    // 100件ずつまとめて
+                    //int chunkSize = 100;
+                    //foreach (var newItems in appended.Split(chunkSize)) {
+                    //    count += newItems.Count();
+                    //    dstPlayList.InsertAll(newItems.Select(v => v.ApplyDxx(dxdb).ComplementDuration()));
+                    //    statusBar.OutputStatusMessage($"importing: commiting... {count}/{total}");
+                    //}
+
+                    dstPlayList.Update();
 
 #if false
                     var mayBeUpdated = srcPlayList.Intersect(dstPlayList.List, comparator).ToList();
