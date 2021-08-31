@@ -12,8 +12,18 @@ namespace dxplayer
         public static App Instance => Current as App;
         public MainStorage DB { get; private set; }
 
+        public bool OpenDB(string path) {
+            var db = MainStorage.OpenDB(path);
+            if (db == null) return false;
+            DB?.Dispose();
+            DB = db;
+            Settings.Instance.FilePath = path;
+            Settings.Instance.MRU.AddMru(path);
+            Settings.Instance.Serialize();
+            return true;
+        }
+
         protected override void OnStartup(StartupEventArgs e) {
-            DB = MainStorage.OpenDB(Settings.Instance.FilePath);
             base.OnStartup(e);
         }
 
@@ -21,6 +31,5 @@ namespace dxplayer
             base.OnExit(e);
             DB.Dispose();
         }
-
     }
 }

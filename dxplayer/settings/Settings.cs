@@ -2,16 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace dxplayer.settings
 {
     public class Settings {
         public WinPlacement Placement { get; set; } = new WinPlacement();
         public WinPlacement PlayerPlacement { get; set; } = new WinPlacement();
-        public string FilePath { get; set; } = "default.dpd";
+        public string FilePath { get; set; } = Path.Combine(Environment.CurrentDirectory, "default.dpd");
         public ListFilter ListFilter { get; set; } = new ListFilter();
         public SortInfo SortInfo { get; set; } = new SortInfo();
-        public List<string> MRU { get; set; } = new List<string>();
+        public MRU MRU { get; set; } = new MRU();
         public string DxxDBPath { get; set; } = "";
         public string LastPlayingPath { get; set; } = "";
         public ulong LastPlayingPos { get; set; } = 0;

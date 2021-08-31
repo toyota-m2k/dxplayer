@@ -1,6 +1,7 @@
 ﻿using dxplayer.data;
 using dxplayer.data.main;
 using dxplayer.data.wf;
+using dxplayer.misc;
 using dxplayer.player;
 using dxplayer.server;
 using dxplayer.settings;
@@ -10,12 +11,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using wfPlayer;
 
 namespace dxplayer {
     /// <summary>
@@ -54,6 +58,7 @@ namespace dxplayer {
             ViewModel.UncheckCommand.Subscribe(UncheckItem);
             ViewModel.ResetCounterCommand.Subscribe(ResetCounter);
             ViewModel.DecrementCounterCommand.Subscribe(DecrementCounter);
+            ViewModel.ShutdownCommand.Subscribe(Shutdown);
 
             ViewModel.SettingCommand.Subscribe(async () => {
                 if(await ViewModel.Dialog.ShowSettingDialog()) {
@@ -76,9 +81,10 @@ namespace dxplayer {
 
             Settings.Instance.SortInfo.SortUpdated += OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated += OnFilterChanged;
-            OnSortChanged();
 
             MainListView.Focus();
+            EnsureDB();
+            OnSortChanged();
 
             ServerCommandCenter.Instance.MainWindow = this;
             mServer = new DxServer(this);
@@ -86,6 +92,7 @@ namespace dxplayer {
                 mServer.Start(Settings.Instance.ServerPort);
             }
             ViewModel?.CommandManager?.Enable(this, true);
+
         }
 
         #endregion
@@ -102,6 +109,12 @@ namespace dxplayer {
         protected override void OnClosed(EventArgs e) {
             base.OnClosed(e);
             ViewModel.Dispose();
+        }
+
+        private void Shutdown() {
+            mPlayerWindow?.Close();
+            App.Instance.Shutdown();
+            WinShutdown.Shutdown();
         }
         #endregion
 
@@ -150,6 +163,9 @@ namespace dxplayer {
             ViewModel.PlayingStatus.Value = PlayingStatus.IDLE;
             mPlayCountObserver?.Dispose();
             mPlayCountObserver = null;
+            //if(ViewModel.ListFilter.Enabled) {
+            //    UpdateList();
+            //}
         }
 
         private void Play(bool preview) {
@@ -251,6 +267,89 @@ namespace dxplayer {
                 await DB.RefreshDB(this);
             }
             UpdateList();
+        }
+
+        #endregion
+
+        #region DB File
+
+        private void CreateFileMenu() {
+            var menu = new ContextMenu();
+            var item = new MenuItem();
+            item.Header = "_New DB";
+            item.Command = new SimpleCommand(NewDB);
+            menu.Items.Add(item);
+
+            item = new MenuItem();
+            item.Header = "_Open DB";
+            item.Command = new SimpleCommand(OpenDB);
+            menu.Items.Add(item);
+
+            var curPath = Settings.Instance.FilePath;
+            Settings.Instance.MRU.List.Where(c => c != curPath).Aggregate(menu, (m, path) => {
+                var i = new MenuItem();
+                var c = m.Items.Count - 1;
+                if (c >= 10) {
+                    c = 0;
+                }
+                i.Header = $"_{c}: {Path.GetFileName(path)}";
+                i.Command = new SimpleCommand(() => OpenDB(path));
+                m.Items.Add(i);
+                return m;
+            });
+            if (menu.Items.Count > 2) {
+                menu.Items.Insert(2, new Separator());
+            }
+            mOpenDBButton.DropDownMenu = menu;
+        }
+
+        private void EnsureDB() {
+            if(OpenDB(Settings.Instance.FilePath)) {
+                return;
+            }
+            while(!NewDB()) {
+                MessageBox.Show("Select or create DB file.", "dxplayer", MessageBoxButton.OK);
+            }
+        }
+
+        private bool OpenDB(string path) {
+            if(App.Instance.OpenDB(path)) {
+                CreateFileMenu();
+                UpdateTitle();
+                UpdateList();
+                return true;
+            }
+            return false;
+        }
+
+
+        private bool OpenDB() {
+            var path = OpenFileDialogBuilder.Create()
+                .addFileType("dxplayer DB", "*.dpd")
+                .defaultExtension("dpd")
+                .GetFilePath(this);
+            if (string.IsNullOrEmpty(path)) return false;
+            return OpenDB(path);
+        }
+
+        private bool NewDB() {
+            var path = SaveFileDialogBuilder.Create()
+                .defaultExtension("dpd")
+                .addFileType("dxplayer DB", "*.dpd")
+                .GetFilePath(this);
+            if (string.IsNullOrEmpty(path)) return false;
+            return OpenDB(path);
+        }
+
+        /**
+         * 選択されたDBファイル名をタイトルに表示する
+         */
+        private void UpdateTitle() {
+            var path = Settings.Instance.FilePath;
+            string fname = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : "<untitled>";
+            var v = FileVersionInfo.GetVersionInfo(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            //Debug.WriteLine(v.ToString());
+            this.Title = String.Format("{0} (v{1}.{2}.{3})  - {4}", v.ProductName, v.FileMajorPart, v.FileMinorPart, v.FileBuildPart, fname);
         }
 
         #endregion

@@ -45,7 +45,7 @@ namespace dxplayer.server.cmd {
         }
 
 
-        static Dictionary<string, PlayerCommands.ID> KeyMap = new Dictionary<string, PlayerCommands.ID>() {
+        static Dictionary<string, PlayerCommands.ID> PlayerCommandMap = new Dictionary<string, PlayerCommands.ID>() {
             { "play", PlayerCommands.ID.PLAY },
             { "pause", PlayerCommands.ID.PAUSE },
             { "stop", PlayerCommands.ID.PAUSE },
@@ -77,7 +77,10 @@ namespace dxplayer.server.cmd {
             { "showSlider", PlayerCommands.ID.TOGGLE_PIN_SLIDER },
             { "kickOutMouse", PlayerCommands.ID.KICKOUT_MOUSE },
         };
-
+        static Dictionary<string, MainCommands.ID> MainCommandMap = new Dictionary<string, MainCommands.ID>() {
+            { "play", MainCommands.ID.PLAY },
+            { "shutdown", MainCommands.ID.SHUTDOWN },
+        };
         static Regex mRegex = new Regex(@"/wfplayer/cmd/(?<cmd>[a-zA-Z]+)(/(?<param>\w*))?");
 
         public Route WF { get; } = new Route {
@@ -90,8 +93,12 @@ namespace dxplayer.server.cmd {
                 var result = false;
                 if (match.Success) {
                     cmd = match.Groups["cmd"].Value;
-                    if(KeyMap.TryGetValue(cmd, out var id)) {
-                        ServerCommandCenter.Instance.InvokePlayerCommand(cm=>cm[id].Invoke(0));
+                    var scc = ServerCommandCenter.Instance;
+                    if (scc.HasPlayer && PlayerCommandMap.TryGetValue(cmd, out var pid)) {
+                        scc.InvokePlayerCommand(cm=>cm[pid].Invoke(0));
+                        result = true;
+                    } else if(MainCommandMap.TryGetValue(cmd, out var mid)) {
+                        scc.InvokeMainCommand(cm => cm[mid].Invoke(0));
                         result = true;
                     }
                 }
