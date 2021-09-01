@@ -103,23 +103,10 @@ namespace dxplayer.player {
             }
         }
 
-        public void CurrentToTrimmingStart() {
-            SetTrimming(SetTrimmingStart);
-        }
-        public void CurrentToTrimmingEnd() {
-            SetTrimming(SetTrimmingEnd);
-        }
-        public void ResetTrimmingStart() {
-            ResetTrimming(SetTrimmingStart);
-        }
-        public void ResetTrimmingEnd() {
-            ResetTrimming(SetTrimmingEnd);
-        }
-
         private void SetTrimming(object obj) {
             switch (obj as String) {
-                case "Start": CurrentToTrimmingStart(); break;
-                case "End": CurrentToTrimmingEnd(); break;
+                case "Start": SetTrimmingStartAtCurrentPos(); break;
+                case "End": SetTrimmingEndAtCurrentPos(); break;
                 default: return;
             }
         }
@@ -131,42 +118,78 @@ namespace dxplayer.player {
             }
         }
 
-        private void ResetTrimming(Func<IPlayItem, ulong, PlayRange?> setFunc) {
-            var item = PlayList.Current.Value;
-            if (item == null) return;
-            var trimming = setFunc(item, 0);
-            if (trimming == null) return;
+        //private void ResetTrimming(Func<IPlayItem, ulong, PlayRange?> setFunc) {
+        //    var item = PlayList.Current.Value;
+        //    if (item == null) return;
+        //    var trimming = setFunc(item, 0);
+        //    if (trimming == null) return;
 
-            Trimming.Value = trimming.Value;
-            DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming.Value).ToList();
+        //    Trimming.Value = trimming.Value;
+        //    DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming.Value).ToList();
+        //}
+
+        //private void SetTrimming(Func<IPlayItem, ulong, PlayRange?> setFunc) {
+        //    var item = PlayList.Current.Value;
+        //    if (item == null) return;
+        //    var pos = PlayerPosition;
+        //    var trimming = setFunc(item, pos);
+        //    if (trimming == null) return;
+
+        //    Trimming.Value = trimming.Value;
+        //    DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming.Value).ToList();
+        //}
+
+        //--------------------------------------------
+        public void SetTrimmingStartAtCurrentPos() {
+            SetTrimmingStart(PlayerPosition);
         }
-
-        private void SetTrimming(Func<IPlayItem, ulong, PlayRange?> setFunc) {
-            var item = PlayList.Current.Value;
-            if (item == null) return;
-            var pos = PlayerPosition;
-            var trimming = setFunc(item, pos);
-            if (trimming == null) return;
-
-            Trimming.Value = trimming.Value;
-            DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming.Value).ToList();
+        public void SetTrimmingEndAtCurrentPos() {
+            SetTrimmingEnd(PlayerPosition);
         }
-        private PlayRange? SetTrimmingStart(IPlayItem item, ulong pos) {
+        //--------------------------------------------
+        public void SetTrimmingStart(ulong pos) {
+            SetTrimmingStart(PlayList.Current.Value, pos);
+        }
+        public void SetTrimmingStart(IPlayItem item, ulong pos) {
+            if (item == null) return;
             var trimming = Trimming.Value;
             if (trimming.TrySetStart(pos)) {
                 item.TrimStart = pos;
-                return trimming;
+                Trimming.Value = trimming;
+                DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming).ToList();
             }
-            return null;
         }
-        private PlayRange? SetTrimmingEnd(IPlayItem item, ulong pos) {
+
+        public void SetTrimmingEnd(ulong pos) {
+            SetTrimmingEnd(PlayList.Current.Value, pos);
+        }
+
+        public void SetTrimmingEnd(IPlayItem item, ulong pos) {
+            if (item == null) return;
             var trimming = Trimming.Value;
             if (trimming.TrySetEnd(pos)) {
                 item.TrimEnd = pos;
-                return trimming;
+                Trimming.Value = trimming;
+                DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming).ToList();
             }
-            return null;
         }
+
+        //--------------------------------------------
+        public void ResetTrimmingStart() {
+            ResetTrimmingStart(PlayList.Current.Value);
+        }
+        public void ResetTrimmingStart(IPlayItem item) {
+            SetTrimmingStart(item, 0);
+        }
+        public void ResetTrimmingEnd() {
+            ResetTrimmingEnd(PlayList.Current.Value);
+        }
+        public void ResetTrimmingEnd(IPlayItem item) {
+            SetTrimmingEnd(item, 0);
+        }
+        //--------------------------------------------
+
+
 
         public void NotifyChapterUpdated() {
             Chapters.Value.Apply((chapterList) => {
@@ -438,11 +461,11 @@ namespace dxplayer.player {
                 if (item == null) return;
                 if (item.TrimStart > 0) {
                     AddDisabledChapterRange(new PlayRange(0, item.TrimStart));
-                    ResetTrimming(SetTrimmingStart);
+                    ResetTrimmingStart();
                 }
                 if (item.TrimEnd > 0) {
                     AddDisabledChapterRange(new PlayRange(item.TrimEnd, 0));
-                    ResetTrimming(SetTrimmingEnd);
+                    ResetTrimmingEnd();
                 }
             });
             if (CheckMode) {

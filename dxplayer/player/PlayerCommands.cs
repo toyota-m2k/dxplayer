@@ -106,10 +106,10 @@ namespace dxplayer.player {
                 , CMD(ID.TOGGLE_PIN_SLIDER, "TogglePinSlider", () => viewModel.PinControlPanel.Value = !viewModel.PinControlPanel.Value, "Pinning slider panel")
                 , CMD(ID.KICKOUT_MOUSE, "KickOutMouse", viewModel.KickOutMouseCommand, "Kick mouse cursor out of Player")
 
-                , CMD(ID.TRIM_SET_START, "SetTrimStart", viewModel.CurrentToTrimmingStart, "Trimming to current position from head")
-                , CMD(ID.TRIM_SET_END, "SetTrimEnd", viewModel.CurrentToTrimmingEnd, "Trimming from current position to tail")
-                , CMD(ID.TRIM_RESET_START, "ResetTrimStart", viewModel.CurrentToTrimmingStart, "Reset head trimming.")
-                , CMD(ID.TRIM_RESET_END, "ResetTrimEnd", viewModel.CurrentToTrimmingEnd, "Reset tail trimming.")
+                , CMD(ID.TRIM_SET_START, "SetTrimStart", viewModel.SetTrimmingStartAtCurrentPos, "Trimming to current position from head")
+                , CMD(ID.TRIM_SET_END, "SetTrimEnd", viewModel.SetTrimmingEndAtCurrentPos, "Trimming from current position to tail")
+                , CMD(ID.TRIM_RESET_START, "ResetTrimStart", viewModel.ResetTrimmingStart, "Reset head trimming.")
+                , CMD(ID.TRIM_RESET_END, "ResetTrimEnd", viewModel.ResetTrimmingEnd, "Reset tail trimming.")
 
                 , CMD(ID.CHAPTER_SET_BEGIN, "ChapterSetBegin", viewModel.BeginChapterSetting, "Begin disabled chapter from current position")
                 , CMD(ID.CHAPTER_SET_COMMIT, "ChapterSetCommit", viewModel.CommitChapterSetting, "Commit disabled chapter to current position")

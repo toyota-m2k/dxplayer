@@ -124,6 +124,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="data\IStatusBar.cs" />
+    <Compile Include="data\main\ChapterEditor.cs" />
     <Compile Include="data\main\ChapterEntry.cs" />
     <Compile Include="data\main\ChapterInfo.cs" />
     <Compile Include="data\main\PlayCountObserver.cs" />
