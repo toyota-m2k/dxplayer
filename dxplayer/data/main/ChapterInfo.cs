@@ -1,11 +1,16 @@
-﻿using dxplayer.player;
+﻿using dxplayer.data.main;
+using dxplayer.player;
+using io.github.toyota32k.toolkit.utils;
 using io.github.toyota32k.toolkit.view;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace dxplayer.data {
     public class ChapterInfo : PropertyChangeNotifier {
+        private WeakReference<ChapterEditor> mEditor;
+        private ChapterEditor Editor => mEditor?.GetValue();
         private bool mSkip;
         private string mLabel;
 
@@ -17,8 +22,10 @@ namespace dxplayer.data {
         public string Label {
             get => mLabel;
             set {
+                var old = mLabel;
                 if(setProp(callerName(), ref mLabel, value)) {
                     IsModified = true;
+                    Editor?.OnLabelChanged(this, old, value);
                 }
             }
         }
@@ -27,11 +34,13 @@ namespace dxplayer.data {
             get => mSkip;
             set {
                 if (setProp(callerName(), ref mSkip, value)) { 
-                    IsModified = true; 
+                    IsModified = true;
+                    Editor?.OnSkipChanged(this, value);
                 }
             }
         }
-        public ChapterInfo(ulong pos, bool skip = false, string label=null) {
+        public ChapterInfo(ChapterEditor editor, ulong pos, bool skip = false, string label=null) {
+            mEditor = new WeakReference<ChapterEditor>(editor);
             Position = pos;
             mSkip = skip;
             mLabel = label;

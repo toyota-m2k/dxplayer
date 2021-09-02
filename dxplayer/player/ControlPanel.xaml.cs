@@ -22,26 +22,27 @@ namespace dxplayer.player
         private common.DisposablePool mDisposablePool = new common.DisposablePool();
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
-            mDisposablePool.Add(ViewModel.ChapterEditing.Subscribe(OnChapterEditing));
+            mDisposablePool.Add(ViewModel.ChapterEditor.IsEditing.Subscribe(OnChapterEditing));
         }
 
         private void OnChapterEditing(bool editing) {
             if(editing) {
-                mDisposablePool.Add(ViewModel.EditingChapterList.Subscribe(c => UpdateChapterLength()));
+                mDisposablePool.Add(ViewModel.ChapterEditor.EditingChapterList.Subscribe(c => UpdateChapterLength()));
                 mDisposablePool.Add(ViewModel.Duration.Subscribe(c => UpdateChapterLength()));
                 mDisposablePool.Add(ViewModel.SyncChapterCommand.Subscribe(SyncChapter));
-                ViewModel.EditingChapterList.Value.CollectionChanged += OnChapterListChanged;
+                ViewModel.ChapterEditor.EditingChapterList.Value.CollectionChanged += OnChapterListChanged;
             } else {
                 mDisposablePool.Reset();
-                if (ViewModel?.EditingChapterList?.Value != null) {
-                    ViewModel.EditingChapterList.Value.CollectionChanged -= OnChapterListChanged;
+                var editingChapterList = ViewModel?.ChapterEditor?.EditingChapterList?.Value;
+                if ( editingChapterList!= null) {
+                    editingChapterList.CollectionChanged -= OnChapterListChanged;
                 }
             }
         }
 
         private void SyncChapter() {
             var pos = ViewModel.PlayerPosition;
-            if (ViewModel.Chapters.Value.GetNeighbourChapterIndex(pos, out var prev, out var next)) {
+            if (ViewModel.ChapterEditor.Chapters.Value.GetNeighbourChapterIndex(pos, out var prev, out var next)) {
                 prev++;
             } 
             if(prev>=0) {
@@ -51,7 +52,7 @@ namespace dxplayer.player
         }
 
         private void UpdateChapterLength() {
-            if (!ViewModel.ChapterEditing.Value) return;
+            if (!ViewModel.ChapterEditor.IsEditing.Value) return;
 
             var duration = ViewModel?.Duration?.Value;
             if (duration == null) return;
@@ -61,7 +62,7 @@ namespace dxplayer.player
 
         private void UpdateLengthField(ulong duration) {
             if (duration == 0) return;
-            var editingList = ViewModel?.EditingChapterList?.Value;
+            var editingList = ViewModel?.ChapterEditor?.EditingChapterList?.Value;
             if (editingList == null) return;
 
             if (editingList.Count == 0) return;
@@ -87,12 +88,12 @@ namespace dxplayer.player
         private void OnSkipChapterButtonClicked(object sender, RoutedEventArgs e) {
             var entry = (ChapterInfo)((FrameworkElement)sender).Tag;
             entry.Skip = !entry.Skip;
-            ViewModel.NotifyChapterUpdated();
+            //ViewModel.NotifyChapterUpdated();
         }
         private void OnDeleteChapterButtonClicked(object sender, RoutedEventArgs e) {
             var entry = (ChapterInfo)((FrameworkElement)sender).Tag;
-            if (ViewModel.Chapters.Value.RemoveChapter(entry)) {
-                ViewModel.NotifyChapterUpdated();
+            if (ViewModel.ChapterEditor.RemoveChapter(entry)) {
+                //ViewModel.NotifyChapterUpdated();
             }
         }
 
@@ -162,17 +163,17 @@ namespace dxplayer.player
                 switch(e.Key) {
                     case System.Windows.Input.Key.Return:
                     case System.Windows.Input.Key.Down:
-                        index = ViewModel.EditingChapterList.Value.IndexOf(entry) + 1;
+                        index = ViewModel.ChapterEditor.EditingChapterList.Value.IndexOf(entry) + 1;
                         break;
                     case System.Windows.Input.Key.Up:
-                        index = ViewModel.EditingChapterList.Value.IndexOf(entry) - 1;
+                        index = ViewModel.ChapterEditor.EditingChapterList.Value.IndexOf(entry) - 1;
                         break;
                     default:
                         break;
                 }
                 // ターゲットのTextBoxを探してフォーカスをセット
-                if(0<=index && index< ViewModel.EditingChapterList.Value.Count) {
-                    entry = ViewModel.EditingChapterList.Value[index];
+                if(0<=index && index< ViewModel.ChapterEditor.EditingChapterList.Value.Count) {
+                    entry = ViewModel.ChapterEditor.EditingChapterList.Value[index];
                     // VirtualizingPanelにビューがなければ生成させるため、まず表示する
                     chapterListView.ScrollIntoView(entry);
                     // 現在フォーカスを持っているtextBox の親コンテナ、VirtualizingStackPanel を取得

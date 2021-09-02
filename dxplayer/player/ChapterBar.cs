@@ -41,8 +41,8 @@ namespace dxplayer.player {
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
-            ViewModel?.Chapters.Subscribe(OnChapterListChanged);
-            ViewModel?.DisabledRanges.Subscribe(OnDisabledRangesChanged);
+            ViewModel?.ChapterEditor?.Chapters?.Subscribe(OnChapterListChanged);
+            ViewModel?.ChapterEditor?.DisabledRanges?.Subscribe(OnDisabledRangesChanged);
             ViewModel?.DraggingRange.Subscribe(OnDraggingRangeChanged);
             Loaded -= OnLoaded;
         }
@@ -168,8 +168,8 @@ namespace dxplayer.player {
         private void OnSizeChanged(object sender, SizeChangedEventArgs e) {
             if (PrevWidth > 0 && PrevWidth != ActualWidth) {
                 PrevWidth = ActualWidth;
-                OnChapterListChanged(ViewModel.Chapters.Value);
-                OnDisabledRangesChanged(ViewModel.DisabledRanges.Value);
+                OnChapterListChanged(ViewModel.ChapterEditor.Chapters.Value);
+                OnDisabledRangesChanged(ViewModel.ChapterEditor.DisabledRanges.Value);
             }
         }
     }

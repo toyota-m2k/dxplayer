@@ -47,7 +47,7 @@ namespace dxplayer.player {
 
             ViewModel.PlayCommand.Subscribe(Play);
             ViewModel.PauseCommand.Subscribe(Pause);
-            ViewModel.ChapterEditing.Subscribe(OnChapterEditing);
+            ViewModel.ChapterEditor.IsEditing.Subscribe(OnChapterEditing);
 
             CursorManager.SetActivator(ViewModel.CursorManagerActivity);
         }
@@ -55,11 +55,9 @@ namespace dxplayer.player {
         private void OnCurrentItemChanged(IPlayItem item) {
             MediaPlayer.Stop();
             MediaPlayer.Source = null;
-            ViewModel.SaveChapterListIfNeeds();
+            //ViewModel.ChapterEditor.SaveChapterListIfNeeds();
             ViewModel.State.Value = PlayerState.UNAVAILABLE;
-            ViewModel.Trimming.Value = PlayRange.Empty;
-            ViewModel.Chapters.Value = null;
-            ViewModel.DisabledRanges.Value = null;
+            ViewModel.ChapterEditor.Reset();
 
             ReservePosition = 0;
             Uri uri = null;
@@ -90,10 +88,7 @@ namespace dxplayer.player {
             ViewModel.State.Value = PlayerState.READY;
             ViewModel.Duration.Value = (ulong)MediaPlayer.NaturalDuration.TimeSpan.TotalMilliseconds;
             var current = ViewModel.PlayList.Current.Value;
-            if (current != null) {
-                //current.DurationInSec = ViewModel.Duration.Value / 1000;
-                ViewModel.PrepareChapterListForCurrentItem();
-            }
+            ViewModel.ChapterEditor.OnMediaOpened(current);
             if (ViewModel.AutoPlay) {
                 Play();
                 double pos = 0;

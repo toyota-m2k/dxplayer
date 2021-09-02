@@ -56,6 +56,9 @@ namespace dxplayer.player {
             CHAPTER_SET_COMMIT,
             CHAPTER_SET_CANCEL,
 
+            CHAPTER_UNDO,
+            CHAPTER_REDO,
+
             TOGGLE_CHAPTER_EDIT_MODE,
 
             TOGGLE_FULLSCREEN,
@@ -101,7 +104,7 @@ namespace dxplayer.player {
                 , CMD(ID.RATING_DREADFUL_AND_NEXT, "RatingDreadfulAndNext", () => { viewModel.SetRating(Rating.DREADFUL); ; viewModel.PlayList.Next(); }, "Rating:Dreadful and naxt movie.")
 
                 , CMD(ID.TOGGLE_STRECH_MODE, "ToggleStrechMode", () => viewModel.FitMode.Value = !viewModel.FitMode.Value, "Change fitting mode")
-                , CMD(ID.TOGGLE_CHAPTER_EDIT_MODE, "ToggleChapterEditMode", () => viewModel.ChapterEditing.Value = !viewModel.ChapterEditing.Value, "Edit chapters")
+                , CMD(ID.TOGGLE_CHAPTER_EDIT_MODE, "ToggleChapterEditMode", () => viewModel.ChapterEditor.IsEditing.Value = !viewModel.ChapterEditor.IsEditing.Value, "Edit chapters")
 
                 , CMD(ID.TOGGLE_PIN_SLIDER, "TogglePinSlider", () => viewModel.PinControlPanel.Value = !viewModel.PinControlPanel.Value, "Pinning slider panel")
                 , CMD(ID.KICKOUT_MOUSE, "KickOutMouse", viewModel.KickOutMouseCommand, "Kick mouse cursor out of Player")
@@ -120,6 +123,9 @@ namespace dxplayer.player {
                 , CMD(ID.MOVIE_PREV, "MovieNext", viewModel.PlayList.Prev, "Previous movie")
                 , CMD(ID.CHAPTER_NEXT, "ChapterNext", viewModel.NextChapterCommand, "Next chapter")
                 , CMD(ID.CHAPTER_PREV, "ChapterPrev", viewModel.PrevChapterCommand, "Previous chapter")
+
+                , CMD(ID.CHAPTER_UNDO, "ChapterUndo", ()=>viewModel.ChapterEditor.Undo(), "Undo chapter editing")
+                , CMD(ID.CHAPTER_REDO, "ChapterRedo", () => viewModel.ChapterEditor.Do(), "Redo chapter editing")
                 );
 
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.F);
@@ -148,6 +154,9 @@ namespace dxplayer.player {
             AssignControlKeyCommand(ID.TRIM_RESET_END, Key.K);
 
             AssignSingleKeyCommand(ID.TOGGLE_CHAPTER_EDIT_MODE, Key.C);
+
+            AssignControlKeyCommand(ID.CHAPTER_UNDO, Key.Z);
+            AssignControlShiftKeyCommand(ID.CHAPTER_REDO, Key.Z);
 
             ServerCommandCenter.Instance.Attach(this);
         }

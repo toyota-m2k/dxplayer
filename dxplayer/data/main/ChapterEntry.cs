@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using dxplayer.data.main;
+using System.Collections.Generic;
 using System.Data.Linq.Mapping;
 using System.Data.SQLite;
 using System.Linq;
@@ -39,8 +40,8 @@ namespace dxplayer.data {
             return new ChapterEntry() { Owner = owner, Position = info.Position, Skip = info.Skip, Label = info.Label };
         }
 
-        public ChapterInfo ToChapterInfo() {
-            return new ChapterInfo(Position, Skip, Label);
+        public ChapterInfo ToChapterInfo(ChapterEditor editor) {
+            return new ChapterInfo(editor, Position, Skip, Label);
         }
     }
 
@@ -64,8 +65,8 @@ namespace dxplayer.data {
             return Table.Where((c) => c.Owner == owner);
         }
 
-        public ChapterList GetChapterList(long owner) {
-            return new ChapterList(owner, Table.Where((c) => c.Owner == owner).Select((c)=>c.ToChapterInfo()));
+        public ChapterList GetChapterList(ChapterEditor editor, long owner) {
+            return new ChapterList(owner, Table.Where((c) => c.Owner == owner).Select((c)=>c.ToChapterInfo(editor)));
         }
 
         private class PositionComparator : IEqualityComparer<ChapterInfo> {
@@ -89,8 +90,8 @@ namespace dxplayer.data {
         }
 
 
-        public void UpdateByChapterList(ChapterList updated) {
-            var current = GetChapterList(updated.Owner);
+        public void UpdateByChapterList(ChapterEditor editor, ChapterList updated) {
+            var current = GetChapterList(editor, updated.Owner);
 
             var appended = updated.Values.Except(current.Values, PComp).Select((c)=>ChapterEntry.Create(updated.Owner, c)).ToList();
             var deleted = current.Values.Except(updated.Values, PComp).Select((c) => ChapterEntry.Create(updated.Owner, c)).ToList();

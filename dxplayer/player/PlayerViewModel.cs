@@ -54,14 +54,14 @@ namespace dxplayer.player {
         #endregion
 
         #region Trimming/Chapters
-
-        public ReactiveProperty<PlayRange> Trimming { get; } = new ReactiveProperty<PlayRange>(PlayRange.Empty);
-        public ReactiveProperty<ChapterList> Chapters { get; } = new ReactiveProperty<ChapterList>(null, ReactivePropertyMode.RaiseLatestValueOnSubscribe);
-        public ReactiveProperty<List<PlayRange>> DisabledRanges { get; } = new ReactiveProperty<List<PlayRange>>(initialValue:null);
+        public ChapterEditor ChapterEditor { get; } = new ChapterEditor();
+        //public ReactiveProperty<PlayRange> Trimming { get; } = new ReactiveProperty<PlayRange>(PlayRange.Empty);
+        //public ReactiveProperty<ChapterList> Chapters { get; } = new ReactiveProperty<ChapterList>(null, ReactivePropertyMode.RaiseLatestValueOnSubscribe);
+        //public ReactiveProperty<List<PlayRange>> DisabledRanges { get; } = new ReactiveProperty<List<PlayRange>>(initialValue:null);
         public ReadOnlyReactiveProperty<bool> HasDisabledRange { get; }
         public ReadOnlyReactiveProperty<bool> HasTrimming { get; }
-        public ReactiveProperty<bool> ChapterEditing { get; } = new ReactiveProperty<bool>(false);
-        public ReactiveProperty<ObservableCollection<ChapterInfo>> EditingChapterList { get; } = new ReactiveProperty<ObservableCollection<ChapterInfo>>();
+        //public ReactiveProperty<bool> ChapterEditing { get; } = new ReactiveProperty<bool>(false);
+        //public ReactiveProperty<ObservableCollection<ChapterInfo>> EditingChapterList { get; } = new ReactiveProperty<ObservableCollection<ChapterInfo>>();
         public Subject<string> ReachRangeEnd { get; } = new Subject<string>();
 
         public ReactiveCommand<ulong> NotifyPosition { get; } = new ReactiveCommand<ulong>();
@@ -71,37 +71,37 @@ namespace dxplayer.player {
         /**
          * 現在再生中の動画のチャプター設定が変更されていればDBに保存する。
          */
-        public void SaveChapterListIfNeeds() {
-            var storage = App.Instance.DB;
-            if (null == storage) return;
-            var item = PlayList.Current.Value;
-            if (item == null) return;
-            var chapterList = Chapters.Value;
-            if (chapterList == null || !chapterList.IsModified) return;
-            storage.ChapterTable.UpdateByChapterList(chapterList);
-        }
+        //public void SaveChapterListIfNeeds() {
+        //    var storage = App.Instance.DB;
+        //    if (null == storage) return;
+        //    var item = PlayList.Current.Value;
+        //    if (item == null) return;
+        //    var chapterList = ChapterEditor.Chapters.Value;
+        //    if (chapterList == null || !chapterList.IsModified) return;
+        //    storage.ChapterTable.UpdateByChapterList(chapterList);
+        //}
 
         /**
          * 再生する動画のチャプターリスト、トリミング情報、無効化範囲リストを準備する。
          */
-        public void PrepareChapterListForCurrentItem() {
-            //Chapters.Value = null;
-            //DisabledRanges.Value = null;
-            //Trimming.Value = null;
-            var item = PlayList.Current.Value;
-            if (item == null) return;
-            Trimming.Value = new PlayRange(item.TrimStart, item.TrimEnd);
-            var chapterList = App.Instance.DB.ChapterTable.GetChapterList(item.ID);
-            if (chapterList != null) {
-                Chapters.Value = chapterList;
-                DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
-            } else {
-                DisabledRanges.Value = new List<PlayRange>();
-            }
-            if (ChapterEditing.Value) {
-                EditingChapterList.Value = Chapters.Value.Values;
-            }
-        }
+        //public void PrepareChapterListForCurrentItem() {
+        //    //Chapters.Value = null;
+        //    //DisabledRanges.Value = null;
+        //    //Trimming.Value = null;
+        //    var item = PlayList.Current.Value;
+        //    if (item == null) return;
+        //    Trimming.Value = new PlayRange(item.TrimStart, item.TrimEnd);
+        //    var chapterList = App.Instance.DB.ChapterTable.GetChapterList(item.ID);
+        //    if (chapterList != null) {
+        //        Chapters.Value = chapterList;
+        //        DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
+        //    } else {
+        //        DisabledRanges.Value = new List<PlayRange>();
+        //    }
+        //    if (ChapterEditing.Value) {
+        //        EditingChapterList.Value = Chapters.Value.Values;
+        //    }
+        //}
 
         private void SetTrimming(object obj) {
             switch (obj as String) {
@@ -141,102 +141,102 @@ namespace dxplayer.player {
 
         //--------------------------------------------
         public void SetTrimmingStartAtCurrentPos() {
-            SetTrimmingStart(PlayerPosition);
+            ChapterEditor.SetTrimmingStart(PlayerPosition);
         }
         public void SetTrimmingEndAtCurrentPos() {
-            SetTrimmingEnd(PlayerPosition);
+            ChapterEditor.SetTrimmingEnd(PlayerPosition);
         }
         //--------------------------------------------
-        public void SetTrimmingStart(ulong pos) {
-            SetTrimmingStart(PlayList.Current.Value, pos);
-        }
-        public void SetTrimmingStart(IPlayItem item, ulong pos) {
-            if (item == null) return;
-            var trimming = Trimming.Value;
-            if (trimming.TrySetStart(pos)) {
-                item.TrimStart = pos;
-                Trimming.Value = trimming;
-                DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming).ToList();
-            }
-        }
+        //public void SetTrimmingStart(ulong pos) {
+        //    SetTrimmingStart(PlayList.Current.Value, pos);
+        //}
+        //public void SetTrimmingStart(IPlayItem item, ulong pos) {
+        //    if (item == null) return;
+        //    var trimming = Trimming.Value;
+        //    if (trimming.TrySetStart(pos)) {
+        //        item.TrimStart = pos;
+        //        Trimming.Value = trimming;
+        //        DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming).ToList();
+        //    }
+        //}
 
-        public void SetTrimmingEnd(ulong pos) {
-            SetTrimmingEnd(PlayList.Current.Value, pos);
-        }
+        //public void SetTrimmingEnd(ulong pos) {
+        //    SetTrimmingEnd(PlayList.Current.Value, pos);
+        //}
 
-        public void SetTrimmingEnd(IPlayItem item, ulong pos) {
-            if (item == null) return;
-            var trimming = Trimming.Value;
-            if (trimming.TrySetEnd(pos)) {
-                item.TrimEnd = pos;
-                Trimming.Value = trimming;
-                DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming).ToList();
-            }
-        }
+        //public void SetTrimmingEnd(IPlayItem item, ulong pos) {
+        //    if (item == null) return;
+        //    var trimming = Trimming.Value;
+        //    if (trimming.TrySetEnd(pos)) {
+        //        item.TrimEnd = pos;
+        //        Trimming.Value = trimming;
+        //        DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming).ToList();
+        //    }
+        //}
 
         //--------------------------------------------
         public void ResetTrimmingStart() {
-            ResetTrimmingStart(PlayList.Current.Value);
+            ChapterEditor.ResetTrimmingStart();
         }
-        public void ResetTrimmingStart(IPlayItem item) {
-            SetTrimmingStart(item, 0);
-        }
+        //public void ResetTrimmingStart(IPlayItem item) {
+        //    SetTrimmingStart(item, 0);
+        //}
         public void ResetTrimmingEnd() {
-            ResetTrimmingEnd(PlayList.Current.Value);
+            ChapterEditor.ResetTrimmingEnd();
         }
-        public void ResetTrimmingEnd(IPlayItem item) {
-            SetTrimmingEnd(item, 0);
-        }
+        //public void ResetTrimmingEnd(IPlayItem item) {
+        //    SetTrimmingEnd(item, 0);
+        //}
         //--------------------------------------------
 
 
 
-        public void NotifyChapterUpdated() {
-            Chapters.Value.Apply((chapterList) => {
-                Chapters.Value = chapterList;
-                DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
-            });
-        }
+        //public void NotifyChapterUpdated() {
+        //    Chapters.Value.Apply((chapterList) => {
+        //        Chapters.Value = chapterList;
+        //        DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
+        //    });
+        //}
 
         private void AddChapter() {
-            AddChapter(PlayerPosition);
+            ChapterEditor.AddChapter(new ChapterInfo(ChapterEditor, PlayerPosition));
         }
 
-        private void AddChapter(ulong pos) {
-            if (PlayList.Current.Value == null) return;
-            var chapterList = Chapters.Value;
-            if (chapterList == null) return;
-            if (pos > Duration.Value) return;
-            if (chapterList.AddChapter(new ChapterInfo(pos))) {
-                Chapters.Value = chapterList;
-                DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
-            }
-        }
+        //private void AddChapter(ulong pos) {
+        //    if (PlayList.Current.Value == null) return;
+        //    var chapterList = Chapters.Value;
+        //    if (chapterList == null) return;
+        //    if (pos > Duration.Value) return;
+        //    if (chapterList.AddChapter(new ChapterInfo(pos))) {
+        //        Chapters.Value = chapterList;
+        //        DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
+        //    }
+        //}
 
-        private void AddDisabledChapterRange(PlayRange range) {
-            if (PlayList.Current.Value == null) return;
-            var chapterList = Chapters.Value;
-            if (chapterList == null) return;
+        //private void AddDisabledChapterRange(PlayRange range) {
+        //    if (PlayList.Current.Value == null) return;
+        //    var chapterList = Chapters.Value;
+        //    if (chapterList == null) return;
 
-            range.AdjustTrueEnd(Duration.Value);
-            var del = chapterList.Values.Where(c => range.Start <= c.Position && c.Position <= range.End).ToList();
-            foreach (var e in del) {    // chapterList.Valuesは ObservableCollection なので、RemoveAll的なやつ使えない。
-                chapterList.Values.Remove(e);
-            }
-            chapterList.AddChapter(new ChapterInfo(range.Start) { Skip = true });
-            if (range.End != Duration.Value) {
-                chapterList.AddChapter(new ChapterInfo(range.End));
-            }
-            Chapters.Value = chapterList;
-            DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
-        }
+        //    range.AdjustTrueEnd(Duration.Value);
+        //    var del = chapterList.Values.Where(c => range.Start <= c.Position && c.Position <= range.End).ToList();
+        //    foreach (var e in del) {    // chapterList.Valuesは ObservableCollection なので、RemoveAll的なやつ使えない。
+        //        chapterList.Values.Remove(e);
+        //    }
+        //    chapterList.AddChapter(new ChapterInfo(range.Start) { Skip = true });
+        //    if (range.End != Duration.Value) {
+        //        chapterList.AddChapter(new ChapterInfo(range.End));
+        //    }
+        //    Chapters.Value = chapterList;
+        //    DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
+        //}
 
         private void NextChapter() {
-            var chapterList = Chapters.Value;
+            var chapterList = ChapterEditor.Chapters.Value;
             chapterList.GetNeighbourChapterIndex(PlayerPosition, out var prev, out var next);
             if (next >= 0) {
                 var c = chapterList.Values[next].Position;
-                if (Trimming.Value.Contains(c)) {
+                if (ChapterEditor.Trimming.Value.Contains(c)) {
                     Position.Value = c;
                     return;
                 }
@@ -245,19 +245,19 @@ namespace dxplayer.player {
         }
 
         private void PrevChapter() {
-            var chapterList = Chapters.Value;
+            var chapterList = ChapterEditor.Chapters.Value;
             var basePosition = PlayerPosition;
             if (basePosition > 1000)
                 basePosition -= 1000;
             chapterList.GetNeighbourChapterIndex(basePosition, out var prev, out var next);
             if (prev >= 0) {
                 var c = chapterList.Values[prev].Position;
-                if (Trimming.Value.Contains(c)) {
+                if (ChapterEditor.Trimming.Value.Contains(c)) {
                     Position.Value = c;
                     return;
                 }
             }
-            Position.Value = Trimming.Value.Start;
+            Position.Value = ChapterEditor.Trimming.Value.Start;
         }
 
         #endregion
@@ -352,34 +352,28 @@ namespace dxplayer.player {
             AutoPlay = !checkMode;
             DurationText = Duration.Select((v) => FormatDuration(v)).ToReadOnlyReactiveProperty();
             PositionText = Position.Select((v) => FormatDuration(v)).ToReadOnlyReactiveProperty();
-            TrimStartText = Trimming.Select((v) => FormatDuration(v.Start)).ToReadOnlyReactiveProperty();
-            TrimEndText = Trimming.Select((v) => FormatDuration(v.End)).ToReadOnlyReactiveProperty();
-            HasDisabledRange = DisabledRanges.Select((c) => c != null && c.Count > 0).ToReadOnlyReactiveProperty();
-            HasTrimming = Trimming.Select(c => c.Start > 0 || c.End > 0).ToReadOnlyReactiveProperty();
+            TrimStartText = ChapterEditor.Trimming.Select((v) => FormatDuration(v.Start)).ToReadOnlyReactiveProperty();
+            TrimEndText = ChapterEditor.Trimming.Select((v) => FormatDuration(v.End)).ToReadOnlyReactiveProperty();
+            HasDisabledRange = ChapterEditor.DisabledRanges.Select((c) => c != null && c.Count > 0).ToReadOnlyReactiveProperty();
+            HasTrimming = ChapterEditor.Trimming.Select(c => c.Start > 0 || c.End > 0).ToReadOnlyReactiveProperty();
             IsPlaying = State.Select((v) => v == PlayerState.PLAYING).ToReadOnlyReactiveProperty();
             IsReady = State.Select((v) => v == PlayerState.READY || v == PlayerState.PLAYING).ToReadOnlyReactiveProperty();
 
             ShowSizePanel = ReqShowSizePanel.ToReadOnlyReactiveProperty();
-            ShowControlPanel = ReqShowControlPanel.CombineLatest(PinControlPanel, ChapterEditing, (req, pin, editing) => {
+            ShowControlPanel = ReqShowControlPanel.CombineLatest(PinControlPanel, ChapterEditor.IsEditing, (req, pin, editing) => {
                 return CheckMode || req || pin || editing;
             }).ToReadOnlyReactiveProperty();
-            MinimumPanel = PinControlPanel.CombineLatest(IsPlaying, ChapterEditing, ReqShowControlPanel, (pin, playing, editing, req) => {
+            MinimumPanel = PinControlPanel.CombineLatest(IsPlaying, ChapterEditor.IsEditing, ReqShowControlPanel, (pin, playing, editing, req) => {
                 return pin && playing && !CheckMode && !req && !editing;
             }).ToReadOnlyReactiveProperty();
             CursorManagerActivity = ShowControlPanel.CombineLatest(ShowSizePanel, (c, s) => !c && !s).ToReadOnlyReactiveProperty();
 
             GoForwardCommand.Subscribe(() => {
-                if (ChapterEditing.Value) {
-                    EditingChapterList.Value = null;
-                    SaveChapterListIfNeeds();
-                }
+                ChapterEditor.SaveChapterListIfNeeds();
                 PlayList.Next();
             });
             GoBackCommand.Subscribe(() => {
-                if (ChapterEditing.Value) {
-                    EditingChapterList.Value = null;
-                    SaveChapterListIfNeeds();
-                }
+                ChapterEditor.SaveChapterListIfNeeds();
                 PlayList.Prev();
             });
             TrashCommand.Subscribe(PlayList.DeleteCurrent);
@@ -393,18 +387,14 @@ namespace dxplayer.player {
             PrevChapterCommand.Subscribe(PrevChapter);
             NextChapterCommand.Subscribe(NextChapter);
 
-            ChapterEditing.Subscribe((c) => {
-                if (c) {
-                    EditingChapterList.Value = Chapters.Value.Values;
-                    PanelPosition.Value = player.PanelPosition.RIGHT;
-                } else {
-                    EditingChapterList.Value = null;
-                    SaveChapterListIfNeeds();
-                }
-            });
+            //ChapterEditor.IsEditing.Subscribe((c) => {
+            //    if (c) {
+            //        PanelPosition.Value = player.PanelPosition.RIGHT;
+            //    }
+            //});
 
-            NotifyRange.Subscribe(AddDisabledChapterRange);
-            NotifyPosition.Subscribe(AddChapter);
+            NotifyRange.Subscribe((range)=>ChapterEditor.AddDisabledChapterRange(Duration.Value, range));
+            NotifyPosition.Subscribe(pos=>ChapterEditor.AddChapter(new ChapterInfo(ChapterEditor, pos)));
 
 
             string prevId = null;
@@ -419,7 +409,7 @@ namespace dxplayer.player {
                 }
             });
 
-            PanelHorzAlign = PanelPosition.CombineLatest(ChapterEditing, (pos, ed) => {
+            PanelHorzAlign = PanelPosition.CombineLatest(ChapterEditor.IsEditing, (pos, ed) => {
                 if (!ed) {
                     return HorizontalAlignment.Right;
                 } else {
@@ -430,7 +420,7 @@ namespace dxplayer.player {
                     }
                 }
             }).ToReadOnlyReactiveProperty();
-            PanelVertAlign = PanelPosition.CombineLatest(ChapterEditing, (pos, ed) => {
+            PanelVertAlign = PanelPosition.CombineLatest(ChapterEditor.IsEditing, (pos, ed) => {
                 if (!ed) {
                     return VerticalAlignment.Bottom;
                 }
@@ -460,11 +450,11 @@ namespace dxplayer.player {
                 var item = PlayList.Current.Value;
                 if (item == null) return;
                 if (item.TrimStart > 0) {
-                    AddDisabledChapterRange(new PlayRange(0, item.TrimStart));
+                    ChapterEditor.AddDisabledChapterRange(Duration.Value, new PlayRange(0, item.TrimStart));
                     ResetTrimmingStart();
                 }
                 if (item.TrimEnd > 0) {
-                    AddDisabledChapterRange(new PlayRange(item.TrimEnd, 0));
+                    ChapterEditor.AddDisabledChapterRange(Duration.Value, new PlayRange(item.TrimEnd, 0));
                     ResetTrimmingEnd();
                 }
             });

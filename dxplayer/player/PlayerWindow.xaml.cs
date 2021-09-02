@@ -67,7 +67,7 @@ namespace dxplayer.player
         protected override void OnClosing(CancelEventArgs e) {
             base.OnClosing(e);
             Settings.Instance.PlayerPlacement.GetPlacementFrom(this);
-            ViewModel.SaveChapterListIfNeeds();
+            ViewModel.ChapterEditor.SaveChapterListIfNeeds();
             ViewModel.PlayList.ResetList();     // 最後に再生中のアイテムについて、PlayCountを更新するため、Currentを変化させて、PlayCountObserverに、ItemChangedイベントを受け取らせたい。
             LoadCompletion.TrySetResult(false);
             PlayWindowClosing?.Invoke(this);

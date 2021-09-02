@@ -108,7 +108,7 @@
                         Content="{StaticResource PathCheck}" Style="{StaticResource IconButtonStyle}"/>
                 <ToggleButton 
                     Focusable="False"
-                    IsChecked="{Binding ChapterEditing.Value, Mode=TwoWay}"
+                    IsChecked="{Binding ChapterEditor.IsEditing.Value, Mode=TwoWay}"
                     Content="{StaticResource PathList}" Style="{StaticResource IconToggleButtonStyle}"
                     VerticalAlignment="Bottom"
                     />
@@ -167,11 +167,11 @@
             >
             <TextBlock 
                 Text="Chapter" VerticalAlignment="Center" Foreground="White"
-                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
+                Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
                 />
             <Button 
                 Focusable="False"
-                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
+                Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
                 Content="{StaticResource PathPlus}"
                 Style="{StaticResource IconButtonStyle}" 
                 Command="{Binding AddChapterCommand}" 
@@ -180,7 +180,7 @@
                 />
             <Button 
                 Focusable="False"
-                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
+                Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
                 Command="{Binding SyncChapterCommand}"
                 Content="{StaticResource PathSync}" Style="{StaticResource IconButtonStyle}"
                 Padding="4"
@@ -190,7 +190,7 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
-            Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
+            Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
             >
             <common:CheckButton
                 Focusable="False"
@@ -228,7 +228,7 @@
         </StackPanel>
         <!-- Edit Chapters-->
         <Grid Grid.Row="3"
-            Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
+            Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
             >
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -257,7 +257,7 @@
                 MinHeight="80"
                 SelectionChanged="OnChapterSelected"
                 SelectionMode="Single"
-                StretchColumnIndex="4" StretchColumnMinWidth="75" ItemsSource="{Binding EditingChapterList.Value}">
+                StretchColumnIndex="4" StretchColumnMinWidth="75" ItemsSource="{Binding ChapterEditor.EditingChapterList.Value}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Skip" Width="40">
@@ -321,7 +321,7 @@
             <StackPanel 
                 Grid.Row="1"
                 Margin="0,8,0,0"
-                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
+                Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource BoolVisibilityConverter}}"
                 Orientation="Horizontal">
                 <Button 
                     Padding="8,2"
@@ -372,7 +372,7 @@
 
             <!-- Trimming -->
             <Grid Grid.Row="0" 
-                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+                Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
                 Margin="0,10,0,0"
                 >
                 <Grid.RowDefinitions>
@@ -427,7 +427,7 @@
             </Grid>
             <!-- Volume/Speed -->
             <Grid Grid.Row="1"
-                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+                Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
                  >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -450,7 +450,7 @@
             <!-- Rating -->
             <StackPanel Grid.Row="2" Orientation="Horizontal"
                 HorizontalAlignment="Left"         
-                Visibility="{Binding ChapterEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
+                Visibility="{Binding ChapterEditor.IsEditing.Value, Converter={StaticResource NegBoolVisibilityConverter}}"
                 >
                 <RadioButton 
                 Focusable="False"

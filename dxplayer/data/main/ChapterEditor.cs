@@ -1,5 +1,6 @@
 ﻿using dxplayer.player;
 using io.github.toyota32k.toolkit.utils;
+using io.github.toyota32k.toolkit.view;
 using Reactive.Bindings;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace dxplayer.data.main {
 
     public abstract class OwnerdUnitBase {
         private WeakReference<ChapterEditor> mOwner;
-        protected ChapterEditor Owner => mOwner?.GetValue();
+        protected virtual ChapterEditor Owner => mOwner?.GetValue();
         public OwnerdUnitBase(ChapterEditor owner) {
             mOwner = new WeakReference<ChapterEditor>(owner);
         }
@@ -25,27 +26,27 @@ namespace dxplayer.data.main {
     class AddRemoveRec : OwnerdUnitBase, IChapterEditUnit {
         bool Add;
         ChapterInfo Target;
+        ChapterList ChapterList => Owner?.ChapterList;
         public AddRemoveRec(ChapterEditor owner, ChapterInfo chapter, bool add):base(owner) {
             Add = add;
             Target = chapter;
         }
 
-        public bool Do() {
-            if (Add) {
-                return Owner.ChapterList.AddChapter(Target);
+        private bool Apply(bool add) {
+            if (add) {
+                return ChapterList?.AddChapter(Target) ?? false;
             }
             else {
-                return Owner.ChapterList.RemoveChapter(Target);
+                return ChapterList?.RemoveChapter(Target) ?? false;
             }
         }
 
+        public bool Do() {
+            return Apply(Add);
+        }
+
         public bool Undo() {
-            if (!Add) {
-                return Owner.ChapterList.AddChapter(Target);
-            }
-            else {
-                return Owner.ChapterList.RemoveChapter(Target);
-            }
+            return Apply(!Add);
         }
     }
 
@@ -53,54 +54,79 @@ namespace dxplayer.data.main {
         private bool Set;
         private bool End;
         private ulong Position;
+        
         public TrimmingRec(ChapterEditor owner, bool set, ulong pos, bool end):base(owner) {
             Set = set;
             Position = pos;
             End = end;
         }
 
-        public bool Do() {
-            if (Set) {
-                if(!End) {
-                    Owner.
+        private bool Apply(bool set) {
+            var owner = Owner;
+            if (owner == null) return false;
+
+            if (set) {
+                if (!End) {
+                    var item = CurrentItem;
+                    if (item == null) return;
+                    var trimming = Trimming.Value;
+                    if (trimming.TrySetStart(pos)) {
+                        item.TrimStart = pos;
+                        Trimming.Value = trimming;
+                        DisabledRanges.Value = Chapters.Value.GetDisabledRanges(trimming).ToList();
+                    }
+                } else {
+                    owner.SetTrimmingEnd(Position);
+                }
+            } else {
+                if (!End) {
+                    owner.ResetTrimmingStart();
+                }
+                else {
+                    owner.ResetTrimmingEnd();
                 }
             }
-            Owner.Trimming.Value = 
+            return true;
+        }
+
+        public bool Do() {
+            return Apply(Set);
         }
 
         public bool Undo() {
-            throw new NotImplementedException();
+            return Apply(!Set);
         }
     }
 
-    abstract class PropRec<T> : IChapterEditUnit {
+    abstract class PropRec<T> : OwnerdUnitBase, IChapterEditUnit {
         T Prev;
         T Next;
 
         ulong TargetPosition;
-        public PropRec(ulong targetPosition, T prev, T next) {
+        public PropRec(ChapterEditor owner, ulong targetPosition, T prev, T next):base(owner) {
             TargetPosition = targetPosition;
             Prev = prev;
             Next = next;
         }
         protected abstract void SetProp(ChapterInfo chapter, T prop);
 
-        protected ChapterInfo ChapterAt(ChapterList list, ulong position) {
-            if (list.GetNeighbourChapterIndex(position, out int prev, out int next)) {
+        protected ChapterInfo ChapterAt(ulong position) {
+            var list = Owner?.ChapterList;
+            if (list!=null && list.GetNeighbourChapterIndex(position, out int prev, out int next)) {
                 return list.Values[prev];
             }
             return null;
         }
 
-        public bool Do(ChapterList list) {
-            var chapter = ChapterAt(list, TargetPosition);
+        public bool Do() {
+            var chapter = ChapterAt(TargetPosition);
             if (null == chapter) return false;
             SetProp(chapter, Next);
             return true;
         }
 
-        public bool Undo(ChapterList list) {
-            var chapter = ChapterAt(list, TargetPosition);
+        public bool Undo() {
+            var chapter = ChapterAt(TargetPosition);
             if (null == chapter) return false;
             SetProp(chapter, Prev);
             return true;
@@ -108,7 +134,7 @@ namespace dxplayer.data.main {
     }
 
     class LabelRec : PropRec<string> {
-        public LabelRec(ulong targetPosition, string prev, string next) : base(targetPosition, prev, next) {
+        public LabelRec(ChapterEditor owner, ulong targetPosition, string prev, string next) : base(owner, targetPosition, prev, next) {
         }
 
         protected override void SetProp(ChapterInfo chapter, string prop) {
@@ -117,7 +143,7 @@ namespace dxplayer.data.main {
     }
 
     class SkipRec : PropRec<bool> {
-        public SkipRec(ulong targetPosition, bool prev, bool next) : base(targetPosition, prev, next) {
+        public SkipRec(ChapterEditor owner, ulong targetPosition, bool prev, bool next) : base(owner, targetPosition, prev, next) {
         }
 
         protected override void SetProp(ChapterInfo chapter, bool prop) {
@@ -126,17 +152,19 @@ namespace dxplayer.data.main {
     }
 
     class CompoundRec : AbsChapterEditHistory, IChapterEditUnit {
-        public bool Do(ChapterList list) {
+        public CompoundRec(ChapterEditor owner):base(owner) { }
+
+        public bool Do() {
             foreach (var rec in Records) {
-                if (!rec.Do(list)) {
+                if (!rec.Do()) {
                     return false;
                 }
             }
             return true;
         }
-        public bool Undo(ChapterList list) {
+        public bool Undo() {
             foreach (var rec in ((IEnumerable<IChapterEditUnit>)Records).Reverse()) {
-                if (!rec.Undo(list)) {
+                if (!rec.Undo()) {
                     return false;
                 }
             }
@@ -145,41 +173,78 @@ namespace dxplayer.data.main {
     }
 
     public interface IChapterEditHistory {
-        bool AddChapter(ChapterList list, ChapterInfo chapter);
-        bool RemoveChapter(ChapterList list, ChapterInfo chapter);
+        bool AddChapter(ChapterInfo chapter);
+        bool RemoveChapter(ChapterInfo chapter);
         void OnLabelChanged(ChapterInfo chapter, string prev, string current);
         void OnSkipChanged(ChapterInfo chapter, bool current);
+        void SetTrimmingStart(ulong pos);
+        void SetTrimmingEnd(ulong pos);
+        void ResetTrimmingStart();
+        void ResetTrimmingEnd();
     }
-    public abstract class AbsChapterEditHistory : IChapterEditHistory {
+    public abstract class AbsChapterEditHistory : ViewModelBase<ChapterEditor>, IChapterEditHistory {
         protected List<IChapterEditUnit> Records = new List<IChapterEditUnit>(100);
+        public AbsChapterEditHistory(ChapterEditor owner):base(owner) {
+
+        }
+
+        public int CountOfRecords => Records.Count;
+
+        private bool Apply(ChapterInfo chapter, bool add) {
+            var owner = Owner;
+            if (owner == null) return false;
+            var rec = new AddRemoveRec(owner, chapter, add);
+            if (rec.Do()) {
+                Records.Add(rec);
+                return true;
+            }
+            return false;
+        }
 
         public virtual bool AddChapter(ChapterInfo chapter) {
-            var rec = new AddRemoveRec(chapter, add: true);
-            if (rec.Do(list)) {
-                Records.Add(rec);
-                return true;
-            }
-            return false;
+            return Apply(chapter, true);
         }
 
-        public virtual bool RemoveChapter(ChapterList list, ChapterInfo chapter) {
-            var rec = new AddRemoveRec(chapter, add: false);
-            if (rec.Do(list)) {
-                Records.Add(rec);
-                return true;
-            }
-            return false;
+        public virtual bool RemoveChapter(ChapterInfo chapter) {
+            return Apply(chapter, false);
         }
+
+
 
         public virtual void OnLabelChanged(ChapterInfo chapter, string prev, string current) {
-            var rec = new LabelRec(chapter.Position, prev, current);
+            var owner = Owner;
+            if (null == owner) return;
+            var rec = new LabelRec(owner, chapter.Position, prev, current);
             Records.Add(rec);
         }
 
         public virtual void OnSkipChanged(ChapterInfo chapter, bool current) {
-            var rec = new SkipRec(chapter.Position, current, !current);
+            var owner = Owner;
+            if (null == owner) return;
+            var rec = new SkipRec(owner, chapter.Position, current, !current);
             Records.Add(rec);
         }
+
+        public virtual void SetTrimmingStart(ulong pos) {
+            var owner = Owner;
+            if (null == owner) return;
+            var rec = new TrimmingRec(owner, set: true, pos, end: false);
+            if (rec.Do()) {
+                Records.Add(rec);
+            }
+        }
+        void SetTrimmingEnd(ulong pos) {
+            var owner = Owner;
+            if (null == owner) return;
+            var rec = new TrimmingRec(owner, set: true, pos, end: true);
+            if (rec.Do()) {
+                Records.Add(rec);
+            }
+        }
+        void ResetTrimmingStart() {
+
+        }
+        void ResetTrimmingEnd();
 
     }
 
@@ -187,40 +252,120 @@ namespace dxplayer.data.main {
         public ReactiveProperty<PlayRange> Trimming { get; } = new ReactiveProperty<PlayRange>(PlayRange.Empty);
         public ReactiveProperty<ChapterList> Chapters { get; } = new ReactiveProperty<ChapterList>(null, ReactivePropertyMode.RaiseLatestValueOnSubscribe);
         public ReactiveProperty<List<PlayRange>> DisabledRanges { get; } = new ReactiveProperty<List<PlayRange>>(initialValue: null);
-        public ReactiveProperty<bool> ChapterEditing { get; } = new ReactiveProperty<bool>(false);
+        public ReactiveProperty<bool> IsEditing { get; } = new ReactiveProperty<bool>(false);
         public ReactiveProperty<ObservableCollection<ChapterInfo>> EditingChapterList { get; } = new ReactiveProperty<ObservableCollection<ChapterInfo>>();
-        public ChapterList ChapterList => Chapters.Value;
-        private int CurrentPos = -1;
         
-        public ChapterEditor() {
+        public ChapterList ChapterList => Chapters.Value;
+        public IPlayItem CurrentItem { get; private set; }
+
+        private int UndoPosition = -1;
+        //protected override ChapterEditor Owner => this;
+
+        // OnMediaOpened()
+        public void OnMediaOpened(IPlayItem item) {
+            CurrentItem = item;
+            if (item == null) {
+                Reset();
+                return;
+            }
+            Trimming.Value = new PlayRange(item.TrimStart, item.TrimEnd);
+            var chapterList = App.Instance.DB.ChapterTable.GetChapterList(this, item.ID);
+            if (chapterList != null) {
+                Chapters.Value = chapterList;
+                DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
+            }
+            else {
+                DisabledRanges.Value = new List<PlayRange>();
+            }
+            if (IsEditing.Value) {
+                EditingChapterList.Value = Chapters.Value.Values;
+            }
+
+        }
+
+        public void NotifyChapterUpdated() {
+            var chapterList = Chapters.Value;
+            Chapters.Value = chapterList;       //セットしなおすことで更新する
+            DisabledRanges.Value = chapterList.GetDisabledRanges(Trimming.Value).ToList();
+        }
+
+        public void AddDisabledChapterRange(ulong duration, PlayRange range) {
+            if (CurrentItem == null) return;
+            var chapterList = Chapters.Value;
+            if (chapterList == null) return;
+
+            range.AdjustTrueEnd(duration);
+            var del = chapterList.Values.Where(c => range.Start <= c.Position && c.Position <= range.End).ToList();
+            var start = new ChapterInfo(this, range.Start);
+            EditInGroup((gr) => {
+                foreach (var e in del) {    // chapterList.Valuesは ObservableCollection なので、RemoveAll的なやつ使えない。
+                    gr.RemoveChapter(e);
+                }
+                gr.AddChapter(start);
+                if (range.End != duration) {
+                    gr.AddChapter(new ChapterInfo(this, range.End));
+                }
+            });
+            start.Skip = true;
+            NotifyChapterUpdated();
+        }
+
+        public void SaveChapterListIfNeeds() {
+            var storage = App.Instance.DB;
+            if (null == storage) return;
+            var item = CurrentItem;
+            if (item == null) return;
+            var chapterList = Chapters.Value;
+            if (chapterList == null || !chapterList.IsModified) return;
+            storage.ChapterTable.UpdateByChapterList(this, chapterList);
+        }
+
+        public ChapterEditor():base(null) {
+            Owner = this;
+            IsEditing.Subscribe((c) => {
+                if (c) {
+                    EditingChapterList.Value = Chapters.Value.Values;
+                }
+                else {
+                    EditingChapterList.Value = null;
+                    SaveChapterListIfNeeds();
+                }
+            });
         }
 
         public void Reset() {
-            CurrentPos = -1;
+            SaveChapterListIfNeeds();
+            UndoPosition = -1;
             Records.Clear();
+            EditingChapterList.Value = null;
+            Chapters.Value = null;
+            DisabledRanges.Value = null;
+            Trimming.Value = PlayRange.Empty;
         }
 
         public void Prepare() {
-            if(CurrentPos>=0) {
-                Records.RemoveRange(CurrentPos, Records.Count - CurrentPos);
-                CurrentPos = -1;
+            if(UndoPosition>=0) {
+                Records.RemoveRange(UndoPosition, Records.Count - UndoPosition);
+                UndoPosition = -1;
             }
         }
 
         public void EditInGroup(Action<IChapterEditHistory> fn) {
-            var cr = new CompoundRec();
+            var cr = new CompoundRec(this);
             fn(cr);
-            Records.Add(cr);
+            if (cr.CountOfRecords > 0) {
+                Records.Add(cr);
+            }
         }
 
-        public override bool AddChapter(ChapterList list, ChapterInfo chapter) {
+        public override bool AddChapter(ChapterInfo chapter) {
             Prepare();
-            return base.AddChapter(list, chapter);
+            return base.AddChapter(chapter);
         }
 
-        public override bool RemoveChapter(ChapterList list, ChapterInfo chapter) {
+        public override bool RemoveChapter(ChapterInfo chapter) {
             Prepare();
-            return base.RemoveChapter(list, chapter);
+            return base.RemoveChapter(chapter);
         }
 
         public override void OnLabelChanged(ChapterInfo chapter, string prev, string current) {
@@ -233,39 +378,9 @@ namespace dxplayer.data.main {
             base.OnSkipChanged(chapter, current);
         }
 
-        public bool Do(ChapterList list) {
-            if(0<=CurrentPos && CurrentPos<Records.Count) {
-                if(!Records[CurrentPos].Do(list)) {
-                    Reset();
-                    return false;
-                }
-                CurrentPos++;
-                if(CurrentPos==Records.Count) {
-                    CurrentPos = -1;
-                }
-                return true;
-            }
-            return false;
-        }
-
-        public bool Undo(ChapterList list) {
-            if (CurrentPos < 0) {
-                if (Records.Count <= 0) return false;
-                CurrentPos = Records.Count;
-            }
-            if(CurrentPos==0) {
-                return false;
-            }
-            CurrentPos--;
-            if(!Records[CurrentPos].Undo(list)) {
-                Reset();
-                return false;
-            }
-            return true;
-        }
-
         //--------------------------------------------
-        public void SetTrimmingStart(IPlayItem item, ulong pos) {
+        public void SetTrimmingStart(ulong pos) {
+            var item = CurrentItem;
             if (item == null) return;
             var trimming = Trimming.Value;
             if (trimming.TrySetStart(pos)) {
@@ -276,10 +391,7 @@ namespace dxplayer.data.main {
         }
 
         public void SetTrimmingEnd(ulong pos) {
-            SetTrimmingEnd(PlayList.Current.Value, pos);
-        }
-
-        public void SetTrimmingEnd(IPlayItem item, ulong pos) {
+            var item = CurrentItem;
             if (item == null) return;
             var trimming = Trimming.Value;
             if (trimming.TrySetEnd(pos)) {
@@ -291,18 +403,50 @@ namespace dxplayer.data.main {
 
         //--------------------------------------------
         public void ResetTrimmingStart() {
-            ResetTrimmingStart(PlayList.Current.Value);
+            SetTrimmingStart(CurrentItem);
         }
         public void ResetTrimmingStart(IPlayItem item) {
             SetTrimmingStart(item, 0);
         }
         public void ResetTrimmingEnd() {
-            ResetTrimmingEnd(PlayList.Current.Value);
+            ResetTrimmingEnd(CurrentItem);
         }
         public void ResetTrimmingEnd(IPlayItem item) {
             SetTrimmingEnd(item, 0);
         }
         //--------------------------------------------
+
+
+        public bool Do() {
+            if(0<=UndoPosition && UndoPosition<Records.Count) {
+                if(!Records[UndoPosition].Do()) {
+                    Reset();
+                    return false;
+                }
+                UndoPosition++;
+                if(UndoPosition==Records.Count) {
+                    UndoPosition = -1;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public bool Undo() {
+            if (UndoPosition < 0) {
+                if (Records.Count <= 0) return false;
+                UndoPosition = Records.Count;
+            }
+            if(UndoPosition==0) {
+                return false;
+            }
+            UndoPosition--;
+            if(!Records[UndoPosition].Undo()) {
+                Reset();
+                return false;
+            }
+            return true;
+        }
 
     }
 }

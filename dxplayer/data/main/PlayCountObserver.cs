@@ -20,7 +20,7 @@ namespace dxplayer.data.main {
         public PlayCountObserver(PlayerViewModel viewModel) { 
             Add(viewModel.PlayList.Current.Subscribe(OnItemChagned));
             Add(viewModel.IsPlaying.Subscribe(OnPlayingStateChanged));
-            Add(viewModel.DisabledRanges.Subscribe(OnDisabledRangeChanged));
+            Add(viewModel.ChapterEditor.DisabledRanges.Subscribe(OnDisabledRangeChanged));
         }
 
         private void OnPlayingStateChanged(bool playing) {

@@ -26,7 +26,7 @@ namespace dxplayer.player {
                 mSliderSeekingFromPlayer = true;
                 this.Value = pos;
                 mSliderSeekingFromPlayer = false;
-                CheckRangeAndSeek(pos, vm.DisabledRanges.Value);
+                CheckRangeAndSeek(pos, vm.ChapterEditor.DisabledRanges.Value);
             };
             Loaded += OnLoaded;
         }
