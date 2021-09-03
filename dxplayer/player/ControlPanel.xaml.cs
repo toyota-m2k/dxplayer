@@ -186,5 +186,13 @@ namespace dxplayer.player
                 }
             }
         }
-   }
+
+        private void OnLabelGotFocus(object sender, RoutedEventArgs e) {
+            ViewModel?.CommandManager.Enable(Window.GetWindow(this), false);
+        }
+
+        private void OnLabelLostFocus(object sender, RoutedEventArgs e) {
+            ViewModel?.CommandManager.Enable(Window.GetWindow(this), true);
+        }
+    }
 }

@@ -288,6 +288,8 @@
                                         FocusVisualStyle="{x:Null}"
                                         Tag="{Binding}" 
                                         Text="{Binding Label, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        GotFocus="OnLabelGotFocus"
+                                        LostFocus="OnLabelLostFocus"
                                         BorderThickness="0" 
                                         MinWidth="200"
                                         PreviewKeyDown="OnLabelEditKeyDown"

@@ -197,27 +197,27 @@ namespace dxplayer.data {
             return Values.Where(c => c.Position == pos).FirstOrDefault();
         }
 
-        private IEnumerable<PlayRange> GetDisabledChapterRanges() {
-            bool skip = false;
-            ulong skipStart = 0;
+        //private IEnumerable<PlayRange> GetDisabledChapterRanges() {
+        //    bool skip = false;
+        //    ulong skipStart = 0;
 
-            foreach (var c in Values) {
-                if (c.Skip) {
-                    if (!skip) {
-                        skip = true;
-                        skipStart = c.Position;
-                    }
-                } else {
-                    if (skip) {
-                        skip = false;
-                        yield return new PlayRange(skipStart, c.Position);
-                    }
-                }
-            }
-            if(skip) {
-                yield return new PlayRange(skipStart, 0);
-            }
-        }
+        //    foreach (var c in Values) {
+        //        if (c.Skip) {
+        //            if (!skip) {
+        //                skip = true;
+        //                skipStart = c.Position;
+        //            }
+        //        } else {
+        //            if (skip) {
+        //                skip = false;
+        //                yield return new PlayRange(skipStart, c.Position);
+        //            }
+        //        }
+        //    }
+        //    if(skip) {
+        //        yield return new PlayRange(skipStart, 0);
+        //    }
+        //}
 
         public IEnumerable<(ulong,bool)> GetChapterPositionAwareOfTrimming(PlayRange trimming) {
             var trimStart = trimming.Start;
