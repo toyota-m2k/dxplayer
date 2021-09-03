@@ -52,6 +52,7 @@ namespace dxplayer.player {
             TRIM_RESET_START,
             TRIM_RESET_END,
 
+            CHAPTER_ADD,
             CHAPTER_SET_BEGIN,
             CHAPTER_SET_COMMIT,
             CHAPTER_SET_CANCEL,
@@ -114,23 +115,24 @@ namespace dxplayer.player {
                 , CMD(ID.TRIM_RESET_START, "ResetTrimStart", viewModel.ResetTrimmingStart, "Reset head trimming.")
                 , CMD(ID.TRIM_RESET_END, "ResetTrimEnd", viewModel.ResetTrimmingEnd, "Reset tail trimming.")
 
+                , CMD(ID.CHAPTER_ADD, "ChapterAdd", viewModel.AddChapter, "Add chapter")
                 , CMD(ID.CHAPTER_SET_BEGIN, "ChapterSetBegin", viewModel.BeginChapterSetting, "Begin disabled chapter from current position")
                 , CMD(ID.CHAPTER_SET_COMMIT, "ChapterSetCommit", viewModel.CommitChapterSetting, "Commit disabled chapter to current position")
                 , CMD(ID.CHAPTER_SET_CANCEL, "ChapterSetCommit", viewModel.CancelChapterSetting, "Cancel setting chapter")
-                , CMD(ID.TOGGLE_FULLSCREEN, "ToggleFullscreen", ()=>viewModel.Fullscreen.Value = !viewModel.Fullscreen.Value, "Fullscreen Mode")
+                , CMD(ID.TOGGLE_FULLSCREEN, "ToggleFullscreen", () => viewModel.Fullscreen.Value = !viewModel.Fullscreen.Value, "Fullscreen Mode")
 
                 , CMD(ID.MOVIE_NEXT, "MovieNext", viewModel.PlayList.Next, "Next movie")
                 , CMD(ID.MOVIE_PREV, "MovieNext", viewModel.PlayList.Prev, "Previous movie")
                 , CMD(ID.CHAPTER_NEXT, "ChapterNext", viewModel.NextChapterCommand, "Next chapter")
                 , CMD(ID.CHAPTER_PREV, "ChapterPrev", viewModel.PrevChapterCommand, "Previous chapter")
 
-                , CMD(ID.CHAPTER_UNDO, "ChapterUndo", ()=>viewModel.ChapterEditor.Undo(), "Undo chapter editing")
+                , CMD(ID.CHAPTER_UNDO, "ChapterUndo", () => viewModel.ChapterEditor.Undo(), "Undo chapter editing")
                 , CMD(ID.CHAPTER_REDO, "ChapterRedo", () => viewModel.ChapterEditor.Do(), "Redo chapter editing")
-                );
+                ); ;
 
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.F);
             AssignShiftKeyCommand(ID.CONTINUOUS_HIGH_SPEED, Key.F);
-            AssignControlShiftKeyCommand(ID.CONTINUOUS_SUPER_HIGH_SPEED, Key.F);
+            AssignControlKeyCommand(ID.CONTINUOUS_SUPER_HIGH_SPEED, Key.F);
 
             AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
 
@@ -138,7 +140,7 @@ namespace dxplayer.player {
 
             AssignSingleKeyCommand(ID.CHAPTER_SET_BEGIN, Key.U);
             AssignSingleKeyCommand(ID.CHAPTER_SET_COMMIT, Key.I);
-            AssignSingleKeyCommand(ID.CHAPTER_SET_CANCEL, Key.M);
+            AssignSingleKeyCommand(ID.CHAPTER_SET_CANCEL, Key.Y);
 
             AssignSingleKeyCommand(ID.TOGGLE_PLAY, Key.S);
 

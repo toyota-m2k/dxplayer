@@ -198,7 +198,7 @@ namespace dxplayer.player {
         //    });
         //}
 
-        private void AddChapter() {
+        public void AddChapter() {
             ChapterEditor.AddChapter(new ChapterInfo(ChapterEditor, PlayerPosition));
         }
 
@@ -446,18 +446,7 @@ namespace dxplayer.player {
                 PanelPosition.Value = misc.Utils.ParseToEnum(pos, player.PanelPosition.RIGHT);
             });
 
-            TrimmingToChapterCommand.Subscribe(() => {
-                var item = PlayList.Current.Value;
-                if (item == null) return;
-                if (item.TrimStart > 0) {
-                    ChapterEditor.AddDisabledChapterRange(Duration.Value, new PlayRange(0, item.TrimStart));
-                    ResetTrimmingStart();
-                }
-                if (item.TrimEnd > 0) {
-                    ChapterEditor.AddDisabledChapterRange(Duration.Value, new PlayRange(item.TrimEnd, 0));
-                    ResetTrimmingEnd();
-                }
-            });
+            TrimmingToChapterCommand.Subscribe(() => ChapterEditor.TrimmingToChapter(Duration.Value));
             if (CheckMode) {
                 CheckedCommand.Subscribe(() => {
                     PlayList.Current.Value.Checked = true;

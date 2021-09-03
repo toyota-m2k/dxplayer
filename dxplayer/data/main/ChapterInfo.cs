@@ -22,23 +22,38 @@ namespace dxplayer.data {
         public string Label {
             get => mLabel;
             set {
-                var old = mLabel;
-                if(setProp(callerName(), ref mLabel, value)) {
+                if (setProp(callerName(), ref mLabel, value)) {
                     IsModified = true;
-                    Editor?.OnLabelChanged(this, old, value);
                 }
             }
         }
+        //public bool SetLabel(string label, bool notifyToEditor) {
+        //    var old = mLabel;
+        //    if (setProp(callerName(), ref mLabel, label)) {
+        //        IsModified = true;
+        //        if (notifyToEditor) {
+        //            Editor?.OnLabelChanged(this, prev: old, current: label);
+        //        }
+        //        return true;
+        //    }
+        //    return false;
+        //}
 
         public bool Skip { 
             get => mSkip;
-            set {
-                if (setProp(callerName(), ref mSkip, value)) { 
-                    IsModified = true;
-                    Editor?.OnSkipChanged(this, value);
-                }
-            }
+            set => SetSkip(value, true);
         }
+        public bool SetSkip(bool skip, bool notifyToEditor) {
+            if (setProp(callerName(), ref mSkip, skip)) {
+                IsModified = true;
+                if (notifyToEditor) {
+                    Editor?.OnSkipChanged(this, skip);
+                }
+                return true;
+            }
+            return false;
+        }
+
         public ChapterInfo(ChapterEditor editor, ulong pos, bool skip = false, string label=null) {
             mEditor = new WeakReference<ChapterEditor>(editor);
             Position = pos;
@@ -140,14 +155,14 @@ namespace dxplayer.data {
             return true;
         }
 
-        public bool ClearAllChapters() {
-            if (Values.Count > 0) {
-                Values.Clear();
-                IsModified = true;
-                return true;
-            }
-            return false;
-        }
+        //public bool ClearAllChapters() {
+        //    if (Values.Count > 0) {
+        //        Values.Clear();
+        //        IsModified = true;
+        //        return true;
+        //    }
+        //    return false;
+        //}
         /**
             * 指定位置(current)近傍のChapterを取得
             * 
@@ -176,6 +191,10 @@ namespace dxplayer.data {
             prev = count - 1;
             next = -1;
             return false;
+        }
+
+        public ChapterInfo GetChapterAt(ulong pos) {
+            return Values.Where(c => c.Position == pos).FirstOrDefault();
         }
 
         private IEnumerable<PlayRange> GetDisabledChapterRanges() {
