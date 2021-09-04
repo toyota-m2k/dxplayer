@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace dxplayer.player
 {
@@ -101,8 +102,21 @@ namespace dxplayer.player
             ViewModel.PlayList.Add(item);
         }
 
+        private DispatcherTimer FlashTitleTimer = null;
         private void OnCurrentItemChanged(IPlayItem item) {
+            FlashTitleTimer?.Stop();
             this.Title = item?.TitleOrName() ?? "";
+            if(item!=null && ViewModel.Fullscreen.Value && !string.IsNullOrWhiteSpace(item.Title)) {
+                ViewModel.ShowLabelPanel.Value = true;
+                if (FlashTitleTimer == null) {
+                    FlashTitleTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(5) };
+                    FlashTitleTimer.Tick += (s,e) => {
+                        FlashTitleTimer.Stop();
+                        ViewModel.ShowLabelPanel.Value = false;
+                    };
+                }
+                FlashTitleTimer.Start();
+            }
             PlayItemChanged?.Invoke(item);
         }
 

@@ -311,6 +311,7 @@ namespace dxplayer.player {
         public ReactiveProperty<bool> ReqShowControlPanel { get; } = new ReactiveProperty<bool>(false);
         public ReactiveProperty<bool> ReqShowSizePanel { get; } = new ReactiveProperty<bool>(false);
         public ReactiveProperty<bool> PinControlPanel { get; } = new ReactiveProperty<bool>(false);
+        public ReactiveProperty<bool> ShowLabelPanel { get; } = new ReactiveProperty<bool>(false);
 
         public ReadOnlyReactiveProperty<bool> ShowControlPanel { get; }
         public ReadOnlyReactiveProperty<bool> ShowSizePanel { get; }

@@ -24,12 +24,13 @@
                       Volume="{Binding Volume.Value, Mode=OneWay}"
                       IsMuted="{Binding Mute.Value, Mode=OneWay}"
                       />
-        <Grid Background="{StaticResource ControlPanelBG}" 
+        
+        <Grid Tag="SizingPanel"
+              Background="{StaticResource ControlPanelBG}" 
               MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave"
               Opacity="0"
               VerticalAlignment="Top"
               HorizontalAlignment="Right"
-              Tag="SizingPanel"
               >
             <Grid.Style>
                 <!-- Fade in/out effect -->
@@ -61,14 +62,12 @@
 
         </Grid>
 
-        <Grid 
-            Background="{StaticResource ControlPanelBG}" 
-            MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave"
-            Opacity="0"
-            VerticalAlignment="{Binding PanelVertAlign.Value}"
-            HorizontalAlignment="{Binding PanelHorzAlign.Value}"
-            Tag="ControlPanel"
-            >
+        <Grid Tag="ControlPanel"
+              Background="{StaticResource ControlPanelBG}" 
+              MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave"
+              Opacity="0"
+              VerticalAlignment="{Binding PanelVertAlign.Value}"
+              HorizontalAlignment="{Binding PanelHorzAlign.Value}">
             <Grid.Style>
                 <!-- Fade in/out effect -->
                 <Style TargetType="Grid">
@@ -90,6 +89,39 @@
             <local:ControlPanel x:Name="ControlPanel"/>
         </Grid>
 
+        <Grid Tag="LabelPanel"
+              Background="{StaticResource ControlPanelBG}" 
+              MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave"
+              Opacity="0"
+              VerticalAlignment="Top"
+              HorizontalAlignment="Left"
+              >
+            <Grid.Style>
+                <!-- Fade in/out effect -->
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ShowLabelPanel.Value}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <StopStoryboard BeginStoryboardName="MouseLeaveStoryboard" />
+                                <BeginStoryboard Name="MouseOverStoryboard" Storyboard="{StaticResource MouseOverStoryboard}" />
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <StopStoryboard BeginStoryboardName="MouseOverStoryboard" />
+                                <BeginStoryboard Name="MouseLeaveStoryboard" Storyboard="{StaticResource MouseLeaveStoryboard}" />
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <StackPanel Orientation="Horizontal" Margin="10">
+                <TextBlock 
+                    Text="{Binding PlayList.Current.Value.Title}"
+                    FontSize="20"
+                    Foreground="White"
+                    />
+            </StackPanel>
+
+        </Grid>
 
     </Grid>
 </UserControl>
