@@ -70,7 +70,9 @@ namespace dxplayer.player {
             MOVIE_PREV,
             CHAPTER_NEXT,
             CHAPTER_PREV,
+            CHECKED_SET,
 
+            HELP
         }
         public PlayerCommands(PlayerViewModel viewModel) {
             RegisterCommand(
@@ -125,16 +127,24 @@ namespace dxplayer.player {
                 , CMD(ID.MOVIE_PREV, "MovieNext", viewModel.PlayList.Prev, "Previous movie")
                 , CMD(ID.CHAPTER_NEXT, "ChapterNext", viewModel.NextChapterCommand, "Next chapter")
                 , CMD(ID.CHAPTER_PREV, "ChapterPrev", viewModel.PrevChapterCommand, "Previous chapter")
+                , CMD(ID.CHECKED_SET, "CheckedSet", viewModel.CheckedCommand, "Check and next movie")
 
                 , CMD(ID.CHAPTER_UNDO, "ChapterUndo", () => viewModel.ChapterEditor.Undo(), "Undo chapter editing")
                 , CMD(ID.CHAPTER_REDO, "ChapterRedo", () => viewModel.ChapterEditor.Do(), "Redo chapter editing")
+                , CMD(ID.HELP, "Help", viewModel.HelpCommand)
                 ); ;
 
+            AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.Right);
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.F);
             AssignShiftKeyCommand(ID.CONTINUOUS_HIGH_SPEED, Key.F);
             AssignControlKeyCommand(ID.CONTINUOUS_SUPER_HIGH_SPEED, Key.F);
 
+            AssignSingleKeyCommand(ID.CHECKED_SET, Key.N);
+            AssignSingleKeyCommand(ID.MOVIE_NEXT, Key.PageDown);
+            AssignSingleKeyCommand(ID.MOVIE_PREV, Key.PageUp);
+
             AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
+            AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.Left);
 
             AssignSingleKeyCommand(ID.CLOSE, Key.Escape);
 
@@ -159,6 +169,7 @@ namespace dxplayer.player {
 
             AssignControlKeyCommand(ID.CHAPTER_UNDO, Key.Z);
             AssignControlShiftKeyCommand(ID.CHAPTER_REDO, Key.Z);
+            AssignSingleKeyCommand(ID.HELP, Key.F1);
 
             ServerCommandCenter.Instance.Attach(this);
         }

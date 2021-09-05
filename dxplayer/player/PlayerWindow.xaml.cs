@@ -62,11 +62,13 @@ namespace dxplayer.player
             ViewModel.CommandManager.Enable(this, true);
             ViewModel.PlayList.Current.Subscribe(OnCurrentItemChanged);
             ViewModel.ClosePlayerCommand.Subscribe(Close);
+            ViewModel.HelpCommand.Subscribe(Help);
             LoadCompletion.TrySetResult(true);
         }
 
         protected override void OnClosing(CancelEventArgs e) {
             base.OnClosing(e);
+            mHelpWindow?.Close();
             Settings.Instance.PlayerPlacement.GetPlacementFrom(this);
             ViewModel.ChapterEditor.SaveChapterListIfNeeds();
             ViewModel.PlayList.ResetList();     // 最後に再生中のアイテムについて、PlayCountを更新するため、Currentを変化させて、PlayCountObserverに、ItemChangedイベントを受け取らせたい。
@@ -118,6 +120,20 @@ namespace dxplayer.player
                 FlashTitleTimer.Start();
             }
             PlayItemChanged?.Invoke(item);
+        }
+
+        private KeyHelpWindow mHelpWindow = null;
+        private void Help() {
+            if(mHelpWindow!=null) {
+                return;
+            }
+            mHelpWindow = new KeyHelpWindow("Player", ViewModel.CommandManager.MakeHelpMessage());
+            mHelpWindow.Closed += OnHelpWindowClosed;
+            mHelpWindow.Show();
+        }
+
+        private void OnHelpWindowClosed(object sender, EventArgs e) {
+            mHelpWindow = null;
         }
 
         protected override void OnActivated(EventArgs e) {

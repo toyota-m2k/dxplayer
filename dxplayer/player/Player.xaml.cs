@@ -160,12 +160,14 @@ namespace dxplayer.player {
         }
 
         private void ShowPanel(FrameworkElement panel, bool show) {
+            var vm = ViewModel;
+            if (vm == null) return;
             switch (panel?.Tag as string) {
                 case "ControlPanel":
-                    ViewModel.ReqShowControlPanel.Value = show;
+                    vm.ReqShowControlPanel.Value = show;
                     break;
                 case "SizingPanel":
-                    ViewModel.ReqShowSizePanel.Value = show;
+                    vm.ReqShowSizePanel.Value = show;
                     break;
                 default:
                     return;

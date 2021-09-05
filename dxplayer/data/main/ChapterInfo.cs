@@ -44,7 +44,7 @@ namespace dxplayer.data {
             set => SetSkip(value, true);
         }
         public bool SetSkip(bool skip, bool notifyToEditor) {
-            if (setProp(callerName(), ref mSkip, skip)) {
+            if (setProp("Skip", ref mSkip, skip)) {
                 IsModified = true;
                 if (notifyToEditor) {
                     Editor?.OnSkipChanged(this, skip);

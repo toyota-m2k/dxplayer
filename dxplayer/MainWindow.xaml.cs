@@ -79,6 +79,8 @@ namespace dxplayer {
                 ViewModel.Dialog.SettingDialog.DxxDBPath.Value = path;
             });
 
+            ViewModel.HelpCommand.Subscribe(Help);
+
             Settings.Instance.SortInfo.SortUpdated += OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated += OnFilterChanged;
 
@@ -95,12 +97,28 @@ namespace dxplayer {
 
         }
 
+        private KeyHelpWindow mHelpWindow = null;
+        private void Help(object obj) {
+            if (mHelpWindow != null) {
+                return;
+            }
+            mHelpWindow = new KeyHelpWindow("Main", ViewModel.CommandManager.MakeHelpMessage());
+            mHelpWindow.Closed += OnHelpWindowClosed;
+            mHelpWindow.Show();
+        }
+
+        private void OnHelpWindowClosed(object sender, EventArgs e) {
+            mHelpWindow = null;
+        }
+
+
         #endregion
 
         #region Terminating
 
         protected override void OnClosing(CancelEventArgs e) {
             base.OnClosing(e);
+            mHelpWindow?.Close();
             Settings.Instance.SortInfo.SortUpdated -= OnSortChanged;
             Settings.Instance.ListFilter.FilterUpdated -= OnFilterChanged;
             Settings.Instance.Placement.GetPlacementFrom(this);
@@ -345,16 +363,22 @@ namespace dxplayer {
          * 選択されたDBファイル名をタイトルに表示する
          */
         private void UpdateTitle() {
+            var dbg =
+#if DEBUG
+                "-dbg";
+#else
+                "";
+#endif
             var path = Settings.Instance.FilePath;
             string fname = !string.IsNullOrEmpty(path) ? Path.GetFileName(path) : "<untitled>";
             var v = FileVersionInfo.GetVersionInfo(System.Reflection.Assembly.GetExecutingAssembly().Location);
             //Debug.WriteLine(v.ToString());
-            this.Title = String.Format("{0} (v{1}.{2}.{3})  - {4}", v.ProductName, v.FileMajorPart, v.FileMinorPart, v.FileBuildPart, fname);
+            this.Title = $"{v.ProductName}{dbg} (v{v.FileMajorPart}.{v.FileMinorPart}.{v.FileBuildPart}.{v.ProductPrivatePart})  - {fname}";
         }
 
-        #endregion
+#endregion
 
-        #region List Management
+#region List Management
 
         public PlayItem SelectedItem {
             get => MainListView.SelectedItem as PlayItem;
@@ -409,9 +433,9 @@ namespace dxplayer {
         }
 
 
-        #endregion
+#endregion
 
-        #region Sort / Filter
+#region Sort / Filter
 
         private void UpdateList() {
             var list = DB.PlayListTable.List.Filter();
@@ -465,15 +489,20 @@ namespace dxplayer {
         private void UpdateColumnHeaderOnSort() {
             var sorter = Settings.Instance.SortInfo;
             foreach (var header in FindVisualChildren<GridViewColumnHeader>(MainListView)) {
-                logger.debug(header.ToString());
-                var textBox = FindVisualChildren<TextBlock>(header).FirstOrDefault();
-                if (null != textBox) {
-                    var key = SortInfo.SortKeyFromString(textBox.Text);
-                    if (key == sorter.PrimaryKey) {
-                        header.Tag = sorter.Order == SortInfo.SortOrder.ASCENDING ? "asc" : "desc";
-                    }
-                    else {
-                        header.Tag = null;
+                //logger.debug(header.ToString());
+                if (sorter.Shuffle) {
+                    header.Tag = null;
+                }
+                else {
+                    var textBox = FindVisualChildren<TextBlock>(header).FirstOrDefault();
+                    if (null != textBox) {
+                        var key = SortInfo.SortKeyFromString(textBox.Text);
+                        if (key == sorter.PrimaryKey) {
+                            header.Tag = sorter.Order == SortInfo.SortOrder.ASCENDING ? "asc" : "desc";
+                        }
+                        else {
+                            header.Tag = null;
+                        }
                     }
                 }
             }
@@ -489,9 +518,9 @@ namespace dxplayer {
         }
 
 
-        #endregion
+#endregion
 
-        #region View Events
+#region View Events
 
         //private void OnKeyDown(object sender, KeyEventArgs e) {
         //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");
@@ -516,7 +545,7 @@ namespace dxplayer {
             ViewModel.CommandManager.Enable(this, false);
         }
 
-        #endregion
+#endregion
 
         //private void OnKeyDown2(object sender, KeyEventArgs e) {
         //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");

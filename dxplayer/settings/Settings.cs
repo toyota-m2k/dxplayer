@@ -1,4 +1,5 @@
-﻿using io.github.toyota32k.toolkit.utils;
+﻿using dxplayer.misc;
+using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,6 +10,7 @@ namespace dxplayer.settings
     public class Settings {
         public WinPlacement Placement { get; set; } = new WinPlacement();
         public WinPlacement PlayerPlacement { get; set; } = new WinPlacement();
+        public SerializableDictionary<string, WinPlacement> HelpPlacement { get; } = new SerializableDictionary<string, WinPlacement>();
         public string FilePath { get; set; } = Path.Combine(Environment.CurrentDirectory, "default.dpd");
         public ListFilter ListFilter { get; set; } = new ListFilter();
         public SortInfo SortInfo { get; set; } = new SortInfo();

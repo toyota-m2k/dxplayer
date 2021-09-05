@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -83,7 +84,23 @@ namespace dxplayer.misc {
         }
 
         public static Command NOP = new Command();
+
+        public override string ToString() {
+            return string.IsNullOrWhiteSpace(Description) ? Name : Description;
+        }
     }
+
+    public class KeyMapHelpItem {
+        public string Key { get; }
+        public string Description { get; }
+        public int ID { get; }
+        public KeyMapHelpItem(Key key, Command command, string optionKey = "") {
+            Key = $"{optionKey}{key}";
+            ID = command.ID;
+            Description = command.ToString();
+        }
+    }
+
 
     public class KeyCommandManager : ViewModelBase {
         private Dictionary<int, Command> CommandMap = new Dictionary<int, Command>();
@@ -236,6 +253,14 @@ namespace dxplayer.misc {
             ActiveKey.Value = Key.None;
             Ctrl.Value = false;
             Shift.Value = false;
+        }
+
+        public IEnumerable<KeyMapHelpItem> MakeHelpMessage() {
+            return SingleKeyCommands.Select(p => new KeyMapHelpItem(p.Key, p.Value))
+                    .Concat(ControlKeyCommands.Select(p => new KeyMapHelpItem(p.Key, p.Value, "Ctrl+")))
+                    .Concat(ShiftKeyCommands.Select(p => new KeyMapHelpItem(p.Key, p.Value, "Shift+")))
+                    .Concat(ControlShiftKeyCommands.Select(p => new KeyMapHelpItem(p.Key, p.Value, "Ctrl+Shift+")))
+                    .OrderBy(t => t.ID);
         }
 
         public override void Dispose() {

@@ -116,6 +116,7 @@ namespace dxplayer.data {
         }
 
         public void Dispose() {
+            Update();
             AddEvent.Dispose();
             DelEvent.Dispose();
             Context?.Dispose();

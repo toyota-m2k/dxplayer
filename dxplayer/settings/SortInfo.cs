@@ -50,7 +50,12 @@ namespace dxplayer.settings {
         }
         public bool Shuffle {
             get => mShuffle;
-            set { setProp(callerName(), ref mShuffle, value); SortUpdated?.Invoke(); } 
+            set => SetShuffle(value, needsUpdateSort:true);
+        }
+        private void SetShuffle(bool value, bool needsUpdateSort) {
+            if (setProp("Shuffle", ref mShuffle, value) && needsUpdateSort) {
+                SortUpdated?.Invoke();
+            }
         }
 
         class StringComparer : IComparer<string> {
@@ -187,6 +192,7 @@ namespace dxplayer.settings {
         }
 
         public void SetSortKey(string v) {
+            SetShuffle(false, needsUpdateSort: false);
             var k = SortKeyFromString(v);
             if (k != mPrimaryKey) {
                 mSecondaryKey = mPrimaryKey;
@@ -204,7 +210,5 @@ namespace dxplayer.settings {
             }
             return (SortKey)Enum.Parse(typeof(SortKey), v, true);
         }
-
-
     }
 }

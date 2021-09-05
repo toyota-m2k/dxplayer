@@ -15,6 +15,7 @@ namespace dxplayer {
             UNCHECK,
             DECREMENT_COUNTER,
             SHUTDOWN,
+            HELP
         }
 
         public MainCommands(MainViewModel viewModel) {
@@ -22,9 +23,10 @@ namespace dxplayer {
                   CMD(ID.PLAY, "Play", viewModel.PlayCommand, "Open player")
                 , CMD(ID.PLAY_TO_CHECK, "PlayToCheck", viewModel.PreviewCommand, "Open player to check")
                 , CMD(ID.CHECK, "Check", viewModel.CheckCommand, "Check selected item(s).")
-                , CMD(ID.CHECK, "Uncheck", viewModel.UncheckCommand, "Uncheck selected item(s).")
+                , CMD(ID.UNCHECK, "Uncheck", viewModel.UncheckCommand, "Uncheck selected item(s).")
                 , CMD(ID.DECREMENT_COUNTER, "DecrementCounter", viewModel.DecrementCounterCommand, "Decrement play-counter")
                 , CMD(ID.SHUTDOWN, "Shutdown", viewModel.ShutdownCommand)
+                , CMD(ID.HELP, "Help", viewModel.HelpCommand)
                 );
 
             AssignSingleKeyCommand(ID.PLAY_TO_CHECK,         Key.Enter);       // return == enter
@@ -32,6 +34,7 @@ namespace dxplayer {
             AssignControlKeyCommand(ID.CHECK,                Key.J);
             AssignControlShiftKeyCommand(ID.UNCHECK,         Key.J);
             AssignControlKeyCommand(ID.DECREMENT_COUNTER,    Key.T);
+            AssignSingleKeyCommand(ID.HELP, Key.F1);
 
             ServerCommandCenter.Instance.Attach(this);
         }

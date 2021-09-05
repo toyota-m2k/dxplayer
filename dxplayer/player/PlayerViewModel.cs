@@ -297,6 +297,7 @@ namespace dxplayer.player {
         public ReactiveCommand TrimmingToChapterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ClosePlayerCommand { get; } = new ReactiveCommand();
         public ReactiveCommand KickOutMouseCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand HelpCommand { get; } = new ReactiveCommand();
 
 
 
@@ -371,10 +372,12 @@ namespace dxplayer.player {
 
             GoForwardCommand.Subscribe(() => {
                 ChapterEditor.SaveChapterListIfNeeds();
+                App.Instance.DB.PlayListTable.Update();
                 PlayList.Next();
             });
             GoBackCommand.Subscribe(() => {
                 ChapterEditor.SaveChapterListIfNeeds();
+                App.Instance.DB.PlayListTable.Update();
                 PlayList.Prev();
             });
             TrashCommand.Subscribe(PlayList.DeleteCurrent);

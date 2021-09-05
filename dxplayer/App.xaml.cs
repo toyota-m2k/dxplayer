@@ -30,6 +30,7 @@ namespace dxplayer
         protected override void OnExit(ExitEventArgs e) {
             base.OnExit(e);
             DB.Dispose();
+            Settings.Instance.Serialize();
         }
     }
 }

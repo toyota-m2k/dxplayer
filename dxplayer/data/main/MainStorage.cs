@@ -174,6 +174,7 @@ namespace dxplayer.data.main {
 
         public override void Dispose() {
             PlayListTable.Dispose();
+            ChapterTable.Dispose();
             base.Dispose();
         }
 
