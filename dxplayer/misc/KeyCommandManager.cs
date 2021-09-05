@@ -178,7 +178,7 @@ namespace dxplayer.misc {
             else if(!CurrentCommand.Repeatable) {
                 return;
             }
-            LoggerEx.debug($"{CurrentCommand.Name}");
+            //LoggerEx.debug($"{CurrentCommand.Name}");
             CurrentCommand.Invoke(RepeatCount++);
         }
 
@@ -217,36 +217,36 @@ namespace dxplayer.misc {
         }
 
         public void Down(Key key) {
-            LoggerEx.debug($"{key}");
+            //LoggerEx.debug($"{key}");
             if (key == Key.LeftCtrl || key == Key.RightCtrl) {
                 Ctrl.Value = true;
-                LoggerEx.debug($"Ctrl=true");
+                //LoggerEx.debug($"Ctrl=true");
             }
             else if (key == Key.LeftShift || key == Key.RightShift) {
                 Shift.Value = true;
-                LoggerEx.debug($"Shift=true");
+                //LoggerEx.debug($"Shift=true");
             }
             else {
-                LoggerEx.debug($"{ActiveKey.Value} --> {key}");
+                //LoggerEx.debug($"{ActiveKey.Value} --> {key}");
                 ActiveKey.Value = key;
             }
-            LoggerEx.debug($"Ctrl={Ctrl.Value}, Shift={Shift.Value}, {ActiveKey.Value}");
+            //LoggerEx.debug($"Ctrl={Ctrl.Value}, Shift={Shift.Value}, {ActiveKey.Value}");
         }
 
         public void Up(Key key) {
             if (key == Key.LeftCtrl || key == Key.RightCtrl) {
                 Ctrl.Value = false;
-                LoggerEx.debug($"Ctrl=false");
+                //LoggerEx.debug($"Ctrl=false");
             }
             if (key == Key.LeftShift || key==Key.RightShift) {
                 Shift.Value = false;
-                LoggerEx.debug($"Shift=false");
+                //LoggerEx.debug($"Shift=false");
             }
             else if (key == ActiveKey.Value) {
                 ActiveKey.Value = Key.None;
-                LoggerEx.debug($"{key} --> None");
+                //LoggerEx.debug($"{key} --> None");
             }
-            LoggerEx.debug($"Ctrl={Ctrl.Value}, Shift={Shift.Value}, {ActiveKey.Value}");
+            //LoggerEx.debug($"Ctrl={Ctrl.Value}, Shift={Shift.Value}, {ActiveKey.Value}");
         }
 
         public void Cancel() {

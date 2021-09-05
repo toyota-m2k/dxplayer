@@ -462,6 +462,10 @@ namespace dxplayer.player {
 
         public override void Dispose() {
             base.Dispose();
+            mSuperHighSpeedPlayTimer?.Stop();
+            mSuperHighSpeedPlayTimer = null;
+            mRepeatSkippingTimer?.Stop();
+            mRepeatSkippingTimer = null;
         }
 
         // command handlers
@@ -552,6 +556,7 @@ namespace dxplayer.player {
         }
 
         public void SetSuperHighSpeedMode() {
+            EndRepeatSkippingMode();
             if (null == mSuperHighSpeedPlayTimer) {
                 Speed.Value = 1;
                 mSuperHighSpeedPlayTimer = new DispatcherTimer();
@@ -573,6 +578,35 @@ namespace dxplayer.player {
                 mSuperHighSpeedPlayTimer.Stop();
                 mSuperHighSpeedPlayTimer = null;
             }
+        }
+
+        #endregion
+
+        #region Repeat skipping
+
+        private DispatcherTimer mRepeatSkippingTimer = null;
+        public bool IsRepeatSkippingMode => mRepeatSkippingTimer?.IsEnabled ?? false;
+
+        public void BeginRepeatSkippingMode() {
+            //LoggerEx.debug("Called");
+            SeekRelative(1 * 1000);
+            if (IsRepeatSkippingMode) return;
+            ResetSuperHighSpeedMode();
+            if (null == mRepeatSkippingTimer) {
+                mRepeatSkippingTimer = new DispatcherTimer();
+                mRepeatSkippingTimer.Interval = TimeSpan.FromSeconds(0.3);
+                mRepeatSkippingTimer.Tick += (s, e) => {
+                    //LoggerEx.debug("Seeking");
+                    SeekRelative(1 * 1000);
+                };
+            }
+            mRepeatSkippingTimer.Start();
+        }
+
+        public void EndRepeatSkippingMode() {
+            LoggerEx.debug("Called");
+            if (!IsRepeatSkippingMode) return;
+            mRepeatSkippingTimer?.Stop();
         }
 
         #endregion

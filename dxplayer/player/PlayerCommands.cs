@@ -27,6 +27,8 @@ namespace dxplayer.player {
             SEEK_BACK_5,
             SEEK_BACK_10,
 
+            REPEAT_SEEK_FORWORD_1,
+
             SPEED_SLOW,
             SPEED_NORMAL,
             SPEED_HIGH,
@@ -97,6 +99,7 @@ namespace dxplayer.player {
                 , CMD(ID.TOGGLE_SPEED_HIGH, "ToggleSpeedHigh", () => { viewModel.Speed.Value = (viewModel.Speed.Value > 0.5) ? 0.5 : 1; }, "Toggle high/normal speed")
                 , CNT_CMD(ID.CONTINUOUS_HIGH_SPEED, "ContHighSpeed", () => viewModel.Speed.Value = 1, brk: () => viewModel.Speed.Value = 0.5, "Fast forward")
                 , CNT_CMD(ID.CONTINUOUS_SUPER_HIGH_SPEED, "ContSuperHighSpeed", viewModel.SetSuperHighSpeedMode, brk: viewModel.ResetSuperHighSpeedMode, "Super fast forward on key prssed")
+                , CNT_CMD(ID.REPEAT_SEEK_FORWORD_1, "RepeatSeekForward1", viewModel.BeginRepeatSkippingMode, brk: viewModel.EndRepeatSkippingMode, "Repeat seek forward")
 
                 , CMD(ID.RATING_EXCELLENT, "RatingExcellent", () => viewModel.SetRating(Rating.EXCELLENT), "Rating:Excellent")
                 , CMD(ID.RATING_GOOD, "RatingGood", () => viewModel.SetRating(Rating.GOOD), "Rating:Good")
@@ -132,10 +135,11 @@ namespace dxplayer.player {
                 , CMD(ID.CHAPTER_UNDO, "ChapterUndo", () => viewModel.ChapterEditor.Undo(), "Undo chapter editing")
                 , CMD(ID.CHAPTER_REDO, "ChapterRedo", () => viewModel.ChapterEditor.Do(), "Redo chapter editing")
                 , CMD(ID.HELP, "Help", viewModel.HelpCommand)
-                ); ;
+                );
 
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.Right);
-            AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.F);
+            AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.G);
+            AssignSingleKeyCommand(ID.REPEAT_SEEK_FORWORD_1, Key.F);
             AssignShiftKeyCommand(ID.CONTINUOUS_HIGH_SPEED, Key.F);
             AssignControlKeyCommand(ID.CONTINUOUS_SUPER_HIGH_SPEED, Key.F);
 
