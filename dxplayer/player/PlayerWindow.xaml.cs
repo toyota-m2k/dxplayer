@@ -111,7 +111,7 @@ namespace dxplayer.player
             if(item!=null && ViewModel.Fullscreen.Value && !string.IsNullOrWhiteSpace(item.Title)) {
                 ViewModel.ShowLabelPanel.Value = true;
                 if (FlashTitleTimer == null) {
-                    FlashTitleTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(5) };
+                    FlashTitleTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(20) };
                     FlashTitleTimer.Tick += (s,e) => {
                         FlashTitleTimer.Stop();
                         ViewModel.ShowLabelPanel.Value = false;

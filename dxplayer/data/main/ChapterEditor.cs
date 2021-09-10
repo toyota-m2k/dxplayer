@@ -526,16 +526,19 @@ namespace dxplayer.data.main {
             if(parentGroup==null) {
                 parentGroup = this;
             }
-            return parentGroup.EditInGroup((gr) => {
+            parentGroup.EditInGroup((gr) => {
                 foreach (var e in del) {    // chapterList.Valuesは ObservableCollection なので、RemoveAll的なやつ使えない。
                     gr.RemoveChapter(e);
                 }
                 gr.AddChapter(start);
+            });
+            parentGroup.EditInGroup((gr) => {
                 if (range.End != duration) {
                     gr.AddChapter(new ChapterInfo(this, range.End));
                 }
                 gr.SetSkip(start, true);
             });
+            return true;
         }
 
         public bool ClearAllChapters() {
