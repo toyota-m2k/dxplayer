@@ -28,6 +28,7 @@ namespace dxplayer.player {
             SEEK_BACK_10,
 
             REPEAT_SEEK_FORWORD_1,
+            TOGGLE_REPEAT_SEEK_FORWORD_1,
 
             SPEED_SLOW,
             SPEED_NORMAL,
@@ -100,6 +101,7 @@ namespace dxplayer.player {
                 , CNT_CMD(ID.CONTINUOUS_HIGH_SPEED, "ContHighSpeed", () => viewModel.Speed.Value = 1, brk: () => viewModel.Speed.Value = 0.5, "Fast forward")
                 , CNT_CMD(ID.CONTINUOUS_SUPER_HIGH_SPEED, "ContSuperHighSpeed", viewModel.SetSuperHighSpeedMode, brk: viewModel.ResetSuperHighSpeedMode, "Super fast forward on key prssed")
                 , CNT_CMD(ID.REPEAT_SEEK_FORWORD_1, "RepeatSeekForward1", viewModel.BeginRepeatSkippingMode, brk: viewModel.EndRepeatSkippingMode, "Repeat seek forward")
+                , CMD(ID.TOGGLE_REPEAT_SEEK_FORWORD_1, "ToggleRepeatSeekForward1", viewModel.ToggleRepeatSkippingMode, "Toggle repeat seek forward")
 
                 , CMD(ID.RATING_EXCELLENT, "RatingExcellent", () => viewModel.SetRating(Rating.EXCELLENT), "Rating:Excellent")
                 , CMD(ID.RATING_GOOD, "RatingGood", () => viewModel.SetRating(Rating.GOOD), "Rating:Good")
@@ -140,6 +142,7 @@ namespace dxplayer.player {
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.Right);
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.G);
             AssignSingleKeyCommand(ID.REPEAT_SEEK_FORWORD_1, Key.F);
+            AssignSingleKeyCommand(ID.TOGGLE_REPEAT_SEEK_FORWORD_1, Key.R);
             AssignShiftKeyCommand(ID.CONTINUOUS_HIGH_SPEED, Key.F);
             AssignControlKeyCommand(ID.CONTINUOUS_SUPER_HIGH_SPEED, Key.F);
 

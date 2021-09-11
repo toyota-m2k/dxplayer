@@ -609,6 +609,14 @@ namespace dxplayer.player {
             mRepeatSkippingTimer?.Stop();
         }
 
+        public void ToggleRepeatSkippingMode() {
+            if(IsRepeatSkippingMode) {
+                EndRepeatSkippingMode();
+            } else {
+                BeginRepeatSkippingMode();
+            }
+        }
+
         #endregion
     }
 }

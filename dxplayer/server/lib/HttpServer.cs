@@ -13,13 +13,11 @@ using System.Threading.Tasks;
 
 namespace io.github.toyota32k.server {
 
-    public class HttpServer {
+    public class HttpServer : IDisposable {
         #region Fields
 
-        private int Port;
-        private TcpListener Listener;
         private HttpProcessor Processor;
-        //private bool IsActive = true;
+        private Looper ServerLooper = null;
 
         #endregion
 
@@ -27,8 +25,7 @@ namespace io.github.toyota32k.server {
         private bool Alive = true;
 
         #region Public Methods
-        public HttpServer(int port, List<Route> routes) {
-            this.Port = port;
+        public HttpServer(List<Route> routes) {
             this.Processor = new HttpProcessor();
 
             foreach (var route in routes) {
@@ -36,58 +33,69 @@ namespace io.github.toyota32k.server {
             }
         }
 
-        //public void Listen()
-        //{
-        //    this.Listener = new TcpListener(IPAddress.Any, this.Port);
-        //    this.Listener.Start();
-        //    while (this.IsActive)
-        //    {
-        //        TcpClient s = this.Listener.AcceptTcpClient();
-        //        Thread thread = new Thread(() =>
-        //        {
-        //            this.Processor.HandleClient(s);
-        //        });
-        //        thread.Start();
-        //        Thread.Sleep(1);
-        //    }
-        //}
+        class Looper: IDisposable {
+            private TcpListener Listener = null;
+            private bool Alive = true;
 
-        public bool Start() {
-            try {
-                this.Listener = new TcpListener(IPAddress.Any, this.Port);
-                this.Listener.Start();
-            }
-            catch (Exception e) {
-                log.error(e);
+            public void Dispose() {
                 Stop();
-                return false;
             }
-            Task.Run(async () => {
-                while (Alive) {
-                    try {
-                        TcpClient s = await this.Listener.AcceptTcpClientAsync();
-                        this.Processor.HandleClient(s);
-                    }
-                    catch (Exception e) {
-                        if (Alive) {
-                            log.error(e);
+
+            public bool Start(int port, HttpProcessor processor) {
+                try {
+                    this.Listener = new TcpListener(IPAddress.Any, port);
+                    this.Listener.Start();
+                }
+                catch (Exception e) {
+                    log.error(e);
+                    Stop();
+                    return false;
+                }
+                Task.Run(async () => {
+                    while (Alive) {
+                        try {
+                            TcpClient s = await this.Listener.AcceptTcpClientAsync();
+                            processor.HandleClient(s);
+                        }
+                        catch (Exception e) {
+                            if (Alive) {
+                                log.error(e);
+                            }
                         }
                     }
-                }
+                    lock (this) {
+                        Listener?.Stop();
+                        Listener = null;
+                    }
+                });
+                return true;
+            }
+            public void Stop() {
+                Alive = false;
                 lock (this) {
                     Listener?.Stop();
                     Listener = null;
                 }
-            });
-            return true;
+            }
+        }
+
+        public bool Start(int port) {
+            Stop();
+            var looper = new Looper();
+            if (looper.Start(port, Processor)) {
+                ServerLooper = looper;
+                return true;
+            }
+            return false;
         }
 
         public void Stop() {
-            Alive = false;
-            lock (this) {
-                Listener?.Stop();
-                Listener = null;
-            }
+            ServerLooper?.Stop();
+            ServerLooper = null;
+        }
+
+        public void Dispose() {
+            Stop();
         }
         #endregion
     }

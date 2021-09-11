@@ -25,9 +25,9 @@ namespace dxplayer.server {
         public void Start(int port) {
             if (!IsListening) {
                 if (null == mServer) {
-                    mServer = new HttpServer(port, Routes);
+                    mServer = new HttpServer(Routes);
                 }
-                if (mServer.Start()) {
+                if (mServer.Start(port)) {
                     IsListening = true;
                     StatusBar?.OutputStatusMessage($"DxPlayListServer has been started: port={port}");
                 }
