@@ -29,6 +29,7 @@ namespace dxplayer.data.main {
                 if (!Playing) {
                     // start
                     TickStart = tick;
+
                 } else {
                     // stop
                     TickTotal += tick - TickStart;

@@ -5,8 +5,6 @@ using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace dxplayer.server {
     public class DxServer : IDisposable {

@@ -1,12 +1,10 @@
 ﻿using dxplayer.misc;
 using io.github.toyota32k.toolkit.utils;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace dxplayer.settings
-{
+namespace dxplayer.settings {
     public class Settings {
         public WinPlacement Placement { get; set; } = new WinPlacement();
         public WinPlacement PlayerPlacement { get; set; } = new WinPlacement();

@@ -1,6 +1,4 @@
-﻿using dxplayer.server;
-using dxplayer.settings;
-using io.github.toyota32k.toolkit.utils;
+﻿using dxplayer.settings;
 using io.github.toyota32k.toolkit.view;
 using Reactive.Bindings;
 using System.Linq;

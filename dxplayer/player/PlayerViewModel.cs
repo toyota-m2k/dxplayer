@@ -4,8 +4,6 @@ using io.github.toyota32k.toolkit.utils;
 using io.github.toyota32k.toolkit.view;
 using Reactive.Bindings;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;

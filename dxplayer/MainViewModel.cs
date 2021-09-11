@@ -6,10 +6,8 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
-using wfPlayer;
 
-namespace dxplayer
-{
+namespace dxplayer {
     public enum PlayingStatus {
         IDLE,
         PLAYING,

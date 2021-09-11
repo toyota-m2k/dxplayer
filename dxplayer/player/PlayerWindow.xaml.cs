@@ -4,11 +4,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Threading;
 
-namespace dxplayer.player
-{
+namespace dxplayer.player {
     /// <summary>
     /// PlayerWindow.xaml の相互作用ロジック
     /// </summary>
