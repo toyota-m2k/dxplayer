@@ -31,8 +31,8 @@ namespace dxplayer.data.main {
      * Undo/Redo用の履歴管理用のi/f定義
      */
     public interface IChapterEditHistory {
-        bool AddChapter(ChapterInfo chapter);
-        bool RemoveChapter(ChapterInfo chapter);
+        bool AddChapter(ChapterInfo chapter, ulong seekOnUndo = AddRemoveRec.NO_SEEK_ON_UNDO);
+        bool RemoveChapter(ChapterInfo chapter, ulong seekOnUndo = AddRemoveRec.NO_SEEK_ON_UNDO);
         //void OnLabelChanged(ChapterInfo chapter, string prev, string current);
         void OnSkipChanged(ChapterInfo chapter, bool current);
         bool SetSkip(ChapterInfo chapter, bool skip);
@@ -54,10 +54,10 @@ namespace dxplayer.data.main {
 
         public int CountOfRecords => Records.Count;
 
-        private bool Apply(ChapterInfo chapter, bool add) {
+        private bool Apply(ChapterInfo chapter, bool add, ulong seekOnUndo) {
             var owner = Owner;
             if (owner == null) return false;
-            var rec = new AddRemoveRec(owner, chapter, add);
+            var rec = new AddRemoveRec(owner, chapter, add, seekOnUndo);
             if (rec.Do()) {
                 Records.Add(rec);
                 return true;
@@ -65,12 +65,12 @@ namespace dxplayer.data.main {
             return false;
         }
 
-        public virtual bool AddChapter(ChapterInfo chapter) {
-            return Apply(chapter, true);
+        public virtual bool AddChapter(ChapterInfo chapter, ulong seekOnUndo) {
+            return Apply(chapter, true, seekOnUndo);
         }
 
-        public virtual bool RemoveChapter(ChapterInfo chapter) {
-            return Apply(chapter, false);
+        public virtual bool RemoveChapter(ChapterInfo chapter, ulong seekOnUndo) {
+            return Apply(chapter, false, seekOnUndo);
         }
 
         //public virtual void OnLabelChanged(ChapterInfo chapter, string prev, string current) {
@@ -148,12 +148,15 @@ namespace dxplayer.data.main {
      * Chapterの追加/削除操作用IChapterEditUnit実装クラス
      */
     class AddRemoveRec : OwnerdUnitBase, IChapterEditUnit {
+        public const ulong NO_SEEK_ON_UNDO = ulong.MaxValue;
         bool Add;
         ChapterInfo Target;
         ChapterList ChapterList => Owner?.ChapterList;
-        public AddRemoveRec(ChapterEditor owner, ChapterInfo chapter, bool add):base(owner) {
+        ulong SeekOnUndo = ulong.MaxValue;
+        public AddRemoveRec(ChapterEditor owner, ChapterInfo chapter, bool add, ulong seekOnUndo):base(owner) {
             Add = add;
             Target = chapter;
+            SeekOnUndo = seekOnUndo;
         }
 
         private bool Apply(bool add) {
@@ -176,7 +179,13 @@ namespace dxplayer.data.main {
         }
 
         public bool Undo() {
-            return Apply(!Add);
+            if(Apply(!Add)) {
+                if(SeekOnUndo!=NO_SEEK_ON_UNDO) {
+                    Owner?.RequestSeek?.Execute(SeekOnUndo);
+                }
+                return true;
+            }
+            return false;
         }
     }
 
@@ -419,18 +428,20 @@ namespace dxplayer.data.main {
             DisabledRanges.Value = Chapters.Value?.GetDisabledRanges(Trimming.Value)?.ToList();
         }
 
+        public ReactiveCommand<ulong> RequestSeek = new ReactiveCommand<ulong>();
+
         #endregion
 
         #region Edit Operation
 
-        public override bool AddChapter(ChapterInfo chapter) {
+        public override bool AddChapter(ChapterInfo chapter, ulong seekOnUndo=AddRemoveRec.NO_SEEK_ON_UNDO) {
             Prepare();
-            return base.AddChapter(chapter);
+            return base.AddChapter(chapter, seekOnUndo);
         }
 
-        public override bool RemoveChapter(ChapterInfo chapter) {
+        public override bool RemoveChapter(ChapterInfo chapter, ulong seekOnUndo = AddRemoveRec.NO_SEEK_ON_UNDO) {
             Prepare();
-            return base.RemoveChapter(chapter);
+            return base.RemoveChapter(chapter, seekOnUndo);
         }
 
         //public override void OnLabelChanged(ChapterInfo chapter, string prev, string current) {
@@ -532,7 +543,8 @@ namespace dxplayer.data.main {
             });
             parentGroup.EditInGroup((gr) => {
                 if (range.End != duration) {
-                    gr.AddChapter(new ChapterInfo(this, range.End));
+                    ulong seekOnUndo = range.End > range.Start ? range.Start : AddRemoveRec.NO_SEEK_ON_UNDO;
+                    gr.AddChapter(new ChapterInfo(this, range.End), seekOnUndo);
                 }
                 gr.SetSkip(start, true);
             });

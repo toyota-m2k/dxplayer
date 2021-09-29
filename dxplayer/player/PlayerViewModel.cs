@@ -397,6 +397,7 @@ namespace dxplayer.player {
 
             NotifyRange.Subscribe((range)=>ChapterEditor.AddDisabledChapterRange(Duration.Value, range));
             NotifyPosition.Subscribe(pos=>ChapterEditor.AddChapter(new ChapterInfo(ChapterEditor, pos)));
+            ChapterEditor.RequestSeek.Subscribe(pos => Position.Value = pos);
 
 
             string prevId = null;
@@ -592,7 +593,7 @@ namespace dxplayer.player {
             ResetSuperHighSpeedMode();
             if (null == mRepeatSkippingTimer) {
                 mRepeatSkippingTimer = new DispatcherTimer();
-                mRepeatSkippingTimer.Interval = TimeSpan.FromSeconds(0.3);
+                mRepeatSkippingTimer.Interval = TimeSpan.FromSeconds(0.2);
                 mRepeatSkippingTimer.Tick += (s, e) => {
                     //LoggerEx.debug("Seeking");
                     SeekRelative(1 * 1000);

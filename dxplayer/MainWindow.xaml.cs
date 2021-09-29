@@ -181,6 +181,7 @@ namespace dxplayer {
             ViewModel.PlayingStatus.Value = PlayingStatus.IDLE;
             mPlayCountObserver?.Dispose();
             mPlayCountObserver = null;
+            this.Activate();
             //if(ViewModel.ListFilter.Enabled) {
             //    UpdateList();
             //}
