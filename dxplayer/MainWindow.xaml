@@ -116,22 +116,6 @@
                     Orientation="Horizontal"
                     >
                     <StackPanel.Resources>
-                        <Style x:Key="CheckedFilterIconStyle" TargetType="Path">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="TRUE">
-                                    <Setter Property="Data" Value="M19,19H5V5H15V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V11H19M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"/>
-                                    <Setter Property="Fill" Value="#C0FFC0"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="FALSE">
-                                    <Setter Property="Data" Value="M3,21V3H21V21H3M5,5V19H19V5H5Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="NONE">
-                                    <Setter Property="Data" Value="M20 14H4V10H20V14Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
                         <Style x:Key="CounterFilterIconStyle" TargetType="Path">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Path=ListFilter.PlayCountCP}" Value="NONE">
@@ -152,6 +136,89 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
+                        <ControlTemplate x:Key="EqualFilterIcon">
+                            <Canvas>
+                                <Path Fill="#FF2B2B2B"
+                                  Width="14"
+                                  Height="8"
+                                  Canvas.Left="0.311264"
+                                  Canvas.Top="4.0005"
+                                  Stretch="UniformToFill"
+                                  Data="M19,10H5V8H19V10M19,16H5V14H19V16Z" />
+                            </Canvas>
+                        </ControlTemplate>
+                        <ControlTemplate x:Key="GreaterEqualFilterIcon">
+                            <Canvas>
+                                <Path Fill="#FF2B2B2B"
+                                  Width="14"
+                                  Height="14"
+                                  Canvas.Left="0.311264"
+                                  Canvas.Top="0.500005"
+                                  Stretch="Fill"
+                                  Data="M6.5,2.27L20,10.14L6.5,18L5.5,16.27L16.03,10.14L5.5,4L6.5,2.27M20,20V22H5V20H20Z" />
+                            </Canvas>
+                        </ControlTemplate>
+                        <ControlTemplate x:Key="LessEqualFilterIcon">
+                            <Canvas>
+                                <Path Fill="#FF2B2B2B"
+                                  Width="14"
+                                  Height="14"
+                                  Canvas.Left="0.311264"
+                                  Canvas.Top="0.500005"
+                                  Stretch="Fill"
+                                  Data="M18.5,2.27L5,10.14L18.5,18L19.5,16.27L8.97,10.14L19.5,4L18.5,2.27M5,20V22H20V20H5Z" />
+                            </Canvas>
+                        </ControlTemplate>
+
+                        <Style x:Key="CheckedFilterIconStyle" TargetType="Path">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="TRUE">
+                                    <Setter Property="Data" Value="M19,19H5V5H15V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V11H19M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"/>
+                                    <!--<Setter Property="Fill" Value="#C0FFC0"/>-->
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="FALSE">
+                                    <Setter Property="Data" Value="M3,21V3H21V21H3M5,5V19H19V5H5Z"/>
+                                    <!--<Setter Property="Fill" Value="White"/>-->
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="NONE">
+                                    <Setter Property="Data" Value="M20 14H4V10H20V14Z"/>
+                                    <!--<Setter Property="Fill" Value="White"/>-->
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                        <ControlTemplate x:Key="NoFilterIcon">
+                            <Canvas>
+                                <Path Fill="#FF2B2B2B"
+                                  Width="14"
+                                  Height="3"
+                                  Canvas.Left="0.311264"
+                                  Canvas.Top="6.00005"
+                                  Stretch="UniformToFill"
+                                  Data="M20 14H4V10H20V14Z" />
+                            </Canvas>
+                        </ControlTemplate>
+                        <ControlTemplate x:Key="CheckedFilterIcon">
+                            <Canvas>
+                                <Path Fill="#FF2B2B2B"
+                                  Width="14"
+                                  Height="14"
+                                  Canvas.Left="0.311264"
+                                  Canvas.Top="0.500005"
+                                  Stretch="Fill"
+                                  Data="M19,19H5V5H15V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V11H19M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z" />
+                            </Canvas>
+                        </ControlTemplate>
+                        <ControlTemplate x:Key="UncheckedFilterIcon">
+                            <Canvas>
+                                <Path Fill="#FF2B2B2B"
+                                  Width="14"
+                                  Height="14"
+                                  Canvas.Left="0.311264"
+                                  Canvas.Top="0.500005"
+                                  Stretch="Fill"
+                                  Data="M3,21V3H21V21H3M5,5V19H19V5H5Z" />
+                            </Canvas>
+                        </ControlTemplate>
                     </StackPanel.Resources>
                     <TextBlock Text="Play Count" Margin="0" VerticalAlignment="Center" Foreground="LightGray"/>
                     <common:MenuButton
@@ -166,10 +233,26 @@
                         </ToolTipService.ToolTip>
                         <common:MenuButton.DropDownMenu>
                             <ContextMenu>
-                                <MenuItem Header="None" Command="{Binding CountFilterCommand}" CommandParameter="NONE"/>
-                                <MenuItem Header="==" Command="{Binding CountFilterCommand}" CommandParameter="EQ"/>
-                                <MenuItem Header=">=" Command="{Binding CountFilterCommand}" CommandParameter="GE"/>
-                                <MenuItem Header="&lt;=" Command="{Binding CountFilterCommand}" CommandParameter="LE"/>
+                                <MenuItem Header="None" Command="{Binding CountFilterCommand}" CommandParameter="NONE">
+                                    <MenuItem.Icon>
+                                        <ContentControl Template="{StaticResource NoFilterIcon}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="equal" Command="{Binding CountFilterCommand}" CommandParameter="EQ">
+                                    <MenuItem.Icon>
+                                        <ContentControl Template="{StaticResource EqualFilterIcon}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="greater or equal" Command="{Binding CountFilterCommand}" CommandParameter="GE">
+                                    <MenuItem.Icon>
+                                        <ContentControl Template="{StaticResource GreaterEqualFilterIcon}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="less or equal" Command="{Binding CountFilterCommand}" CommandParameter="LE">
+                                    <MenuItem.Icon>
+                                        <ContentControl Template="{StaticResource LessEqualFilterIcon}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
                             </ContextMenu>
                         </common:MenuButton.DropDownMenu>
                     </common:MenuButton>
@@ -193,9 +276,21 @@
                         </ToolTipService.ToolTip>
                         <common:MenuButton.DropDownMenu>
                             <ContextMenu>
-                                <MenuItem Header="None" Command="{Binding CheckedFilterCommand}" CommandParameter="NONE"/>
-                                <MenuItem Header="Checked" Command="{Binding CheckedFilterCommand}" CommandParameter="TRUE"/>
-                                <MenuItem Header="Unchecked" Command="{Binding CheckedFilterCommand}" CommandParameter="FALSE"/>
+                                <MenuItem Header="None" Command="{Binding CheckedFilterCommand}" CommandParameter="NONE">
+                                    <MenuItem.Icon>
+                                        <ContentControl Template="{StaticResource NoFilterIcon}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Checked" Command="{Binding CheckedFilterCommand}" CommandParameter="TRUE">
+                                    <MenuItem.Icon>
+                                        <ContentControl Template="{StaticResource CheckedFilterIcon}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Unchecked" Command="{Binding CheckedFilterCommand}" CommandParameter="FALSE">
+                                    <MenuItem.Icon>
+                                        <ContentControl Template="{StaticResource UncheckedFilterIcon}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
                             </ContextMenu>
                         </common:MenuButton.DropDownMenu>
                     </common:MenuButton>
