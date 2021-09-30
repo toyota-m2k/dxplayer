@@ -115,61 +115,42 @@
                     Visibility="{Binding ListFilter.Enabled, Converter={StaticResource BoolVisibilityConverter}}"
                     Orientation="Horizontal"
                     >
-                    <StackPanel.Resources>
-                        <Style x:Key="CheckedFilterIconStyle" TargetType="Path">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="TRUE">
-                                    <Setter Property="Data" Value="M19,19H5V5H15V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V11H19M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"/>
-                                    <Setter Property="Fill" Value="#C0FFC0"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="FALSE">
-                                    <Setter Property="Data" Value="M3,21V3H21V21H3M5,5V19H19V5H5Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Path=ListFilter.Checked}" Value="NONE">
-                                    <Setter Property="Data" Value="M20 14H4V10H20V14Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                        <Style x:Key="CounterFilterIconStyle" TargetType="Path">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Path=ListFilter.PlayCountCP}" Value="NONE">
-                                    <Setter Property="Data" Value="M20 14H4V10H20V14Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Path=ListFilter.PlayCountCP}" Value="GE">
-                                    <Setter Property="Data" Value="M6.5,2.27L20,10.14L6.5,18L5.5,16.27L16.03,10.14L5.5,4L6.5,2.27M20,20V22H5V20H20Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Path=ListFilter.PlayCountCP}" Value="EQ">
-                                    <Setter Property="Data" Value="M19,10H5V8H19V10M19,16H5V14H19V16Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Path=ListFilter.PlayCountCP}" Value="LE">
-                                    <Setter Property="Data" Value="M18.5,2.27L5,10.14L18.5,18L19.5,16.27L8.97,10.14L19.5,4L18.5,2.27M5,20V22H20V20H5Z"/>
-                                    <Setter Property="Fill" Value="White"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </StackPanel.Resources>
                     <TextBlock Text="Play Count" Margin="0" VerticalAlignment="Center" Foreground="LightGray"/>
                     <common:MenuButton
-                        Style="{StaticResource IconToggleButtonStyle}">
-                        <Viewbox>
-                            <Canvas Width="24" Height="24">
-                                <Path Style="{StaticResource CounterFilterIconStyle}"/>
-                            </Canvas>
-                        </Viewbox>
+                        Style="{StaticResource IconToggleButtonStyle}"
+                        Padding="0"
+                        >
+                        <Grid>
+                            <common:PathView Visibility="{Binding ListFilter.PlayCountCP, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=NONE}" Path="M20 14H4V10H20V14Z"/>
+                            <common:PathView Visibility="{Binding ListFilter.PlayCountCP, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=EQ}" Path="M19,10H5V8H19V10M19,16H5V14H19V16Z"/>
+                            <common:PathView Visibility="{Binding ListFilter.PlayCountCP, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=GE}" Path="M6.5,2.27L20,10.14L6.5,18L5.5,16.27L16.03,10.14L5.5,4L6.5,2.27M20,20V22H5V20H20Z" Margin="1"/>
+                            <common:PathView Visibility="{Binding ListFilter.PlayCountCP, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=LE}" Path="M18.5,2.27L5,10.14L18.5,18L19.5,16.27L8.97,10.14L19.5,4L18.5,2.27M5,20V22H20V20H5Z" Margin="1"/>
+                        </Grid>
                         <ToolTipService.ToolTip>
                             <ToolTip Content="Filter by play-count"/>
                         </ToolTipService.ToolTip>
                         <common:MenuButton.DropDownMenu>
                             <ContextMenu>
-                                <MenuItem Header="None" Command="{Binding CountFilterCommand}" CommandParameter="NONE"/>
-                                <MenuItem Header="==" Command="{Binding CountFilterCommand}" CommandParameter="EQ"/>
-                                <MenuItem Header=">=" Command="{Binding CountFilterCommand}" CommandParameter="GE"/>
-                                <MenuItem Header="&lt;=" Command="{Binding CountFilterCommand}" CommandParameter="LE"/>
+                                <MenuItem Header="None" Command="{Binding CountFilterCommand}" CommandParameter="NONE">
+                                    <MenuItem.Icon>
+                                        <common:PathView Path="M20 14H4V10H20V14Z"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="equal" Command="{Binding CountFilterCommand}" CommandParameter="EQ">
+                                    <MenuItem.Icon>
+                                        <common:PathView Path="M19,10H5V8H19V10M19,16H5V14H19V16Z"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="greater or equal" Command="{Binding CountFilterCommand}" CommandParameter="GE">
+                                    <MenuItem.Icon>
+                                        <common:PathView Path="M6.5,2.27L20,10.14L6.5,18L5.5,16.27L16.03,10.14L5.5,4L6.5,2.27M20,20V22H5V20H20Z"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="less or equal" Command="{Binding CountFilterCommand}" CommandParameter="LE">
+                                    <MenuItem.Icon>
+                                        <common:PathView Path="M18.5,2.27L5,10.14L18.5,18L19.5,16.27L8.97,10.14L19.5,4L18.5,2.27M5,20V22H20V20H5Z"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
                             </ContextMenu>
                         </common:MenuButton.DropDownMenu>
                     </common:MenuButton>
@@ -182,20 +163,34 @@
 
                     <TextBlock Text="Checked" Margin="16,0 0,0" VerticalAlignment="Center" Foreground="LightGray"/>
                     <common:MenuButton
-                        Style="{StaticResource IconToggleButtonStyle}">
-                        <Viewbox>
-                            <Canvas Width="24" Height="24">
-                                <Path Style="{StaticResource CheckedFilterIconStyle}"/>
-                            </Canvas>
-                        </Viewbox>
+                        Style="{StaticResource IconToggleButtonStyle}"
+                        Padding="0"
+                        >
+                        <Grid>
+                            <common:PathView Visibility="{Binding ListFilter.Checked, Converter={StaticResource NegEnumVisibilityConverter}, ConverterParameter=NONE}" Path="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z"/>
+                            <common:PathView Visibility="{Binding ListFilter.Checked, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=NONE}" Path="M20 14H4V10H20V14Z"/>
+                            <common:PathView Visibility="{Binding ListFilter.Checked, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=TRUE}" Path="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" Margin="3" Foreground="LimeGreen"/>
+                        </Grid>
                         <ToolTipService.ToolTip>
                             <ToolTip Content="Filter checked or unchecked items"/>
                         </ToolTipService.ToolTip>
                         <common:MenuButton.DropDownMenu>
                             <ContextMenu>
-                                <MenuItem Header="None" Command="{Binding CheckedFilterCommand}" CommandParameter="NONE"/>
-                                <MenuItem Header="Checked" Command="{Binding CheckedFilterCommand}" CommandParameter="TRUE"/>
-                                <MenuItem Header="Unchecked" Command="{Binding CheckedFilterCommand}" CommandParameter="FALSE"/>
+                                <MenuItem Header="None" Command="{Binding CheckedFilterCommand}" CommandParameter="NONE">
+                                    <MenuItem.Icon>
+                                        <common:PathView Path="M20 14H4V10H20V14Z"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Checked" Command="{Binding CheckedFilterCommand}" CommandParameter="TRUE">
+                                    <MenuItem.Icon>
+                                        <common:PathView Path="M19,19H5V5H15V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V11H19M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Unchecked" Command="{Binding CheckedFilterCommand}" CommandParameter="FALSE">
+                                    <MenuItem.Icon>
+                                        <common:PathView Path="M3,21V3H21V21H3M5,5V19H19V5H5Z"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
                             </ContextMenu>
                         </common:MenuButton.DropDownMenu>
                     </common:MenuButton>
