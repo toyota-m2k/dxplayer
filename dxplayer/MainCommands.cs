@@ -15,6 +15,7 @@ namespace dxplayer {
             UNCHECK,
             DECREMENT_COUNTER,
             SHUTDOWN,
+            DELETE_FILES,
             HELP
         }
 
@@ -26,6 +27,7 @@ namespace dxplayer {
                 , CMD(ID.UNCHECK, "Uncheck", viewModel.UncheckCommand, "Uncheck selected item(s).")
                 , CMD(ID.DECREMENT_COUNTER, "DecrementCounter", viewModel.DecrementCounterCommand, "Decrement play-counter")
                 , CMD(ID.SHUTDOWN, "Shutdown", viewModel.ShutdownCommand)
+                , CMD(ID.DELETE_FILES, "DeleteFiles", viewModel.DeleteItemCommand, "Delete selected file(s).")
                 , CMD(ID.HELP, "Help", viewModel.HelpCommand)
                 );
 
@@ -34,6 +36,7 @@ namespace dxplayer {
             AssignControlKeyCommand(ID.CHECK,                Key.J);
             AssignControlShiftKeyCommand(ID.UNCHECK,         Key.J);
             AssignControlKeyCommand(ID.DECREMENT_COUNTER,    Key.T);
+            AssignSingleKeyCommand(ID.DELETE_FILES, Key.Delete);
             AssignSingleKeyCommand(ID.HELP, Key.F1);
 
             ServerCommandCenter.Instance.Attach(this);

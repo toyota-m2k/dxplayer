@@ -11,6 +11,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
 
 namespace dxplayer.data.main
 {
@@ -62,6 +63,13 @@ namespace dxplayer.data.main
         public bool Checked {
             get => _checked != 0;
             set => setProp(callerName(), ref _checked, value ? 1 : 0);
+        }
+
+        [Column(Name = "flag", CanBeNull = true)]
+        private int flag = 0;
+        public int Flag {
+            get => flag;
+            set => setProp(callerName(), ref flag, value);
         }
 
         [Column(Name = "rating", CanBeNull = false)]
@@ -126,6 +134,7 @@ namespace dxplayer.data.main
 
         static Regex regId = new Regex(@"(?<id>\d{6}-\d{3})|(?<id>\w+)_[a-z]{3}_[a-z]");
         static Regex regId2 = new Regex(@"sample(?:_low)*-(?<id>\d+)");
+
         private string getKeyFromName(string name) {
             var m = regId.Match(name);
             if (m.Success) {
@@ -150,8 +159,14 @@ namespace dxplayer.data.main
 
         public bool HasFile => PathUtil.isFile(Path);
 
-        public void Delete() {
-            PathUtil.safeDeleteFile(Path);
+        public bool Delete() {
+            if (PathUtil.isFile(Path)) {
+                if (!PathUtil.safeDeleteFile(Path)) {
+                    return false;
+                }
+            }
+            Flag = 1;
+            return true;
         }
 
         public static PlayItem Create(string path, DateTime date, long size, ulong duration) {
@@ -219,6 +234,27 @@ namespace dxplayer.data.main
             ComplementDuration();
             return this;
         }
+
+        public class DeleteItemCommandImpl : SimpleCommand {
+            public DeleteItemCommandImpl(PlayItem item) : base(() => {
+                if(item.Delete()) {
+                    App.MainWindow.UpdateList();
+                }
+            }) {}
+        }
+        public DeleteItemCommandImpl DeleteItemCommand => new DeleteItemCommandImpl(this);
+
+        public class ResetCounterCommandImpl:SimpleCommand {
+            private PlayItem playItem;
+            public ResetCounterCommandImpl(PlayItem item) : base(() => {
+                item.PlayCount = 0;
+            }) { playItem = item; }
+            public override bool Enabled {
+                get => playItem.PlayCount > 0;
+                set { }
+            }
+        }
+        public ResetCounterCommandImpl ResetCounterCommand => new ResetCounterCommandImpl(this);
     }
 
     public class PlayListTable : StorageTable<PlayItem> {

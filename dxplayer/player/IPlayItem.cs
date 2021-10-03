@@ -10,7 +10,7 @@
         ulong TrimStart { get; set; }
         ulong TrimEnd { get; set; }
 
-        void Delete();
+        bool Delete();
     }
 
     public static class PlayItemExtension {

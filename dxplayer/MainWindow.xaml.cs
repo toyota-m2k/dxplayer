@@ -57,6 +57,7 @@ namespace dxplayer {
             ViewModel.CheckCommand.Subscribe(CheckItem);
             ViewModel.UncheckCommand.Subscribe(UncheckItem);
             ViewModel.ResetCounterCommand.Subscribe(ResetCounter);
+            ViewModel.DeleteItemCommand.Subscribe(DeleteFiles);
             ViewModel.DecrementCounterCommand.Subscribe(DecrementCounter);
             ViewModel.ShutdownCommand.Subscribe(Shutdown);
 
@@ -419,6 +420,18 @@ namespace dxplayer {
             DB.PlayListTable.Update();
         }
 
+        private void DeleteFiles() {
+            if(MessageBoxResult.OK != MessageBox.Show("Are you sure to delete selected file(s)?", "dxplayer", MessageBoxButton.OKCancel)) {
+                return;
+            }
+
+            foreach (var c in SelectedItems) {
+                c.Delete();
+            }
+            DB.PlayListTable.Update();
+            UpdateList();
+        }
+
         private void UncheckItem() {
             foreach (var c in SelectedItems) {
                 c.Checked = false;
@@ -438,7 +451,7 @@ namespace dxplayer {
 
 #region Sort / Filter
 
-        private void UpdateList() {
+        public void UpdateList() {
             var list = DB.PlayListTable.List.Filter();
             if (Settings.Instance.SortInfo.Shuffle) {
                 ViewModel.MainList.Value = Shuffle(list);

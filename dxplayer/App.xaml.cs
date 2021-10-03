@@ -10,6 +10,7 @@ namespace dxplayer
     public partial class App : Application
     {
         public static App Instance => Current as App;
+        public static new MainWindow MainWindow => Current.MainWindow as MainWindow;
         public MainStorage DB { get; private set; }
 
         public bool OpenDB(string path) {

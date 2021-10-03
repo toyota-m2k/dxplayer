@@ -336,8 +336,8 @@
                     <Setter Property="ContextMenu">
                         <Setter.Value>
                             <ContextMenu Background="WhiteSmoke">
-                                <MenuItem Header="Reset Play Counter (_N)" InputGestureText="Ctrl+N" Command="{Binding ResetCounterCommand}"/>
-                                <MenuItem Header="Delete Files (_D)" InputGestureText="Ctrl+D" Command="{Binding DeleteItemCommand}"/>
+                                <MenuItem Header="Reset Play Counter (_N)" InputGestureText="N" Command="{Binding ResetCounterCommand}"/>
+                                <MenuItem Header="Delete File (_D)" InputGestureText="D" Command="{Binding DeleteItemCommand}"/>
                             </ContextMenu>
                         </Setter.Value>
                     </Setter>

@@ -16,11 +16,11 @@ namespace dxplayer.server {
 
         private WeakReference<MainCommands> mMainCommands;
         private WeakReference<PlayerCommands> mPlayerCommands;
-        private WeakReference<MainWindow> mMainWindow;
         
         private MainCommands MainCommandManager => mMainCommands?.GetValue();
         private PlayerCommands PlayerCommandManager => mPlayerCommands?.GetValue();
 
+        private WeakReference<MainWindow> mMainWindow;
         public MainWindow MainWindow {
             get => mMainWindow.GetValue();
             set { mMainWindow = (value != null) ? new WeakReference<MainWindow>(value) : null; }

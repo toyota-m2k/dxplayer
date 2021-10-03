@@ -73,6 +73,7 @@ namespace dxplayer.settings
 
 
         public IEnumerable<PlayItem> Filter(IEnumerable<PlayItem> list) {
+            list = list.Where(c => c.Flag == 0);
             if (!Enabled) return list;
             if(!Excellent) {
                 list = list.Where(c => c.Rating != Rating.EXCELLENT);

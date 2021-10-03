@@ -5,6 +5,19 @@ namespace dxplayer.misc {
     public class SimpleCommand : ICommand {
         private Action Action;
         private Func<bool> Func;
+        private bool mEnabled = true;
+        public virtual bool Enabled {
+            get => mEnabled;
+            set {
+                if(mEnabled!=value) {
+                    mEnabled = value;
+                    CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+
+
+
         public event EventHandler CanExecuteChanged;
 
         public SimpleCommand(Action action) {
@@ -15,7 +28,7 @@ namespace dxplayer.misc {
         }
 
         public bool CanExecute(object parameter) {
-            return true;
+            return Enabled;
         }
 
         public void Execute(object parameter) {
