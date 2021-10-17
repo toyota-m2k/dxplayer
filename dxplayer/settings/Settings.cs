@@ -19,6 +19,7 @@ namespace dxplayer.settings {
         public bool UseServer { get; set; } = false;
         public bool PlayCountFromServer { get; set; } = false;
         public int ServerPort { get; set; } = 5000;
+        public bool FitMode { get; set; } = false;
 
         private static readonly string SETTINGS_FILE = "dxplayer.settings";
 

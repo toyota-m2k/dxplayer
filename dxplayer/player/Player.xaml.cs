@@ -27,7 +27,7 @@ namespace dxplayer.player {
 
         private void OnLoaded(object sender, RoutedEventArgs e) {
             ViewModel.Player = this;
-            ViewModel.FitMode.Value = Stretch == Stretch.Uniform;
+            ViewModel.FitMode.Value = Settings.Instance.FitMode;
             ViewModel.FitMode.Subscribe(FitView);
             ViewModel.MaximizeCommand.Subscribe(ToggleFullscreen);
             ViewModel.Fullscreen.Value = Window.GetWindow(this).WindowStyle == WindowStyle.None;
@@ -136,6 +136,7 @@ namespace dxplayer.player {
 
         public void FitView(bool mode) {
             Stretch = mode ? Stretch.Uniform : Stretch.UniformToFill;
+            Settings.Instance.FitMode = mode;
         }
 
         //public void Stop() {
