@@ -596,7 +596,10 @@ namespace dxplayer.player {
                 mRepeatSkippingTimer.Interval = TimeSpan.FromSeconds(0.2);
                 mRepeatSkippingTimer.Tick += (s, e) => {
                     //LoggerEx.debug("Seeking");
-                    SeekRelative(1 * 1000);
+                    var state = State.Value;
+                    if (state == PlayerState.PLAYING || state == PlayerState.READY) {
+                        SeekRelative(1 * 1000);
+                    }
                 };
             }
             mRepeatSkippingTimer.Start();
