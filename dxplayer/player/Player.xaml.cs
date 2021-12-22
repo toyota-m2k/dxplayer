@@ -87,14 +87,16 @@ namespace dxplayer.player {
             ViewModel.Duration.Value = (ulong)MediaPlayer.NaturalDuration.TimeSpan.TotalMilliseconds;
             var current = ViewModel.PlayList.Current.Value;
             ViewModel.ChapterEditor.OnMediaOpened(current);
+            Play();     // 一旦 Playを呼んでおかないと、シークしてから再生したときに、なぜか先頭に戻ってしまう。
             if (ViewModel.AutoPlay) {
-                Play();
                 double pos = 0;
                 if (ReservePosition > 0 && ReservePosition < ViewModel.Duration.Value) {
                     pos = ReservePosition;
                 }
                 MediaPlayer.Position = TimeSpan.FromMilliseconds(pos);
                 ReservePosition = 0;
+            } else {
+                Pause();
             }
         }
 
