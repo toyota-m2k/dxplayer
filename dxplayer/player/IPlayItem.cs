@@ -17,7 +17,7 @@
         public static string TitleOrName(this IPlayItem item) {
             if(!string.IsNullOrWhiteSpace(item.Title)) {
                 return item.Title;
-            } else if(string.IsNullOrEmpty(item.Name)) {
+            } else if(!string.IsNullOrWhiteSpace(item.Name)) {
                 return item.Name;
             }
             return "<untitled>";
