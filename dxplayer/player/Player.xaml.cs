@@ -51,10 +51,11 @@ namespace dxplayer.player {
         }
 
         private void OnCurrentItemChanged(IPlayItem item) {
+            ViewModel.EndRepeatSkippingMode();
+            ViewModel.State.Value = PlayerState.UNAVAILABLE;
             MediaPlayer.Stop();
             MediaPlayer.Source = null;
             //ViewModel.ChapterEditor.SaveChapterListIfNeeds();
-            ViewModel.State.Value = PlayerState.UNAVAILABLE;
             ViewModel.ChapterEditor.Reset();
 
             ReservePosition = 0;
@@ -73,22 +74,30 @@ namespace dxplayer.player {
                     ViewModel.State.Value = PlayerState.LOADING;
                 }
                 if (uri != null) {
+                    LoggerEx.debug($"New Source.{uri}");
                     MediaPlayer.Source = uri;
                     // Sourceをセットしただけでは OnMediaOpenedが呼ばれない。
                     // Play または、Stop を呼んでおく必要がある。
-                    MediaPlayer.Stop();
+                    //MediaPlayer.Pause();
                 }
             }
         }
 
         private void OnMediaOpened(object sender, RoutedEventArgs e) {
-            if (!MediaPlayer.NaturalDuration.HasTimeSpan) return;
+            LoggerEx.debug("");
+            if (!MediaPlayer.NaturalDuration.HasTimeSpan) {
+                LoggerEx.debug("no duration");
+                return;
+            }
+
+            LoggerEx.debug("ok");
             ViewModel.State.Value = PlayerState.READY;
             ViewModel.Duration.Value = (ulong)MediaPlayer.NaturalDuration.TimeSpan.TotalMilliseconds;
             var current = ViewModel.PlayList.Current.Value;
             ViewModel.ChapterEditor.OnMediaOpened(current);
-            Play();     // 一旦 Playを呼んでおかないと、シークしてから再生したときに、なぜか先頭に戻ってしまう。
+//            Play();     // 一旦 Playを呼んでおかないと、シークしてから再生したときに、なぜか先頭に戻ってしまう。
             if (ViewModel.AutoPlay) {
+                Play();
                 double pos = 0;
                 if (ReservePosition > 0 && ReservePosition < ViewModel.Duration.Value) {
                     pos = ReservePosition;
@@ -101,6 +110,7 @@ namespace dxplayer.player {
         }
 
         private void OnMediaEnded(object sender, RoutedEventArgs e) {
+            ViewModel.EndRepeatSkippingMode();
             ViewModel.State.Value = PlayerState.READY;
             ControlPanel.Slider.OnMediaEnd();
             //if (mCurrentItemId != null) {

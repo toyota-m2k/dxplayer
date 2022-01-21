@@ -469,9 +469,13 @@ namespace dxplayer.player {
 
         // command handlers
 
-        public void SeekRelative(long delta) {
-            var pos = (ulong)Math.Min((long)Duration.Value, Math.Max(0, (long)Position.Value + delta));
-            Position.Value = pos;
+        public long SeekRelative(long delta) {
+            const long SAFE_MARGIN = 100;
+            var currentPos = (long)Position.Value;
+            var duration = (long)Duration.Value;
+            var safeDelta = Math.Min(Math.Max(delta, -currentPos), duration - currentPos - SAFE_MARGIN);
+            Position.Value = (ulong)Math.Min(duration, Math.Max(0, currentPos + safeDelta));
+            return safeDelta;
         }
         public void SetRating(Rating rating) {
             var item = PlayList.Current.Value as PlayItem;
@@ -586,9 +590,16 @@ namespace dxplayer.player {
         private DispatcherTimer mRepeatSkippingTimer = null;
         public bool IsRepeatSkippingMode => mRepeatSkippingTimer?.IsEnabled ?? false;
 
+        private void SkipInRepeatMode() {
+            const long SEEK_UNIT = 1000;
+            if(SeekRelative(SEEK_UNIT)<SEEK_UNIT) {
+                EndRepeatSkippingMode();
+            }
+        }
+
         public void BeginRepeatSkippingMode() {
             //LoggerEx.debug("Called");
-            SeekRelative(1 * 1000);
+            SkipInRepeatMode();
             if (IsRepeatSkippingMode) return;
             ResetSuperHighSpeedMode();
             if (null == mRepeatSkippingTimer) {
@@ -598,7 +609,7 @@ namespace dxplayer.player {
                     //LoggerEx.debug("Seeking");
                     var state = State.Value;
                     if (state == PlayerState.PLAYING || state == PlayerState.READY) {
-                        SeekRelative(1 * 1000);
+                        SkipInRepeatMode();
                     }
                 };
             }
