@@ -1,11 +1,11 @@
 ﻿using dxplayer.settings;
 using io.github.toyota32k.toolkit.utils;
 using System;
-using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using static System.Windows.Window;
 
 namespace dxplayer.player {
     /// <summary>
@@ -13,8 +13,8 @@ namespace dxplayer.player {
     /// </summary>
     public partial class Player : UserControl {
         PlayerViewModel ViewModel => DataContext as PlayerViewModel;
-        private CursorManager CursorManager;
-        private double ReservePosition = 0;
+        private CursorManager mCursorManager;
+        private double mReservePosition = 0;
 
         public Stretch Stretch {
             get => MediaPlayer.Stretch;
@@ -30,9 +30,9 @@ namespace dxplayer.player {
             ViewModel.FitMode.Value = Settings.Instance.FitMode;
             ViewModel.FitMode.Subscribe(FitView);
             ViewModel.MaximizeCommand.Subscribe(ToggleFullscreen);
-            ViewModel.Fullscreen.Value = Window.GetWindow(this).WindowStyle == WindowStyle.None;
-            CursorManager = new CursorManager( Window.GetWindow(this));
-            ViewModel.KickOutMouseCommand.Subscribe(CursorManager.KickOutMouse);
+            ViewModel.Fullscreen.Value = GetWindow(this)?.WindowStyle == WindowStyle.None;
+            mCursorManager = new CursorManager(GetWindow(this));
+            ViewModel.KickOutMouseCommand.Subscribe(mCursorManager.KickOutMouse);
 
             ViewModel.Speed.Subscribe((speed) => {
                 double sr = (speed >= 0.5) ? 1 + (speed - 0.5) * 2 /* 1 ～ 2 */ : 0.2 + 0.8 * (speed * 2)/*0.2 ～ 1*/;
@@ -47,7 +47,7 @@ namespace dxplayer.player {
             ViewModel.PauseCommand.Subscribe(Pause);
             ViewModel.ChapterEditor.IsEditing.Subscribe(OnChapterEditing);
 
-            CursorManager.SetActivator(ViewModel.CursorManagerActivity);
+            mCursorManager.SetActivator(ViewModel.CursorManagerActivity);
         }
 
         private void OnCurrentItemChanged(IPlayItem item) {
@@ -58,13 +58,13 @@ namespace dxplayer.player {
             //ViewModel.ChapterEditor.SaveChapterListIfNeeds();
             ViewModel.ChapterEditor.Reset();
 
-            ReservePosition = 0;
+            mReservePosition = 0;
             Uri uri = null;
             if (item != null) {
                 if (item.Path == Settings.Instance.LastPlayingPath && Settings.Instance.LastPlayingPos > 0) {
-                    ReservePosition = Settings.Instance.LastPlayingPos;
+                    mReservePosition = Settings.Instance.LastPlayingPos;
                 } else {
-                    ReservePosition = item.TrimStart;
+                    mReservePosition = item.TrimStart;
                 }
                 //ViewModel.Volume.Value = item.Volume;
 
@@ -99,11 +99,11 @@ namespace dxplayer.player {
             if (ViewModel.AutoPlay) {
                 Play();
                 double pos = 0;
-                if (ReservePosition > 0 && ReservePosition < ViewModel.Duration.Value) {
-                    pos = ReservePosition;
+                if (mReservePosition > 0 && mReservePosition < ViewModel.Duration.Value) {
+                    pos = mReservePosition;
                 }
                 MediaPlayer.Position = TimeSpan.FromMilliseconds(pos);
-                ReservePosition = 0;
+                mReservePosition = 0;
             } else {
                 Pause();
             }
@@ -123,7 +123,6 @@ namespace dxplayer.player {
             ViewModel.State.Value = PlayerState.ERROR;
             LoggerEx.error(e.ErrorException);
 
-            // ToDo: 
             // エラー表示と、Retry or Next 選択
 
             //if (mCurrentItemId != null) {
@@ -190,7 +189,7 @@ namespace dxplayer.player {
         }
 
         private void OnMouseMove(object sender, MouseEventArgs e) {
-            CursorManager.Update(e.GetPosition(this));
+            mCursorManager.Update(e.GetPosition(this));
         }
 
         private void OnMouseLeave(object sender, MouseEventArgs e) {
@@ -198,14 +197,16 @@ namespace dxplayer.player {
         }
 
         private void ToggleFullscreen() {
-            var win = Window.GetWindow(this);
+            var win = GetWindow(this);
+            if (win == null) return;
             if (win.WindowStyle == WindowStyle.None) {
                 win.WindowStyle = WindowStyle.SingleBorderWindow;
                 win.WindowState = WindowState.Normal;
                 ViewModel.Fullscreen.Value = false;
-            } else {
-                win.WindowStyle = WindowStyle.None;         // タイトルバーと境界線を表示しない
-                win.WindowState = WindowState.Maximized;    // 最大化表示
+            }
+            else {
+                win.WindowStyle = WindowStyle.None; // タイトルバーと境界線を表示しない
+                win.WindowState = WindowState.Maximized; // 最大化表示
                 ViewModel.Fullscreen.Value = true;
             }
         }

@@ -470,6 +470,9 @@ namespace dxplayer.player {
         // command handlers
 
         public long SeekRelative(long delta) {
+            if (delta < 0) {
+                EndRepeatSkippingMode();
+            }
             const long SAFE_MARGIN = 100;
             var currentPos = (long)Position.Value;
             var duration = (long)Duration.Value;
