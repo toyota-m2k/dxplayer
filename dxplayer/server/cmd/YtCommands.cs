@@ -35,7 +35,7 @@ namespace dxplayer.server.cmd {
                     return source.SelectedItems;
             }
         }
-        private static MainStorage DB = App.Instance.DB;
+        private static MainStorage DB { get => App.Instance.DB; }
 
         public Route PlayList { get; } =                     // list: プレイリスト要求
                     new Route {
