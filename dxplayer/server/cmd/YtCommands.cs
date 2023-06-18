@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 
 namespace dxplayer.server.cmd {
     public class YtCommands : ServerCommandListBase {
@@ -36,6 +37,30 @@ namespace dxplayer.server.cmd {
             }
         }
         private static MainStorage DB { get => App.Instance.DB; }
+        public Route Capability { get; }
+            = new Route {
+                Name = "Capability of this server",
+                UrlRegex = "/capability",
+                Method = "GET",
+                Callable = (request) => {
+                    var json = new JsonObject(new Dictionary<string, JsonValue>() {
+                        {"cmd", "capability"},
+                        {"serverName", "DxPlayer"},
+                        {"version", 1},
+                        {"root", "/ytplayer/" },
+                        {"category", false},
+                        {"rating", false},
+                        {"mark", false},
+                        {"chapter", true },
+                        {"sync", false },
+                        {"acceptRequest", false},
+                        {"backup", false},
+                        {"hasView", true},
+                        {"authentication", false},
+                    });
+                    return new TextHttpResponse(json.ToString(), "application/json");
+                }
+            };
 
         public Route PlayList { get; } =                     // list: プレイリスト要求
                     new Route {
