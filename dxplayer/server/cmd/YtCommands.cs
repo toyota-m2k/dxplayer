@@ -49,13 +49,14 @@ namespace dxplayer.server.cmd {
                         {"version", 1},
                         {"root", "/ytplayer/" },
                         {"category", false},
-                        {"rating", false},
+                        {"rating", true},
                         {"mark", false},
-                        {"chapter", true },
-                        {"sync", false },
-                        {"acceptRequest", false},
-                        {"backup", false},
-                        {"hasView", true},
+                        {"chapter", false},
+                        {"reputation", 1 },             // reputation (category/mark/rating) コマンド対応 1:RO /2:RW
+                        {"diff", false},                // date以降の更新チェック(check)、差分リスト取得に対応
+                        {"sync", false },               // 端末間同期
+                        {"acceptRequest", false },        // register command をサポートする
+                        {"hasView", true },              // current get/set をサポートする
                         {"authentication", false},
                     });
                     return new TextHttpResponse(json.ToString(), "application/json");
@@ -160,6 +161,27 @@ namespace dxplayer.server.cmd {
                             return new TextHttpResponse(json.ToString(), "application/json");
                         }
                     };
+        // ratings: 全レーティングリストの要求
+        public Route RatingList { get; } =
+            new Route {
+                Name = "ytPlayer Ratings",
+                UrlRegex = @"/ytplayer/ratings",
+                Method = "GET",
+                Callable = request => {
+                    //Source?.StandardOutput("BooServer: cmd=rating");
+                    Logger.debug("YtServer: Ratings");
+                    var json = new JsonObject(new Dictionary<string, JsonValue>() {
+                                {"cmd", "ratings"},
+                                {"default",  3 },
+                                {"ratings", new JsonArray(
+                                    Enum.GetValues(typeof(Rating)).ToEnumerable<Rating>().Select((v)=> new JsonObject(new Dictionary<string, JsonValue>() {
+                                        {"rating", (int)v},
+                                        {"label",v.ToString()},
+                                    })).ToArray()) },
+                            });
+                    return new TextHttpResponse(json.ToString(), "application/json");
+                }
+            };
 
         private static void UpdatePlayCounterIfNeed(PlayItem item) {
             if(Settings.Instance.PlayCountFromServer) {
