@@ -51,15 +51,16 @@ namespace dxplayer.server.cmd {
                         {"category", false},
                         {"rating", true},
                         {"mark", false},
-                        {"chapter", false},
+                        {"chapter", true},
                         {"reputation", 1 },             // reputation (category/mark/rating) コマンド対応 1:RO /2:RW
                         {"diff", false},                // date以降の更新チェック(check)、差分リスト取得に対応
                         {"sync", false },               // 端末間同期
                         {"acceptRequest", false },        // register command をサポートする
                         {"hasView", true },              // current get/set をサポートする
                         {"authentication", false},
+                        {"types", "v" }
                     });
-                    return new TextHttpResponse(json.ToString(), "application/json");
+                    return new TextHttpResponse(request, json.ToString(), "application/json");
                 }
             };
 
@@ -104,7 +105,9 @@ namespace dxplayer.server.cmd {
                                         {"name", v.TitleOrName() ?? "untitled" },
                                         {"start", $"{v.TrimStart}"},
                                         {"end", $"{v.TrimEnd}" },
-                                        {"volume",$"1" }
+                                        {"volume",$"1" },
+                                        {"media", "v" },
+                                        {"duration", v.Duration }
                                     })));
                             }
 
@@ -113,7 +116,7 @@ namespace dxplayer.server.cmd {
                                 {"date", $"{current}" },
                                 {"list",  list}
                             });
-                            return new TextHttpResponse(json.ToString(), "application/json");
+                            return new TextHttpResponse(request, json.ToString(), "application/json");
                         }
                     };
 
@@ -131,7 +134,7 @@ namespace dxplayer.server.cmd {
                                 {"cmd", "check"},
                                 {"update", $"{f}" }
                             });
-                            return new TextHttpResponse(json.ToString(), "application/json");
+                            return new TextHttpResponse(request, json.ToString(), "application/json");
                         }
                     };
         public Route ChapterList { get; } =  // chapter: チャプターリスト要求
@@ -158,7 +161,7 @@ namespace dxplayer.server.cmd {
                                                 }))) },
                                             }
                             );
-                            return new TextHttpResponse(json.ToString(), "application/json");
+                            return new TextHttpResponse(request, json.ToString(), "application/json");
                         }
                     };
         // ratings: 全レーティングリストの要求
@@ -179,7 +182,7 @@ namespace dxplayer.server.cmd {
                                         {"label",v.ToString()},
                                     })).ToArray()) },
                             });
-                    return new TextHttpResponse(json.ToString(), "application/json");
+                    return new TextHttpResponse(request, json.ToString(), "application/json");
                 }
             };
 
@@ -197,38 +200,47 @@ namespace dxplayer.server.cmd {
             }
         }
 
+        private static Func<HttpRequest, IHttpResponse> RequestStream = (HttpRequest request) => {
+            var source = DB.PlayListTable.List;
+            if (null == source) {
+                return HttpBuilder.ServiceUnavailable();
+            }
+            var id = Convert.ToInt64(QueryParser.Parse(request.Url)["id"]);
+            var entry = source.Where((e) => e.ID == id).SingleOrDefault();
+            if (null == entry) {
+                return HttpBuilder.NotFound();
+            }
+            UpdatePlayCounterIfNeed(entry);
+
+            var range = request.Headers.GetValue("Range");
+            if (null == range) {
+                //Source?.StandardOutput($"BooServer: cmd=video({id})");
+                return new StreamingHttpResponse(request, entry.Path, "video/mp4", 0, 0);
+            }
+            else {
+                var m = RegRange.Match(range);
+                var s = m.Groups["start"];
+                var e = m.Groups["end"];
+                var start = s.Success ? Convert.ToInt64(s.Value) : 0;
+                var end = e.Success ? Convert.ToInt64(s.Value) : 0;
+                return new StreamingHttpResponse(request, entry.Path, "video/mp4", start, end);
+            }
+        };
+
         private static Regex RegRange = new Regex(@"bytes=(?<start>\d+)(?:-(?<end>\d+))?");
         public Route MovieStream { get; } = // VIDEO:ビデオストリーム要求
                     new Route {
                         Name = "ytPlayer video",
                         UrlRegex = @"/ytplayer/video\?\w+",
                         Method = "GET",
-                        Callable = (HttpRequest request) => {
-                            var source = DB.PlayListTable.List;
-                            if (null == source) {
-                                return HttpBuilder.ServiceUnavailable();
-                            }
-                            var id = Convert.ToInt64(QueryParser.Parse(request.Url)["id"]);
-                            var entry = source.Where((e) => e.ID  == id).SingleOrDefault();
-                            if(null==entry) {
-                                return HttpBuilder.NotFound();
-                            }
-                            UpdatePlayCounterIfNeed(entry);
-
-                            var range = request.Headers.GetValue("Range");
-                            if (null == range) {
-                                //Source?.StandardOutput($"BooServer: cmd=video({id})");
-                                return new StreamingHttpResponse(entry.Path, "video/mp4", 0, 0);
-                            }
-                            else {
-                                var m = RegRange.Match(range);
-                                var s = m.Groups["start"];
-                                var e = m.Groups["end"];
-                                var start = s.Success ? Convert.ToInt64(s.Value) : 0;
-                                var end = e.Success ? Convert.ToInt64(s.Value) : 0;
-                                return new StreamingHttpResponse(entry.Path, "video/mp4", start, end);
-                            }
-                        }
+                        Callable = RequestStream
+                    };
+        public Route ItemStream { get; } = // VIDEO:ビデオストリーム要求
+                    new Route {
+                        Name = "ytPlayer video",
+                        UrlRegex = @"/ytplayer/item\?\w+",
+                        Method = "GET",
+                        Callable = RequestStream
                     };
         public Route GetCurrent { get; } = // current: カレントアイテムのget/set
                     new Route {
@@ -244,7 +256,7 @@ namespace dxplayer.server.cmd {
                                 { "cmd", "current"},
                                 { "id", id },
                             });
-                            return new TextHttpResponse(json.ToString(), "application/json");
+                            return new TextHttpResponse(request, json.ToString(), "application/json");
                         }
                     };
         public Route PutCurrent { get; } =
@@ -264,7 +276,7 @@ namespace dxplayer.server.cmd {
                                 ServerCommandCenter.Instance.RunOnMainThread(() => {
                                     Source.CurrentId = id;
                                 });
-                                return new TextHttpResponse(json.ToString(), "application/json");
+                                return new TextHttpResponse(request, json.ToString(), "application/json");
                             }
                             catch (Exception e) {
                                 Logger.error(e);
@@ -284,7 +296,7 @@ namespace dxplayer.server.cmd {
                                             {"cmd", "category"},
                                             {"categories", new JsonArray() }
                                         });
-                            return new TextHttpResponse(json.ToString(), "application/json");
+                            return new TextHttpResponse(request, json.ToString(), "application/json");
                         }
                     };
 

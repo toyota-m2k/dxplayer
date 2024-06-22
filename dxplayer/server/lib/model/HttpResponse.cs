@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 // NOTE: two consequences of this simplified response model are:
 //
@@ -41,6 +42,38 @@ namespace io.github.toyota32k.server.model {
     }
 
     public abstract class AbstractHttpResponse : IHttpResponse {
+        //private static Regex refererForCors = new Regex(@"(?<target>http://(?:localhost|127.0.0.1)(?::\d+)?)/");
+        private static Regex refererForCors = new Regex(@"(?<target>https?://(?:.*)(?::\d+)?)/?");
+
+        private string getReferer(HttpRequest req) {
+            if(req == null) return null;
+            if (req.Headers.TryGetValue("Origin", out var origin)) {
+                return origin;
+                //var m = refererForCors.Match(origin);
+                //if (m.Success) {
+                //    return m.Groups["target"]?.Value;
+                //}
+            }
+            if (req.Headers.TryGetValue("Referer", out var referer)) {
+                var m = refererForCors.Match(referer);
+                if (m.Success) {
+                    return m.Groups["target"]?.Value;
+                }
+            }
+            return null;
+        }
+
+        protected AbstractHttpResponse(HttpRequest req) {
+            // ローカルホストからの要求に対してはCross-Origin Resource Shareingを許可する
+            var r = getReferer(req);
+            if (!string.IsNullOrEmpty(r)) { 
+                Headers["Access-Control-Allow-Origin"] = r;
+                Headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE";
+                Headers["Access-Control-Allow-Headers"] = "Content-Type,Content-Length,Accept";
+            }
+        }
+
+
         public int StatusCode { get; set; }
         public string ReasonPhrase { get; set; }
 
@@ -82,20 +115,20 @@ namespace io.github.toyota32k.server.model {
         public string Content { get; set; }
         private byte[] Buffer = null;
 
-        public TextHttpResponse() {
+        public TextHttpResponse(HttpRequest req):base(req) {
             StatusCode = 200;
             ReasonPhrase = "OK";
         }
 
-        public TextHttpResponse(string content, string contentType, int code = 200, string reason = "OK") {
+        public TextHttpResponse(HttpRequest req, string content, string contentType, int code=200, string reason="OK") :base(req) {
             StatusCode = code;
             ReasonPhrase = reason;
             Content = content;
             ContentType = contentType;
         }
 
-        protected override void Prepare() {
-            Buffer = Content != null ? Encoding.UTF8.GetBytes(Content) : new byte[] { };
+        protected override void Prepare() { 
+            Buffer = Content!=null ? Encoding.UTF8.GetBytes(Content) : new byte[] { };
             ContentLength = Buffer.Length;
         }
 
@@ -112,10 +145,10 @@ namespace io.github.toyota32k.server.model {
     public class FileHttpResponse : AbstractHttpResponse {
         public string ContentFilePath { get; set; }
 
-        public FileHttpResponse() {
+        public FileHttpResponse(HttpRequest req) : base(req) {
         }
 
-        public FileHttpResponse(string path, string contentType) {
+        public FileHttpResponse(HttpRequest req, string path, string contentType) : base(req) {
             ContentFilePath = path;
             StatusCode = 200;
             ReasonPhrase = "OK";
@@ -145,13 +178,13 @@ namespace io.github.toyota32k.server.model {
     }
 
     public class StreamingHttpResponse : FileHttpResponse {
-        public StreamingHttpResponse() { }
+        public StreamingHttpResponse(HttpRequest req) : base(req) { }
 
         public long Start { get; set; } = 0;
         public long End { get; set; } = 0;
 
-        public StreamingHttpResponse(string path, string contentType, long start, long end)
-            : base(path, contentType) {
+        public StreamingHttpResponse(HttpRequest req, string path, string contentType, long start, long end)
+            : base(req, path, contentType) {
             Start = start;
             End = end;
         }
@@ -159,17 +192,16 @@ namespace io.github.toyota32k.server.model {
         protected override void Prepare() {
             if (Start == 0 && End == 0) {
                 StatusCode = 200;
-                Headers["Accept-Range"] = "bytes";
+                Headers["Accept-Ranges"] = "bytes";
                 base.Prepare();
-            }
-            else {
+            } else {
                 var fileLength = FileLength;
                 if (End == 0) {
                     End = fileLength - 1;
                 }
                 StatusCode = 206;
                 Headers["Content-Range"] = $"bytes {Start}-{End}/{fileLength}";
-                Headers["Accept-Range"] = "bytes";
+                Headers["Accept-Ranges"] = "bytes";
                 ContentLength = End - Start + 1;
             }
         }
@@ -177,13 +209,12 @@ namespace io.github.toyota32k.server.model {
         protected override void WriteBody(Stream output) {
             if (Start == 0 && End == 0) {
                 base.WriteBody(output);
-            }
-            else {
+            } else {
                 long chunkLength = End - Start + 1;
                 long remain = chunkLength;
-                int read = 0;
+                int read=0;
                 using (var input = OpenFile()) {
-                    byte[] buffer = new byte[Math.Min(chunkLength, 1 * 1024 * 1024)];
+                    byte[] buffer = new byte[Math.Min(chunkLength, 1*1024*1024)];
                     input.Seek(Start, SeekOrigin.Begin);
                     while (remain > 0) {
                         read = input.Read(buffer, 0, Math.Min(buffer.Length, (int)remain));

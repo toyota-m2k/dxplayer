@@ -8,7 +8,7 @@ namespace dxplayer.server {
             UrlRegex = "/dxplayer/",
             Method = "GET",
             Callable = (request) => {
-                return new TextHttpResponse(@"DxPlayList Server.", "text/plain");
+                return new TextHttpResponse(request, @"DxPlayList Server.", "text/plain");
             }
         };
 
@@ -21,7 +21,7 @@ namespace dxplayer.server {
                 ServerCommandCenter.Instance.InvokeMainCommand(cm => {
                     cm[MainCommands.ID.PLAY].Invoke(0);
                 });
-                return Result("openplayer", true);
+                return Result(request, "openplayer", true);
             }
         };
     }

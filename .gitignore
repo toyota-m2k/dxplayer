@@ -329,3 +329,4 @@ fastlane/readme.md
 AnalysisReport.sarif
 upgrade-assistant.clef
 dxplayer/data/dmm.wpd
+*.bak

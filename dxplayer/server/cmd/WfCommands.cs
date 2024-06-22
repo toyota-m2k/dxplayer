@@ -102,7 +102,7 @@ namespace dxplayer.server.cmd {
                         result = true;
                     }
                 }
-                return Result(cmd, result);
+                return Result(request, cmd, result);
             }
         };
     }

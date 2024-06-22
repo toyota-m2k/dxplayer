@@ -22,7 +22,7 @@ namespace io.github.toyota32k.server {
         #endregion
 
         private static readonly LoggerEx log = new LoggerEx("HttpServer");
-        private bool Alive = true;
+        //private bool Alive = true;
 
         #region Public Methods
         public HttpServer(List<Route> routes) {

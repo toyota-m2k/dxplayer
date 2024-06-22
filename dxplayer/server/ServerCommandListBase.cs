@@ -6,12 +6,12 @@ using System.Json;
 namespace dxplayer.server {
     public abstract class ServerCommandListBase {
         protected static LoggerEx logger = new LoggerEx("ServerCommand");
-        protected static IHttpResponse Result(string cmd, bool result) {
+        protected static IHttpResponse Result(HttpRequest request, string cmd, bool result) {
             var json = new JsonObject(new Dictionary<string, JsonValue>() {
                                 {"cmd", cmd },
                                 {"result",  true}
                             });
-            return new TextHttpResponse(json.ToString(), "application/json");
+            return new TextHttpResponse(request, json.ToString(), "application/json");
         }
 
 

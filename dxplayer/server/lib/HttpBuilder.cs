@@ -11,7 +11,8 @@ namespace io.github.toyota32k.server {
         public static IHttpResponse InternalServerError() {
             // string content = File.ReadAllText("Resources/Pages/500.html"); 
 
-            return new TextHttpResponse() {
+            return new TextHttpResponse(null)
+            {
                 ReasonPhrase = "InternalServerError",
                 StatusCode = 500,
                 Content = "Internal Server Error."
@@ -21,7 +22,7 @@ namespace io.github.toyota32k.server {
         public static IHttpResponse BadRequest() {
             //string content = File.ReadAllText("Resources/Pages/404.html");
 
-            return new TextHttpResponse() {
+            return new TextHttpResponse(null) {
                 ReasonPhrase = "BadRequest",
                 StatusCode = 400,
                 Content = "Bad Request."
@@ -31,7 +32,7 @@ namespace io.github.toyota32k.server {
         public static IHttpResponse NotFound() {
             //string content = File.ReadAllText("Resources/Pages/404.html");
 
-            return new TextHttpResponse() {
+            return new TextHttpResponse(null) {
                 ReasonPhrase = "NotFound",
                 StatusCode = 404,
                 Content = "Not Found."
@@ -39,7 +40,7 @@ namespace io.github.toyota32k.server {
         }
 
         public static IHttpResponse MethodNotAllowed() {
-            return new TextHttpResponse() {
+            return new TextHttpResponse(null) {
                 ReasonPhrase = "Method Not Allowed",
                 StatusCode = 405,
                 Content = "Method Not Allowed"
@@ -47,7 +48,7 @@ namespace io.github.toyota32k.server {
         }
 
         public static IHttpResponse ServiceUnavailable() {
-            return new TextHttpResponse() {
+            return new TextHttpResponse(null) {
                 ReasonPhrase = "ServiceUnavailable",
                 StatusCode = 503,
                 Content = "Service Unavailable"
