@@ -105,6 +105,7 @@ namespace dxplayer.player {
                 MediaPlayer.Position = TimeSpan.FromMilliseconds(pos);
                 mReservePosition = 0;
             } else {
+                Play();     // 一旦 Playを呼んでおかないと、シークしてから再生したときに、なぜか先頭に戻ってしまう。
                 Pause();
             }
         }

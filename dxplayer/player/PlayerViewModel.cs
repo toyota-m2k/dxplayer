@@ -405,7 +405,7 @@ namespace dxplayer.player {
                 if (prevId == prev) {
                     LoggerEx.error("Next more than twice.");
                 }
-                if (PlayList.HasNext.Value) {
+                if (PlayList.HasNext.Value &&!CheckMode) {
                     GoForwardCommand.Execute();
                 } else {
                     PauseCommand.Execute();
