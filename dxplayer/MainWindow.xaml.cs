@@ -58,6 +58,7 @@ namespace dxplayer {
             ViewModel.UncheckCommand.Subscribe(UncheckItem);
             ViewModel.ResetCounterCommand.Subscribe(ResetCounter);
             ViewModel.DeleteItemCommand.Subscribe(DeleteFiles);
+            ViewModel.CopyItemPathCommand.Subscribe(CopyItemPath);
             ViewModel.DecrementCounterCommand.Subscribe(DecrementCounter);
             ViewModel.ShutdownCommand.Subscribe(Shutdown);
 
@@ -432,6 +433,12 @@ namespace dxplayer {
             UpdateList();
         }
 
+        private void CopyItemPath() {
+            var item = SelectedItem;
+            if (item == null) return;
+
+            Clipboard.SetText(item.Path);
+        }
         private void UncheckItem() {
             foreach (var c in SelectedItems) {
                 c.Checked = false;

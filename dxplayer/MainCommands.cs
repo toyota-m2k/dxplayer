@@ -16,6 +16,7 @@ namespace dxplayer {
             DECREMENT_COUNTER,
             SHUTDOWN,
             DELETE_FILES,
+            COPY_PATH,
             HELP
         }
 
@@ -28,6 +29,7 @@ namespace dxplayer {
                 , CMD(ID.DECREMENT_COUNTER, "DecrementCounter", viewModel.DecrementCounterCommand, "Decrement play-counter")
                 , CMD(ID.SHUTDOWN, "Shutdown", viewModel.ShutdownCommand)
                 , CMD(ID.DELETE_FILES, "DeleteFiles", viewModel.DeleteItemCommand, "Delete selected file(s).")
+                , CMD(ID.COPY_PATH, "CopyPath", viewModel.CopyItemPathCommand, "Copy path to the movie file.")
                 , CMD(ID.HELP, "Help", viewModel.HelpCommand)
                 );
 

@@ -102,10 +102,11 @@
                 <TextBlock Text="{Binding PlayList.CurrentPos.Value}" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0"/>
                 <TextBlock Text=" / " Foreground="White" VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding PlayList.TotalCount.Value}" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <Button Focusable="False"
-                        Visibility="{Binding CheckMode, Converter={StaticResource BoolVisibilityConverter}}"
-                        Command="{Binding CheckedCommand}"
-                        Content="{StaticResource PathCheck}" Style="{StaticResource IconButtonStyle}"/>
+                <ToggleButton
+                    Focusable="False"
+                    Visibility="{Binding CheckMode, Converter={StaticResource BoolVisibilityConverter}}"
+                    IsChecked="{Binding PlayList.Current.Value.Checked}"
+                    Content="{StaticResource PathCheck}" Style="{StaticResource IconToggleButtonStyle}"/>
                 <ToggleButton 
                     Focusable="False"
                     IsChecked="{Binding ChapterEditor.IsEditing.Value, Mode=TwoWay}"

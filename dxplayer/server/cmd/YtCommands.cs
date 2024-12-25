@@ -107,7 +107,8 @@ namespace dxplayer.server.cmd {
                                         {"end", $"{v.TrimEnd}" },
                                         {"volume",$"1" },
                                         {"media", "v" },
-                                        {"duration", v.Duration }
+                                        {"duration", v.Duration },
+                                        {"date", v.Date.Ticks}
                                     })));
                             }
 

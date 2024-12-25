@@ -338,6 +338,7 @@
                             <ContextMenu Background="WhiteSmoke">
                                 <MenuItem Header="Reset Play Counter (_N)" InputGestureText="N" Command="{Binding ResetCounterCommand}"/>
                                 <MenuItem Header="Delete File (_D)" InputGestureText="D" Command="{Binding DeleteItemCommand}"/>
+                                <MenuItem Header="Copy Path (_C)" InputGestureText="C" Command="{Binding CopyItemPathCommand}"/>
                             </ContextMenu>
                         </Setter.Value>
                     </Setter>

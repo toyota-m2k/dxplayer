@@ -291,7 +291,8 @@ namespace dxplayer.player {
         public ReactiveCommand<string> PanelPositionCommand { get; } = new ReactiveCommand<string>();
         public ReactiveCommand SetTrimCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ResetTrimCommand { get; } = new ReactiveCommand();
-        public ReactiveCommand CheckedCommand { get; } = new ReactiveCommand();
+//        public ReactiveCommand<bool> CheckCommand { get; } = new ReactiveCommand<bool>();
+        public ReactiveCommand CheckAndGoCommand { get; } = new ReactiveCommand();
         public ReactiveCommand TrimmingToChapterCommand { get; } = new ReactiveCommand();
         public ReactiveCommand ClosePlayerCommand { get; } = new ReactiveCommand();
         public ReactiveCommand KickOutMouseCommand { get; } = new ReactiveCommand();
@@ -451,7 +452,10 @@ namespace dxplayer.player {
 
             TrimmingToChapterCommand.Subscribe(() => ChapterEditor.TrimmingToChapter(Duration.Value));
             if (CheckMode) {
-                CheckedCommand.Subscribe(() => {
+                //CheckCommand.Subscribe(sw => {
+                //    PlayList.Current.Value.Checked = sw;
+                //});
+                CheckAndGoCommand.Subscribe(() => {
                     PlayList.Current.Value.Checked = true;
                     GoForwardCommand.Execute();
                 });
@@ -468,6 +472,10 @@ namespace dxplayer.player {
         }
 
         // command handlers
+
+        public void SeekTo(ulong pos) {
+            Position.Value = pos;
+        }
 
         public long SeekRelative(long delta) {
             if (delta < 0) {

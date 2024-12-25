@@ -20,6 +20,7 @@ namespace dxplayer {
         public ReactiveCommand PlayCommand { get; } = new ReactiveCommand();
         public ReactiveCommand PreviewCommand { get; } = new ReactiveCommand();
         public ReactiveCommand DeleteItemCommand { get; } = new ReactiveCommand();
+        public ReactiveCommand CopyItemPathCommand { get; } = new ReactiveCommand();
         public ReactiveCommand SettingCommand { get; } = new ReactiveCommand();
         public ReactiveCommand<string> CheckedFilterCommand { get; } = new ReactiveCommand<string>();
         public ReactiveCommand<string> CountFilterCommand { get; } = new ReactiveCommand<string>();

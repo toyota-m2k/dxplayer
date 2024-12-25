@@ -22,6 +22,7 @@ namespace dxplayer.player {
             SEEK_BACK_1,
             SEEK_BACK_5,
             SEEK_BACK_10,
+            SEEK_HEAD,
 
             REPEAT_SEEK_FORWORD_1,
             TOGGLE_REPEAT_SEEK_FORWORD_1,
@@ -88,6 +89,7 @@ namespace dxplayer.player {
                 , REP_CMD(ID.SEEK_BACK_1, "SeekBack1", () => viewModel.SeekRelative(-1000), null, "Seek backward in 1 sec.")
                 , REP_CMD(ID.SEEK_BACK_5, "SeekBack5", () => viewModel.SeekRelative(-5000), null, "Seek backward in 5 sec.")
                 , REP_CMD(ID.SEEK_BACK_10, "SeekBack10", () => viewModel.SeekRelative(-10000), null, "Seek backward in 10 sec.")
+                , CMD(ID.SEEK_HEAD, "SeekHead", () => viewModel.SeekTo(0), "Seek to start")
                 , CMD(ID.SPEED_SLOW, "SpeedSlow", () => viewModel.Speed.Value = 0, "Slow speed")
                 , CMD(ID.SPEED_HIGH, "SpeedHigh", () => viewModel.Speed.Value = 1, "High speed")
                 , CMD(ID.SPEED_NORMAL, "SpeedNormal", () => viewModel.Speed.Value = 0.5, "Normal speed")
@@ -128,7 +130,7 @@ namespace dxplayer.player {
                 , CMD(ID.MOVIE_PREV, "MovieNext", viewModel.PlayList.Prev, "Previous movie")
                 , CMD(ID.CHAPTER_NEXT, "ChapterNext", viewModel.NextChapterCommand, "Next chapter")
                 , CMD(ID.CHAPTER_PREV, "ChapterPrev", viewModel.PrevChapterCommand, "Previous chapter")
-                , CMD(ID.CHECKED_SET, "CheckedSet", viewModel.CheckedCommand, "Check and next movie")
+                , CMD(ID.CHECKED_SET, "CheckedSet", viewModel.CheckAndGoCommand, "Check and next movie")
 
                 , CMD(ID.CHAPTER_UNDO, "ChapterUndo", () => viewModel.ChapterEditor.Undo(), "Undo chapter editing")
                 , CMD(ID.CHAPTER_REDO, "ChapterRedo", () => viewModel.ChapterEditor.Do(), "Redo chapter editing")
@@ -148,6 +150,8 @@ namespace dxplayer.player {
 
             AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
             AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.Left);
+            AssignControlKeyCommand(ID.SEEK_HEAD, Key.Left);
+            AssignSingleKeyCommand(ID.SEEK_HEAD, Key.Home);
 
             AssignSingleKeyCommand(ID.CLOSE, Key.Escape);
 

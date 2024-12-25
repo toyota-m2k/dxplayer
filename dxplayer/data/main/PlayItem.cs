@@ -11,6 +11,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Input;
 
 namespace dxplayer.data.main
@@ -255,6 +256,13 @@ namespace dxplayer.data.main
             }
         }
         public ResetCounterCommandImpl ResetCounterCommand => new ResetCounterCommandImpl(this);
+
+        public class CopyItemPathCommandImpl:SimpleCommand {
+            public CopyItemPathCommandImpl(PlayItem item) : base(() => {
+                Clipboard.SetText(item.Path);
+            }) { }
+        }
+        public CopyItemPathCommandImpl CopyItemPathCommand => new CopyItemPathCommandImpl(this);
     }
 
     public class PlayListTable : StorageTable<PlayItem> {
