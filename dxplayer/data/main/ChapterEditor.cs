@@ -428,6 +428,10 @@ namespace dxplayer.data.main {
             DisabledRanges.Value = Chapters.Value?.GetDisabledRanges(Trimming.Value)?.ToList();
         }
 
+        public IEnumerable<PlayRange> GetEnabledRanges(long duration=0L) {
+            return Chapters.Value?.GetEnabledRanges(Trimming.Value, (ulong)duration);
+        }
+
         public ReactiveCommand<ulong> RequestSeek = new ReactiveCommand<ulong>();
 
         #endregion

@@ -1,5 +1,6 @@
 ﻿using dxplayer.data.dxx;
 using dxplayer.data.wf;
+using dxplayer.ffmpeg;
 using dxplayer.misc;
 using dxplayer.player;
 using io.github.toyota32k.toolkit.utils;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Linq.Mapping;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -50,7 +52,10 @@ namespace dxplayer.data.main
 
         [Column(Name = "size", CanBeNull = false)]
         private long size = 0;
-        public long Size => size;
+        public long Size {
+            get => size;
+            private set => setProp(callerName(), ref size, value);
+        }
 
         [Column(Name = "mark", CanBeNull = true)]
         private string mark = "";
@@ -259,10 +264,65 @@ namespace dxplayer.data.main
 
         public class CopyItemPathCommandImpl:SimpleCommand {
             public CopyItemPathCommandImpl(PlayItem item) : base(() => {
+                var anal = Analyzer.Analyze(item.Path).ToString();
+                Debug.WriteLine(anal);
                 Clipboard.SetText(item.Path);
             }) { }
         }
         public CopyItemPathCommandImpl CopyItemPathCommand => new CopyItemPathCommandImpl(this);
+
+        static private string TempPathFrom(string path, string suffix) {
+            var dir = System.IO.Path.GetDirectoryName(path);
+            var ext = System.IO.Path.GetExtension(path);
+            var name = System.IO.Path.GetFileNameWithoutExtension(path);
+            return System.IO.Path.Combine(dir, $"{name}{suffix}{ext}");
+        }
+
+        public class CompressItemCommandImpl:SimpleCommand {
+            public CompressItemCommandImpl(PlayItem item) : base(() => {
+                var srcPath = item.Path;
+                var chapterEditor = new ChapterEditor();
+                var trimmed = false;
+                chapterEditor.OnMediaOpened(item);
+                if(chapterEditor.DisabledRanges.Value?.FirstOrDefault()!=null) {
+                    // トリミングが必要
+                    var enabledRange = chapterEditor.GetEnabledRanges().ToList();
+                    var trimFile = TempPathFrom(item.Path,"_trim");
+                    var trim = FFApi.Trimming(item.Path, trimFile, enabledRange, null);
+                    if(trim.Result) {
+                        trimmed = true;
+                        srcPath = trimFile;
+                    } else {
+                        return;
+                    }
+                }
+
+                var outPath = TempPathFrom(item.Path, "_comp");
+                var r = FFApi.Compress(srcPath, outPath);
+                Debug.WriteLine(r);
+                if(r.Result && r.After.Size<r.Before.Size) {
+                    File.Delete(item.Path);
+                    File.Move(outPath, item.Path);
+                    item.Size = r.After.Size;
+                    item.Duration = (ulong)r.After.Video.Duration.TotalMilliseconds;
+                } else if(trimmed) {
+                    File.Delete(srcPath);
+                    File.Move(srcPath, item.Path);
+                    item.Size = r.Before.Size;
+                    item.Duration = (ulong)r.Before.Video.Duration.TotalMilliseconds;
+                } else {
+                    return;
+                }
+                if (trimmed) {
+                    // トリミングされたら、チャプター情報 と Triming情報をクリア
+                    App.Instance.DB.ChapterTable.DeleteChaptersOfOwner(item.ID);
+                    item.TrimStart = 0;
+                    item.TrimEnd = 0;
+                }
+                App.MainWindow.UpdateList();
+            }) { }
+        }
+        public CompressItemCommandImpl CompressItemCommand => new CompressItemCommandImpl(this);
     }
 
     public class PlayListTable : StorageTable<PlayItem> {
