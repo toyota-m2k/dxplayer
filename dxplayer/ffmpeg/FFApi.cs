@@ -233,7 +233,9 @@ namespace dxplayer.ffmpeg {
 
         private static FFMpegArgumentProcessor CombineArguments(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
             return FFMpegArguments.FromDemuxConcatInput(files)
-                .OutputToFile(outPath, overwrite: true)
+                .OutputToFile(outPath, overwrite:true, (options) => {
+                    options.CopyChannel();
+                })
                 .NotifyOnProgress((TimeSpan s) => {
                     if (totalDuration.HasValue) {
                         TimeSpanProgress("Combining", progress, s, totalDuration.Value);
@@ -332,7 +334,7 @@ namespace dxplayer.ffmpeg {
                     if (!Extract(inPath, tempPath, range, FFProcessId.SPLITTING, progress, initial, totalDuration, inputInfo).Result) {
                         throw new Exception($"Failed to split {i}");
                     }
-                    CountProgress("Splitting:", progress, i + 1, ranges.Count);
+                    //CountProgress("Splitting:", progress, i + 1, ranges.Count);
                 }
 
                 // 分割したファイルを結合
@@ -382,7 +384,7 @@ namespace dxplayer.ffmpeg {
                     if (!(await ExtractAsync(inPath, tempPath, range, FFProcessId.SPLITTING, progress, initial, totalDuration, inputInfo)).Result) {
                         throw new Exception($"Failed to split {i}");
                     }
-                    CountProgress("Splitting:", progress, i + 1, ranges.Count);
+                    // CountProgress("Splitting:", progress, i + 1, ranges.Count);
                 }
 
                 // 分割したファイルを結合
