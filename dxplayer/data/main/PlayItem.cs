@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -278,51 +279,104 @@ namespace dxplayer.data.main
             return System.IO.Path.Combine(dir, $"{name}{suffix}{ext}");
         }
 
+        public async Task<bool> Compress(IFFProgress progress) {
+            var srcPath = this.Path;
+            var chapterEditor = new ChapterEditor();
+            var trimmed = false;
+            FFAnalyzer.Analysis originalInfo = null;
+            chapterEditor.OnMediaOpened(this);
+            if (chapterEditor.DisabledRanges.Value?.FirstOrDefault() != null) {
+                // トリミングが必要
+                var enabledRange = chapterEditor.GetEnabledRanges().ToList();
+                var trimFile = TempPathFrom(this.Path, "_trim");
+                var trim = await FFApi.TrimmingAsync(this.Path, trimFile, enabledRange, progress, null);
+                if (trim.Result) {
+                    trimmed = true;
+                    srcPath = trimFile;
+                    originalInfo = trim.Before;
+                }
+                else {
+                    return false;
+                }
+            }
+
+            var outPath = TempPathFrom(this.Path, "_comp");
+            var comp = await FFApi.CompressAsync(srcPath, outPath, progress);
+            var result = new FFApi.ConvertResult(comp.Result, originalInfo ?? comp.Before, comp.After, comp.Exception);
+            Debug.WriteLine(result.ToString());
+            if (comp.Result && comp.After.Size < comp.Before.Size) {
+                File.Delete(this.Path);
+                File.Move(outPath, this.Path);
+                this.Size = comp.After.Size;
+                this.Duration = (ulong)comp.After.Video.Duration.TotalMilliseconds;
+            }
+            else if (trimmed) {
+                File.Delete(srcPath);
+                File.Move(srcPath, this.Path);
+                this.Size = comp.Before.Size;
+                this.Duration = (ulong)comp.Before.Video.Duration.TotalMilliseconds;
+            }
+            else {
+                return false;
+            }
+            if (trimmed) {
+                // トリミングされたら、チャプター情報 と Triming情報をクリア
+                App.Instance.DB.ChapterTable.DeleteChaptersOfOwner(this.ID);
+                this.TrimStart = 0;
+                this.TrimEnd = 0;
+            }
+            App.MainWindow.UpdateList();
+            return true;
+        }
+
         public class CompressItemCommandImpl:SimpleCommand {
             public CompressItemCommandImpl(PlayItem item) : base(() => {
-                var srcPath = item.Path;
-                var chapterEditor = new ChapterEditor();
-                var trimmed = false;
-                FFAnalyzer.Analysis originalInfo = null;
-                chapterEditor.OnMediaOpened(item);
-                if(chapterEditor.DisabledRanges.Value?.FirstOrDefault()!=null) {
-                    // トリミングが必要
-                    var enabledRange = chapterEditor.GetEnabledRanges().ToList();
-                    var trimFile = TempPathFrom(item.Path,"_trim");
-                    var trim = FFApi.Trimming(item.Path, trimFile, enabledRange, null, null);
-                    if(trim.Result) {
-                        trimmed = true;
-                        srcPath = trimFile;
-                        originalInfo = trim.Before;
-                    } else {
-                        return;
-                    }
-                }
+                App.MainWindow.CompressItems();
 
-                var outPath = TempPathFrom(item.Path, "_comp");
-                var comp = FFApi.Compress(srcPath, outPath,null);
-                var result = new FFApi.ConvertResult(comp.Result, originalInfo ?? comp.Before, comp.After, comp.Exception);
-                Debug.WriteLine(result.ToString());
-                if(comp.Result && comp.After.Size<comp.Before.Size) {
-                    File.Delete(item.Path);
-                    File.Move(outPath, item.Path);
-                    item.Size = comp.After.Size;
-                    item.Duration = (ulong)comp.After.Video.Duration.TotalMilliseconds;
-                } else if(trimmed) {
-                    File.Delete(srcPath);
-                    File.Move(srcPath, item.Path);
-                    item.Size = comp.Before.Size;
-                    item.Duration = (ulong)comp.Before.Video.Duration.TotalMilliseconds;
-                } else {
-                    return;
-                }
-                if (trimmed) {
-                    // トリミングされたら、チャプター情報 と Triming情報をクリア
-                    App.Instance.DB.ChapterTable.DeleteChaptersOfOwner(item.ID);
-                    item.TrimStart = 0;
-                    item.TrimEnd = 0;
-                }
-                App.MainWindow.UpdateList();
+
+                //var srcPath = item.Path;
+                //var chapterEditor = new ChapterEditor();
+                //var trimmed = false;
+                //FFAnalyzer.Analysis originalInfo = null;
+                //chapterEditor.OnMediaOpened(item);
+                //if(chapterEditor.DisabledRanges.Value?.FirstOrDefault()!=null) {
+                //    // トリミングが必要
+                //    var enabledRange = chapterEditor.GetEnabledRanges().ToList();
+                //    var trimFile = TempPathFrom(item.Path,"_trim");
+                //    var trim = FFApi.Trimming(item.Path, trimFile, enabledRange, null, null);
+                //    if(trim.Result) {
+                //        trimmed = true;
+                //        srcPath = trimFile;
+                //        originalInfo = trim.Before;
+                //    } else {
+                //        return;
+                //    }
+                //}
+
+                //var outPath = TempPathFrom(item.Path, "_comp");
+                //var comp = FFApi.Compress(srcPath, outPath,null);
+                //var result = new FFApi.ConvertResult(comp.Result, originalInfo ?? comp.Before, comp.After, comp.Exception);
+                //Debug.WriteLine(result.ToString());
+                //if(comp.Result && comp.After.Size<comp.Before.Size) {
+                //    File.Delete(item.Path);
+                //    File.Move(outPath, item.Path);
+                //    item.Size = comp.After.Size;
+                //    item.Duration = (ulong)comp.After.Video.Duration.TotalMilliseconds;
+                //} else if(trimmed) {
+                //    File.Delete(srcPath);
+                //    File.Move(srcPath, item.Path);
+                //    item.Size = comp.Before.Size;
+                //    item.Duration = (ulong)comp.Before.Video.Duration.TotalMilliseconds;
+                //} else {
+                //    return;
+                //}
+                //if (trimmed) {
+                //    // トリミングされたら、チャプター情報 と Triming情報をクリア
+                //    App.Instance.DB.ChapterTable.DeleteChaptersOfOwner(item.ID);
+                //    item.TrimStart = 0;
+                //    item.TrimEnd = 0;
+                //}
+                //App.MainWindow.UpdateList();
             }) { }
         }
         public CompressItemCommandImpl CompressItemCommand => new CompressItemCommandImpl(this);

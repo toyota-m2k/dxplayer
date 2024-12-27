@@ -470,6 +470,40 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
+                    <StackPanel 
+                        x:Name="CompressProgressDialog" Grid.Row="0" Margin="10"
+                        Visibility="{Binding Dialog.Type.Value, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=COMPRESS_PROGRESS}"
+                        Orientation="Vertical"
+                        Width="300">
+                        <TextBlock>
+                            <Run Text="Processing: "/>
+                            <Run Text="{Binding Dialog.Compress.TargetItemName.Value, Mode=OneWay}"/>
+                        </TextBlock>
+                        <StackPanel
+                            Orientation="Vertical"
+                            Visibility="{Binding Dialog.Compress.MultiItem.Value, Converter={StaticResource BoolVisibilityConverter}}"
+                            >
+                            <ProgressBar
+                                HorizontalAlignment="Stretch"
+                                Height="20"
+                                Orientation="Horizontal"
+                                Minimum="0"
+                                Maximum="100"
+                                Value="{Binding Dialog.Compress.ItemPercent.Value, Mode=OneWay}"
+                                />
+                            <TextBlock HorizontalAlignment="Center" Text="{Binding Dialog.Compress.ItemMessage.Value, Mode=OneWay}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Dialog.Compress.ProcessLabel.Value}"/>
+                        <ProgressBar
+                            HorizontalAlignment="Stretch"
+                            Height="20"
+                            Orientation="Horizontal"
+                            Minimum="0"
+                            Maximum="100"
+                            Value="{Binding Dialog.Compress.ProcessPercent.Value, Mode=OneWay}"
+                            />
+                        <TextBlock HorizontalAlignment="Center" Text="{Binding Dialog.Compress.ProcessMessage.Value, Mode=OneWay}"/>
+                    </StackPanel>
                     <StackPanel x:Name="SettingDialog" Grid.Row="0" Margin="10"
                         Visibility="{Binding Dialog.Type.Value, Converter={StaticResource EnumVisibilityConverter}, ConverterParameter=SETTINGS}"
                         Orientation="Vertical"

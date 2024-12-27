@@ -394,7 +394,7 @@ namespace dxplayer {
 
 #endregion
 
-#region List Management
+        #region List Management
 
         public PlayItem SelectedItem {
             get => MainListView.SelectedItem as PlayItem;
@@ -469,7 +469,7 @@ namespace dxplayer {
 
 #endregion
 
-#region Sort / Filter
+        #region Sort / Filter
 
         public void UpdateList() {
             var list = DB.PlayListTable.List.Filter();
@@ -554,7 +554,7 @@ namespace dxplayer {
 
 #endregion
 
-#region View Events
+        #region View Events
 
         //private void OnKeyDown(object sender, KeyEventArgs e) {
         //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");
@@ -579,8 +579,13 @@ namespace dxplayer {
             ViewModel.CommandManager.Enable(this, false);
         }
 
-#endregion
+        #endregion
 
+        #region Utilities
+        public void CompressItems() {
+            _ = ViewModel.Dialog.ShowCompressProgress(SelectedItems.ToList());
+        }
+        #endregion
         //private void OnKeyDown2(object sender, KeyEventArgs e) {
         //    LoggerEx.debug($"Key={e.Key}, Sys={e.SystemKey}, State={e.KeyStates}, Rep={e.IsRepeat}, Down={e.IsDown}, Up={e.IsUp}, Toggled={e.IsToggled}");
         //}

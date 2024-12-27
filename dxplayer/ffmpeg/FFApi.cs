@@ -86,14 +86,7 @@ namespace dxplayer.ffmpeg {
                     ;
                 })
                 .NotifyOnProgress((TimeSpan s) => {
-                    var percent = ((double)s.Ticks * 100.0) / (double)duration.Ticks;
-                    var percentText = percent.ToString("F1");
-                    var progressMessage = ProgressTimeSpanText(s, duration);
-                    Debug.WriteLine($"Compressing: {progressMessage}");
-                    if(progress!=null) {
-                        progress.Percent = percent;
-                        progress.ProgressMessage = progressMessage;
-                    }
+                    TimeSpanProgress("Compressing", progress, s, duration);
                 });
             }
 
@@ -151,15 +144,8 @@ namespace dxplayer.ffmpeg {
             return Path.Combine(dir, name);
         }
 
-        public static ConvertResult SimpleTrimming(string inPath, string outPath, PlayRange range, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
-            FFConfig.Configure();
-            if (inputInfo == null) {
-                ProgressProcess(progress, FFProcessId.ANALYZING);
-                inputInfo = FFAnalyzer.Analyze(inPath);
-            }
-            try {
-                ProgressProcess(progress, FFProcessId.TRIMMING);
-                FFMpegArguments
+        private static FFMpegArgumentProcessor ExtractArguments(string inPath, string outPath, PlayRange range, IFFProgress progress, TimeSpan initial, TimeSpan total) {
+            return FFMpegArguments
                     .FromFileInput(inPath, verifyExists: true, (options) => {
                         options.Seek(TimeSpan.FromMilliseconds(range.Start));
                         if (range.End != 0 && range.End > range.Start) {
@@ -169,9 +155,22 @@ namespace dxplayer.ffmpeg {
                     .OutputToFile(outPath, overwrite: true, (options) => {
                         options.CopyChannel();
                     })
+                    .NotifyOnProgress(ts => {
+                        TimeSpanProgress("Extracting", progress, ts + initial, total);
+                    })
                     .Apply(it => {
                         Debug.WriteLine(it.Arguments);
-                    })
+                    });
+        }
+
+        private static ConvertResult Extract(string inPath, string outPath, PlayRange range, FFProcessId procId, IFFProgress progress, TimeSpan initial, TimeSpan total, FFAnalyzer.Analysis inputInfo) {
+            if (inputInfo == null) {
+                ProgressProcess(progress, FFProcessId.ANALYZING);
+                inputInfo = FFAnalyzer.Analyze(inPath);
+            }
+            try {
+                ProgressProcess(progress, procId/*FFProcessId.EXTRACTING*/);
+                ExtractArguments(inPath, outPath, range, progress, initial, total)
                     .ProcessSynchronously();
                 return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
             }
@@ -180,11 +179,105 @@ namespace dxplayer.ffmpeg {
                 return ConvertResult.Error(e, inputInfo);
             }
         }
+        private static async Task<ConvertResult> ExtractAsync(string inPath, string outPath, PlayRange range, FFProcessId procId, IFFProgress progress, TimeSpan initial, TimeSpan total, FFAnalyzer.Analysis inputInfo) {
+            if (inputInfo == null) {
+                ProgressProcess(progress, FFProcessId.ANALYZING);
+                inputInfo = FFAnalyzer.Analyze(inPath);
+            }
+            try {
+                ProgressProcess(progress, procId/*FFProcessId.EXTRACTING*/);
+                await ExtractArguments(inPath, outPath, range, progress, initial, total)
+                    .ProcessAsynchronously();
+                return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
+            }
+            catch (Exception e) {
+                PathUtil.safeDeleteFile(outPath);
+                return ConvertResult.Error(e, inputInfo);
+            }
+        }
 
-        //private static string TimeSpanText(TimeSpan ts) {
-        //    return ts.ToString(@"hh\:mm\:ss");
+        //public static ConvertResult SimpleTrimming(string inPath, string outPath, PlayRange range, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+        //    FFConfig.Configure();
+        //    if (inputInfo == null) {
+        //        ProgressProcess(progress, FFProcessId.ANALYZING);
+        //        inputInfo = FFAnalyzer.Analyze(inPath);
+        //    }
+        //    try {
+        //        ProgressProcess(progress, FFProcessId.TRIMMING);
+        //        SimpleTrimmingArguments(inPath, outPath, range)
+        //            .ProcessSynchronously();
+        //        return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
+        //    }
+        //    catch (Exception e) {
+        //        PathUtil.safeDeleteFile(outPath);
+        //        return ConvertResult.Error(e, inputInfo);
+        //    }
         //}
-        private static string ProgressTimeSpanText(TimeSpan current, TimeSpan total) {
+        //public static async Task<ConvertResult> SimpleTrimmingAsync(string inPath, string outPath, PlayRange range, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+        //    FFConfig.Configure();
+        //    if (inputInfo == null) {
+        //        ProgressProcess(progress, FFProcessId.ANALYZING);
+        //        inputInfo = FFAnalyzer.Analyze(inPath);
+        //    }
+        //    try {
+        //        ProgressProcess(progress, FFProcessId.TRIMMING);
+        //        await SimpleTrimmingArguments(inPath, outPath, range)
+        //            .ProcessAsynchronously();
+        //        return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
+        //    }
+        //    catch (Exception e) {
+        //        PathUtil.safeDeleteFile(outPath);
+        //        return ConvertResult.Error(e, inputInfo);
+        //    }
+        //}
+
+        private static FFMpegArgumentProcessor CombineArguments(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
+            return FFMpegArguments.FromDemuxConcatInput(files)
+                .OutputToFile(outPath, overwrite: true)
+                .NotifyOnProgress((TimeSpan s) => {
+                    if (totalDuration.HasValue) {
+                        TimeSpanProgress("Combining", progress, s, totalDuration.Value);
+                    } else {
+                        Debug.WriteLine($"Combining: {TimeSpanText(s)}");
+                        if (progress != null) {
+                            progress.Percent = 0;
+                            progress.ProgressMessage = TimeSpanText(s);
+                        }
+                    }
+                })
+                .Apply(it => {
+                    Debug.WriteLine(it.Arguments);
+                });
+        }
+
+        public static ConvertResult Combine(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
+            try {
+                ProgressProcess(progress, FFProcessId.COMBINING);
+                CombineArguments(files, outPath, progress, totalDuration)
+                    .ProcessSynchronously();
+                return ConvertResult.Success(FFAnalyzer.Analysis.Empty, FFAnalyzer.Analyze(outPath));
+            } catch(Exception e) {
+                PathUtil.safeDeleteFile(outPath);
+                return ConvertResult.Error(e, FFAnalyzer.Analyze(outPath));
+            }
+        }
+        public static async Task<ConvertResult> CombineAsync(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
+            try {
+                ProgressProcess(progress, FFProcessId.COMBINING);
+                await CombineArguments(files, outPath, progress, totalDuration)
+                    .ProcessAsynchronously();
+                return ConvertResult.Success(FFAnalyzer.Analysis.Empty, FFAnalyzer.Analyze(outPath));
+            }
+            catch (Exception e) {
+                PathUtil.safeDeleteFile(outPath);
+                return ConvertResult.Error(e, FFAnalyzer.Analyze(outPath));
+            }
+        }
+
+        private static string TimeSpanText(TimeSpan ts) {
+            return ts.ToString(@"hh\:mm\:ss");
+        }
+        private static void TimeSpanProgress(string label, IFFProgress progress, TimeSpan current, TimeSpan total) {
             string currentText, totalText;
             if(total.TotalMinutes > 60) {
                 currentText = current.ToString(@"hh\:mm\:ss");
@@ -193,7 +286,23 @@ namespace dxplayer.ffmpeg {
                 currentText = current.ToString(@"mm\:ss");
                 totalText = total.ToString(@"mm\:ss");
             }
-            return $"{currentText}/{totalText}";
+            var percent = (total.Ticks>0) ? Math.Min(100, (double)current.Ticks * 100 / (double)total.Ticks) : 0;
+            var percentText = percent.ToString("F1");
+            var progressMessage = $"{currentText}/{totalText} ({percentText}%)";
+            Debug.WriteLine($"{label}: {progressMessage}");
+            if (progress != null) {
+                progress.Percent = percent;
+                progress.ProgressMessage = progressMessage;
+            }
+        }
+        private static void CountProgress(string label, IFFProgress progress, int current, int total) {
+            var percent = (double)current * 100 / (double)total;
+            var progressMessage = $"{current}/{total} ({Math.Round(percent)}%)";
+            Debug.WriteLine($"{label}: {progressMessage}");
+            if (progress != null) {
+                progress.Percent = percent;
+                progress.ProgressMessage = progressMessage;
+            }
         }
 
         public static ConvertResult Trimming(string inPath, string outPath, List<PlayRange> ranges, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
@@ -206,63 +315,34 @@ namespace dxplayer.ffmpeg {
                 return ConvertResult.Error(new Exception("No range specified"), inputInfo);
             }
             if(ranges.Count == 1) {
-                return SimpleTrimming(inPath, outPath, ranges[0], progress, inputInfo);
+                return Extract(inPath, outPath, ranges[0], FFProcessId.TRIMMING, progress, TimeSpan.Zero, TimeSpan.FromMilliseconds(ranges[0].TrueSpan((ulong)inputInfo.DurationMs)), inputInfo);
             }
 
+            var totalDuration = TimeSpan.FromMilliseconds(ranges.Aggregate((ulong)0, (sum, range) => sum + range.TrueSpan((ulong)inputInfo.DurationMs)));
             var tempFiles = new List<string>();
-            var listFile = TempPath(outPath, "list.txt");
             try {
+                // PlayRange毎にファイルを分割
                 ProgressProcess(progress, FFProcessId.SPLITTING);
+                TimeSpan initial = TimeSpan.Zero;
                 for (int i = 0; i < ranges.Count; i++) {
                     var tempPath = TempPathFrom(outPath, i);
                     tempFiles.Add(tempPath);
                     var range = ranges[i];
-
-                    FFMpegArguments
-                        .FromFileInput(inPath, verifyExists: true, (options) => {
-                            options.Seek(TimeSpan.FromMilliseconds(range.Start));
-                            if (range.End != 0 && range.End > range.Start) {
-                                options.WithDuration(TimeSpan.FromMilliseconds(range.End - range.Start));
-                            }
-                        })
-                        .OutputToFile(tempPath, overwrite: true, (options) => {
-                            options.CopyChannel();
-                        })
-                        .Apply(it => {
-                            Debug.WriteLine(it.Arguments);
-                        })
-                        .ProcessSynchronously();
-
-                    var percent = (double)(i + 1) * 100 / (double)ranges.Count;
-                    var progressMessage = $"{i + 1}/{ranges.Count} ({Math.Round(percent)}%)";
-                    Debug.WriteLine($"Splitting: {progressMessage}");
-                    if (progress != null) {
-                        progress.Percent = percent;
-                        progress.ProgressMessage = progressMessage;
+                    initial += TimeSpan.FromMilliseconds(range.TrueSpan((ulong)inputInfo.DurationMs));
+                    if (!Extract(inPath, tempPath, range, FFProcessId.SPLITTING, progress, initial, totalDuration, inputInfo).Result) {
+                        throw new Exception($"Failed to split {i}");
                     }
+                    CountProgress("Splitting:", progress, i + 1, ranges.Count);
                 }
 
-                var totalDuration = TimeSpan.FromMilliseconds(ranges.Aggregate((ulong)0, (sum, range) => sum + range.TrueSpan((ulong)inputInfo.Video.Duration.TotalMilliseconds)));
-                ProgressProcess(progress, FFProcessId.COMBINING);
-                FFMpegArguments.FromDemuxConcatInput(tempFiles)
-                    .OutputToFile(outPath, overwrite: true)
-                    .NotifyOnProgress((TimeSpan s) => {
-                        var percent = (double)s.Ticks * 100 / (double)totalDuration.Ticks;
-                        var percentText = percent.ToString("F1");
-                        var progressMessage = ProgressTimeSpanText(s, totalDuration);
-                        Debug.WriteLine($"Combining: {progressMessage}");
-                        if(progress != null) {
-                            progress.Percent = percent;
-                            progress.ProgressMessage = progressMessage;
-                        }
-                    })
-                    .Apply(it => {
-                        Debug.WriteLine(it.Arguments);
-                    })
-                    .ProcessSynchronously();
+                // 分割したファイルを結合
+                var combineResult = Combine(tempFiles, outPath, progress, totalDuration);
+                if(!combineResult.Result) {
+                    throw new Exception("Failed to combine files.");
+                }
 
                 ProgressProcess(progress, FFProcessId.DISPOSING, 100, "Completed.");
-                return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
+                return ConvertResult.Success(inputInfo, combineResult.After);
             }
             catch (Exception e) {
                 ProgressProcess(progress, FFProcessId.DISPOSING, 0, "Failed.");
@@ -273,7 +353,56 @@ namespace dxplayer.ffmpeg {
                 foreach (var file in tempFiles) {
                     PathUtil.safeDeleteFile(file);
                 }
-                PathUtil.safeDeleteFile(listFile);
+            }
+        }
+        public static async Task<ConvertResult> TrimmingAsync(string inPath, string outPath, List<PlayRange> ranges, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+            FFConfig.Configure();
+            if (inputInfo == null) {
+                ProgressProcess(progress, FFProcessId.ANALYZING);
+                inputInfo = FFAnalyzer.Analyze(inPath);
+            }
+            if (ranges.Count == 0) {
+                return ConvertResult.Error(new Exception("No range specified"), inputInfo);
+            }
+            if (ranges.Count == 1) {
+                return await ExtractAsync(inPath, outPath, ranges[0], FFProcessId.TRIMMING, progress, TimeSpan.Zero, TimeSpan.FromMilliseconds(ranges[0].TrueSpan((ulong)inputInfo.DurationMs)), inputInfo);
+            }
+
+            var totalDuration = TimeSpan.FromMilliseconds(ranges.Aggregate((ulong)0, (sum, range) => sum + range.TrueSpan((ulong)inputInfo.DurationMs)));
+            var tempFiles = new List<string>();
+            try {
+                // PlayRange毎にファイルを分割
+                ProgressProcess(progress, FFProcessId.SPLITTING);
+                TimeSpan initial = TimeSpan.Zero;
+                for (int i = 0; i < ranges.Count; i++) {
+                    var tempPath = TempPathFrom(outPath, i);
+                    tempFiles.Add(tempPath);
+                    var range = ranges[i];
+                    initial += TimeSpan.FromMilliseconds(range.TrueSpan((ulong)inputInfo.DurationMs));
+                    if (!(await ExtractAsync(inPath, tempPath, range, FFProcessId.SPLITTING, progress, initial, totalDuration, inputInfo)).Result) {
+                        throw new Exception($"Failed to split {i}");
+                    }
+                    CountProgress("Splitting:", progress, i + 1, ranges.Count);
+                }
+
+                // 分割したファイルを結合
+                var combineResult = await CombineAsync(tempFiles, outPath, progress, totalDuration);
+                if (!combineResult.Result) {
+                    throw new Exception("Failed to combine files.");
+                }
+
+                ProgressProcess(progress, FFProcessId.DISPOSING, 100, "Completed.");
+                return ConvertResult.Success(inputInfo, combineResult.After);
+            }
+            catch (Exception e) {
+                ProgressProcess(progress, FFProcessId.DISPOSING, 0, "Failed.");
+                PathUtil.safeDeleteFile(outPath);
+                return ConvertResult.Error(e, inputInfo);
+            }
+            finally {
+                foreach (var file in tempFiles) {
+                    PathUtil.safeDeleteFile(file);
+                }
             }
         }
     }

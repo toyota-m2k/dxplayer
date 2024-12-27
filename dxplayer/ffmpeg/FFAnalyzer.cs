@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace dxplayer.ffmpeg {
     public class FFAnalyzer {
@@ -123,6 +124,15 @@ namespace dxplayer.ffmpeg {
             public IVideoInfo Video { get; }
             public IAudioInfo Audio { get; }
             public bool IsEmpty => Video.IsEmpty && Audio.IsEmpty;
+            public long DurationMs {
+                get {
+                    if(Video!=null && Audio!=null) {
+                        return Math.Max((long)Video.Duration.TotalMilliseconds, (long)Audio.Duration.TotalMilliseconds);
+                    } else {
+                        return (long)(Video?.Duration.TotalMilliseconds ?? Audio?.Duration.TotalMilliseconds ?? 0);
+                    }
+                }
+            }
 
             private Analysis(long size, IVideoInfo video, IAudioInfo audio) {
                 Size = size;

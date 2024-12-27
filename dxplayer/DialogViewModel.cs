@@ -1,6 +1,9 @@
-﻿using dxplayer.settings;
+﻿using dxplayer.data.main;
+using dxplayer.ffmpeg;
+using dxplayer.settings;
 using io.github.toyota32k.toolkit.view;
 using Reactive.Bindings;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -10,6 +13,7 @@ namespace dxplayer {
         public enum DialogType {
             NONE,
             SETTINGS,
+            COMPRESS_PROGRESS,
         }
         public ReactivePropertySlim<string> Title { get; } = new ReactivePropertySlim<string>();
         public ReactivePropertySlim<DialogType> Type { get; } = new ReactivePropertySlim<DialogType>(DialogType.NONE);
@@ -44,6 +48,8 @@ namespace dxplayer {
             return await Completion.Task;
         }
 
+        #region Settting Dialog
+
         public class SettingDialogViewModel : ViewModelBase, IDialogViewModel {
             public string TITLE => "Settings";
             public DialogType TYPE => DialogType.SETTINGS;
@@ -60,6 +66,7 @@ namespace dxplayer {
         public SettingDialogViewModel SettingDialog { get; } = new SettingDialogViewModel();
         public async Task<bool> ShowSettingDialog() {
             if (Completion != null) return false;
+            if (Type.Value != DialogType.NONE) return false;
 
             SettingDialog.DxxDBPath.Value = Settings.Instance.DxxDBPath;
             SettingDialog.FFMpegPath.Value = Settings.Instance.FFMpegPath;
@@ -78,5 +85,93 @@ namespace dxplayer {
             Settings.Instance.Serialize();
             return true;
         }
+        #endregion
+
+        #region Compress Progress Dialog
+        public class CompressProgressViewModel : ViewModelBase, IDialogViewModel, IFFProgress {
+            public string TITLE => "Compressor";
+            public DialogType TYPE => DialogType.COMPRESS_PROGRESS;
+
+            private ReactivePropertySlim<List<PlayItem>> TargetItems { get; } = new ReactivePropertySlim<List<PlayItem>>();
+
+            public ReactivePropertySlim<int> ItemCount { get; } = new ReactivePropertySlim<int>();
+            public ReactivePropertySlim<int> CurrentItemIndex { get; } = new ReactivePropertySlim<int>();
+            
+            public ReadOnlyReactivePropertySlim<bool> MultiItem { get; }
+            public ReadOnlyReactivePropertySlim<double> ItemPercent { get; }
+
+            public ReadOnlyReactivePropertySlim<PlayItem> CurrentItem { get; }
+
+            public ReadOnlyReactivePropertySlim<string> ItemMessage { get; }
+            public ReadOnlyReactivePropertySlim<string> TargetItemName { get; }
+
+
+            public ReadOnlyReactivePropertySlim<string> ProcessLabel { get; }
+
+            private ReactivePropertySlim<FFProcessId> _processId = new ReactivePropertySlim<FFProcessId>();
+            FFProcessId IFFProgress.ProcessId {
+                get => _processId.Value;
+                set {
+                    _processId.Value = value;
+                }
+            }
+            public ReactivePropertySlim<double> ProcessPercent { get; } = new ReactivePropertySlim<double>();
+            double IFFProgress.Percent {
+                get => ProcessPercent.Value;
+                set {
+                    ProcessPercent.Value = value;
+                }
+            }
+            public ReactivePropertySlim<string> ProcessMessage { get; } = new ReactivePropertySlim<string>();
+            string IFFProgress.ProgressMessage {
+                get => ProcessMessage.Value;
+                set {
+                    ProcessMessage.Value = value;
+                }
+            }
+
+            public void SetItemList(List<PlayItem> items) {
+                TargetItems.Value = items;
+                ItemCount.Value = items.Count;
+                CurrentItemIndex.Value = 0;
+            }
+
+            public CompressProgressViewModel() {
+                MultiItem = ItemCount.Select(c => c > 1).ToReadOnlyReactivePropertySlim();
+                ItemPercent = CurrentItemIndex.CombineLatest(ItemCount, (index,count) => (count>0) ? (double)(index+1)*100 / count : 0).ToReadOnlyReactivePropertySlim();
+                CurrentItem = CurrentItemIndex.CombineLatest(TargetItems, (index,items)=> (items!=null && 0<=index && index<items.Count) ? items[index] : null).ToReadOnlyReactivePropertySlim();
+                ItemMessage = CurrentItemIndex.CombineLatest(CurrentItem,ItemCount, (index,item,count) => $"{index + 1}/{count} - {item?.Name??""}").ToReadOnlyReactivePropertySlim();
+                TargetItemName = CurrentItem.Select(c => c?.Name ?? "").ToReadOnlyReactivePropertySlim();
+                ProcessLabel = _processId.Select(c => {
+                    switch (c) {
+                        case FFProcessId.ANALYZING: return "Analyzing...";
+                        case FFProcessId.TRIMMING: return "Trimming...";
+                        case FFProcessId.SPLITTING: return "Splitting...";
+                        case FFProcessId.COMBINING: return "Combining...";
+                        case FFProcessId.COMPRESSING: return "Compressing...";
+                        case FFProcessId.DISPOSING: return "Disposing...";
+                        default: return "";
+                    }
+                }).ToReadOnlyReactivePropertySlim();
+            }
+        }
+        public CompressProgressViewModel Compress { get; } = new CompressProgressViewModel();
+
+        public async Task ShowCompressProgress(List<PlayItem> items) {
+            if(Type.Value != DialogType.NONE) return;
+            Compress.SetItemList(items);
+            Title.Value = Compress.TITLE;
+            Type.Value = Compress.TYPE;
+            for(int i = 0; i < items.Count; i++) {
+                Compress.CurrentItemIndex.Value = i;
+                var item = items[i];
+                await item.Compress(Compress);
+            }
+            Type.Value = DialogType.NONE;
+        }
+        public async Task ShowCompressProgress(params PlayItem[] items) {
+            await ShowCompressProgress(items.ToList());
+        }
+        #endregion
     }
 }
