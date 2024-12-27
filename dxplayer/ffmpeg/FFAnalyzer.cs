@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace dxplayer.ffmpeg {
-    public class Analyzer {
+    public class FFAnalyzer {
         public interface IMediaInfo {
             bool IsEmpty { get; }
             string CodecName { get; }
@@ -153,15 +153,11 @@ namespace dxplayer.ffmpeg {
         }
 
         public static Analysis Analyze(string path) {
-            GlobalFFOptions.Configure(conf => {
-                conf.BinaryFolder = "C:\\bin\\tools";
-            });
+            FFConfig.Configure();
             return Analysis.FromPath(path);
         }
         public static async Task<Analysis> AnalyzeAsync(string path) {
-            GlobalFFOptions.Configure(conf => {
-                conf.BinaryFolder = "C:\\bin\\tools";
-            });
+            FFConfig.Configure();
             return await Analysis.FromPathAsync(path);
         }
     }

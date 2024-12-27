@@ -30,6 +30,9 @@ namespace dxplayer.settings {
             get {
                 if (sInstance == null) {
                     sInstance = Deserialize();
+                    FFConfig.Initialize(() => {
+                        return sInstance.FFMpegPath;
+                    });
                 }
                 return sInstance;
             }

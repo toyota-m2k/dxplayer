@@ -1,5 +1,4 @@
-﻿using dxplayer.data;
-using dxplayer.settings;
+﻿using dxplayer.data;    // for PlayRange
 using FFMpegCore;
 using io.github.toyota32k.toolkit.utils;
 using System;
@@ -8,35 +7,31 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace dxplayer.ffmpeg {
     public class FFApi {
-        private static void Initialize() {
-            GlobalFFOptions.Configure(conf => {
-                conf.BinaryFolder = Settings.Instance.FFMpegPath;
-            });
-        }
-        public static int MAX_LENGTH = 1920;    // 長辺の最大値
-        public static int CRF = 23;             // 圧縮率
+        public static int MAX_LENGTH => FFConfig.MaxLengthInPixel;    // 長辺の最大値
+        public static int CRF = FFConfig.CRF;                         // 圧縮率
 
 
         public class ConvertResult {
             public bool Result { get; }
             public Exception Exception { get; }
-            public Analyzer.Analysis Before { get; }
-            public Analyzer.Analysis After { get; }
-            public ConvertResult(bool result, Analyzer.Analysis before, Analyzer.Analysis after, Exception ex) {
+            public FFAnalyzer.Analysis Before { get; }
+            public FFAnalyzer.Analysis After { get; }
+            public ConvertResult(bool result, FFAnalyzer.Analysis before, FFAnalyzer.Analysis after, Exception ex) {
                 Result = result;
                 Before = before;
                 After = after;
                 Exception = ex;
             }
-            public static ConvertResult Error(Exception e, Analyzer.Analysis before) {
-                return new ConvertResult(false, before, Analyzer.Analysis.Empty, e);
+            public static ConvertResult Error(Exception e, FFAnalyzer.Analysis before) {
+                return new ConvertResult(false, before, FFAnalyzer.Analysis.Empty, e);
             }
-            public static ConvertResult Success(Analyzer.Analysis before, Analyzer.Analysis after) {
+            public static ConvertResult Success(FFAnalyzer.Analysis before, FFAnalyzer.Analysis after) {
                 return new ConvertResult(true, before, after, null);
             }
             public override string ToString() {
@@ -55,8 +50,8 @@ namespace dxplayer.ffmpeg {
             }
         }
 
-        public static FFMpegArgumentProcessor CompressArguments(string inPath, string outPath, Analyzer.Analysis inputInfo) {
-            Initialize();
+        public static FFMpegArgumentProcessor CompressArguments(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+            FFConfig.Configure();
             var video = inputInfo.Video;
             if (video.IsEmpty) {
                 throw new Exception("No video stream found");
@@ -91,35 +86,52 @@ namespace dxplayer.ffmpeg {
                     ;
                 })
                 .NotifyOnProgress((TimeSpan s) => {
-                    var percent = (((double)s.Ticks * 100.0) / (double)duration.Ticks).ToString("F1");
-                    Debug.WriteLine($"{s.Ticks}/{duration} ({percent}%)");
+                    var percent = ((double)s.Ticks * 100.0) / (double)duration.Ticks;
+                    var percentText = percent.ToString("F1");
+                    var progressMessage = ProgressTimeSpanText(s, duration);
+                    Debug.WriteLine($"Compressing: {progressMessage}");
+                    if(progress!=null) {
+                        progress.Percent = percent;
+                        progress.ProgressMessage = progressMessage;
+                    }
                 });
             }
 
-        public static async Task<ConvertResult> CompressAsync(string inPath, string outPath, Analyzer.Analysis inputInfo=null) {
-            Initialize();
+        private static void ProgressProcess(IFFProgress progress, FFProcessId id, double percent=0, string message="") {
+            if (progress != null) {
+                progress.ProcessId = id;
+                progress.Percent = percent;
+                progress.ProgressMessage = message;
+            }
+        }
+
+        public static async Task<ConvertResult> CompressAsync(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo=null) {
+            FFConfig.Configure();
             if (inputInfo == null) {
-                inputInfo = await Analyzer.AnalyzeAsync(inPath);
+                ProgressProcess(progress,FFProcessId.ANALYZING);
+                inputInfo = await FFAnalyzer.AnalyzeAsync(inPath);
             }
             try {
-                await CompressArguments(inPath, outPath, inputInfo)
+                ProgressProcess(progress, FFProcessId.COMPRESSING);
+                await CompressArguments(inPath, outPath, progress, inputInfo)
                 .ProcessAsynchronously();
-                return ConvertResult.Success(inputInfo, await Analyzer.AnalyzeAsync(outPath));
+                return ConvertResult.Success(inputInfo, await FFAnalyzer.AnalyzeAsync(outPath));
             }
             catch (Exception e) {
                 return ConvertResult.Error(e, inputInfo);
             }
-
         }
-        public static ConvertResult Compress(string inPath, string outPath, Analyzer.Analysis inputInfo = null) {
-            Initialize();
+        public static ConvertResult Compress(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo = null) {
+            FFConfig.Configure();
             if (inputInfo == null) {
-                inputInfo = Analyzer.Analyze(inPath);
+                ProgressProcess(progress, FFProcessId.ANALYZING);
+                inputInfo = FFAnalyzer.Analyze(inPath);
             }
             try {
-                CompressArguments(inPath, outPath, inputInfo)
+                ProgressProcess(progress, FFProcessId.COMPRESSING);
+                CompressArguments(inPath, outPath, progress, inputInfo)
                 .ProcessSynchronously();
-                return ConvertResult.Success(inputInfo, Analyzer.Analyze(outPath));
+                return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
             }
             catch (Exception e) {
                 PathUtil.safeDeleteFile(outPath);
@@ -139,12 +151,14 @@ namespace dxplayer.ffmpeg {
             return Path.Combine(dir, name);
         }
 
-        public static ConvertResult SimpleTrimming(string inPath, string outPath, PlayRange range, Analyzer.Analysis inputInfo) {
-            Initialize();
+        public static ConvertResult SimpleTrimming(string inPath, string outPath, PlayRange range, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+            FFConfig.Configure();
             if (inputInfo == null) {
-                inputInfo = Analyzer.Analyze(inPath);
+                ProgressProcess(progress, FFProcessId.ANALYZING);
+                inputInfo = FFAnalyzer.Analyze(inPath);
             }
             try {
+                ProgressProcess(progress, FFProcessId.TRIMMING);
                 FFMpegArguments
                     .FromFileInput(inPath, verifyExists: true, (options) => {
                         options.Seek(TimeSpan.FromMilliseconds(range.Start));
@@ -159,7 +173,7 @@ namespace dxplayer.ffmpeg {
                         Debug.WriteLine(it.Arguments);
                     })
                     .ProcessSynchronously();
-                return ConvertResult.Success(inputInfo, Analyzer.Analyze(outPath));
+                return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
             }
             catch (Exception e) {
                 PathUtil.safeDeleteFile(outPath);
@@ -167,22 +181,39 @@ namespace dxplayer.ffmpeg {
             }
         }
 
-        public static ConvertResult Trimming(string inPath, string outPath, List<PlayRange> ranges, Analyzer.Analysis inputInfo) {
-            Initialize();
+        //private static string TimeSpanText(TimeSpan ts) {
+        //    return ts.ToString(@"hh\:mm\:ss");
+        //}
+        private static string ProgressTimeSpanText(TimeSpan current, TimeSpan total) {
+            string currentText, totalText;
+            if(total.TotalMinutes > 60) {
+                currentText = current.ToString(@"hh\:mm\:ss");
+                totalText = total.ToString(@"hh\:mm\:ss");
+            } else {
+                currentText = current.ToString(@"mm\:ss");
+                totalText = total.ToString(@"mm\:ss");
+            }
+            return $"{currentText}/{totalText}";
+        }
+
+        public static ConvertResult Trimming(string inPath, string outPath, List<PlayRange> ranges, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+            FFConfig.Configure();
             if (inputInfo == null) {
-                inputInfo = Analyzer.Analyze(inPath);
+                ProgressProcess(progress, FFProcessId.ANALYZING);
+                inputInfo = FFAnalyzer.Analyze(inPath);
             }
             if(ranges.Count == 0) {
                 return ConvertResult.Error(new Exception("No range specified"), inputInfo);
             }
             if(ranges.Count == 1) {
-                return SimpleTrimming(inPath, outPath, ranges[0], inputInfo);
+                return SimpleTrimming(inPath, outPath, ranges[0], progress, inputInfo);
             }
 
             var tempFiles = new List<string>();
             var listFile = TempPath(outPath, "list.txt");
             try {
-                for(int i = 0; i < ranges.Count; i++) {
+                ProgressProcess(progress, FFProcessId.SPLITTING);
+                for (int i = 0; i < ranges.Count; i++) {
                     var tempPath = TempPathFrom(outPath, i);
                     tempFiles.Add(tempPath);
                     var range = ranges[i];
@@ -201,27 +232,45 @@ namespace dxplayer.ffmpeg {
                             Debug.WriteLine(it.Arguments);
                         })
                         .ProcessSynchronously();
-                    Debug.WriteLine($"Splitting: {range} -> {tempPath}");
+
+                    var percent = (double)(i + 1) * 100 / (double)ranges.Count;
+                    var progressMessage = $"{i + 1}/{ranges.Count} ({Math.Round(percent)}%)";
+                    Debug.WriteLine($"Splitting: {progressMessage}");
+                    if (progress != null) {
+                        progress.Percent = percent;
+                        progress.ProgressMessage = progressMessage;
+                    }
                 }
 
+                var totalDuration = TimeSpan.FromMilliseconds(ranges.Aggregate((ulong)0, (sum, range) => sum + range.TrueSpan((ulong)inputInfo.Video.Duration.TotalMilliseconds)));
+                ProgressProcess(progress, FFProcessId.COMBINING);
                 FFMpegArguments.FromDemuxConcatInput(tempFiles)
                     .OutputToFile(outPath, overwrite: true)
                     .NotifyOnProgress((TimeSpan s) => {
-                        Debug.WriteLine($"Combining: {s}");
+                        var percent = (double)s.Ticks * 100 / (double)totalDuration.Ticks;
+                        var percentText = percent.ToString("F1");
+                        var progressMessage = ProgressTimeSpanText(s, totalDuration);
+                        Debug.WriteLine($"Combining: {progressMessage}");
+                        if(progress != null) {
+                            progress.Percent = percent;
+                            progress.ProgressMessage = progressMessage;
+                        }
                     })
                     .Apply(it => {
                         Debug.WriteLine(it.Arguments);
                     })
                     .ProcessSynchronously();
 
-                return ConvertResult.Success(inputInfo, Analyzer.Analyze(outPath));
+                ProgressProcess(progress, FFProcessId.DISPOSING, 100, "Completed.");
+                return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
             }
             catch (Exception e) {
+                ProgressProcess(progress, FFProcessId.DISPOSING, 0, "Failed.");
                 PathUtil.safeDeleteFile(outPath);
                 return ConvertResult.Error(e, inputInfo);
             }
             finally {
-                foreach(var file in tempFiles) {
+                foreach (var file in tempFiles) {
                     PathUtil.safeDeleteFile(file);
                 }
                 PathUtil.safeDeleteFile(listFile);

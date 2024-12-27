@@ -264,7 +264,7 @@ namespace dxplayer.data.main
 
         public class CopyItemPathCommandImpl:SimpleCommand {
             public CopyItemPathCommandImpl(PlayItem item) : base(() => {
-                var anal = Analyzer.Analyze(item.Path).ToString();
+                var anal = FFAnalyzer.Analyze(item.Path).ToString();
                 Debug.WriteLine(anal);
                 Clipboard.SetText(item.Path);
             }) { }
@@ -283,13 +283,13 @@ namespace dxplayer.data.main
                 var srcPath = item.Path;
                 var chapterEditor = new ChapterEditor();
                 var trimmed = false;
-                Analyzer.Analysis originalInfo = null;
+                FFAnalyzer.Analysis originalInfo = null;
                 chapterEditor.OnMediaOpened(item);
                 if(chapterEditor.DisabledRanges.Value?.FirstOrDefault()!=null) {
                     // トリミングが必要
                     var enabledRange = chapterEditor.GetEnabledRanges().ToList();
                     var trimFile = TempPathFrom(item.Path,"_trim");
-                    var trim = FFApi.Trimming(item.Path, trimFile, enabledRange, null);
+                    var trim = FFApi.Trimming(item.Path, trimFile, enabledRange, null, null);
                     if(trim.Result) {
                         trimmed = true;
                         srcPath = trimFile;
@@ -300,7 +300,7 @@ namespace dxplayer.data.main
                 }
 
                 var outPath = TempPathFrom(item.Path, "_comp");
-                var comp = FFApi.Compress(srcPath, outPath);
+                var comp = FFApi.Compress(srcPath, outPath,null);
                 var result = new FFApi.ConvertResult(comp.Result, originalInfo ?? comp.Before, comp.After, comp.Exception);
                 Debug.WriteLine(result.ToString());
                 if(comp.Result && comp.After.Size<comp.Before.Size) {
