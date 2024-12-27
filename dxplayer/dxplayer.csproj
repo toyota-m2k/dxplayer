@@ -204,6 +204,7 @@
     <Compile Include="data\main\PlayCountObserver.cs" />
     <Compile Include="data\main\PlayRange.cs" />
     <Compile Include="data\main\TargetFolders.cs" />
+    <Compile Include="data\Progress.cs" />
     <Compile Include="data\utils\DBBase.cs" />
     <Compile Include="data\dxx\DxxItem.cs" />
     <Compile Include="data\dxx\DxxStorage.cs" />
@@ -216,7 +217,7 @@
     <Compile Include="data\wf\WfStorage.cs" />
     <Compile Include="DialogViewModel.cs" />
     <Compile Include="ffmpeg\Analyzer.cs" />
-    <Compile Include="ffmpeg\Config.cs" />
+    <Compile Include="ffmpeg\FFConfig.cs" />
     <Compile Include="ffmpeg\FFApi.cs" />
     <Compile Include="interop\KeyState.cs" />
     <Compile Include="interop\WinShutdown.cs" />

@@ -283,6 +283,7 @@ namespace dxplayer.data.main
                 var srcPath = item.Path;
                 var chapterEditor = new ChapterEditor();
                 var trimmed = false;
+                Analyzer.Analysis originalInfo = null;
                 chapterEditor.OnMediaOpened(item);
                 if(chapterEditor.DisabledRanges.Value?.FirstOrDefault()!=null) {
                     // トリミングが必要
@@ -292,24 +293,26 @@ namespace dxplayer.data.main
                     if(trim.Result) {
                         trimmed = true;
                         srcPath = trimFile;
+                        originalInfo = trim.Before;
                     } else {
                         return;
                     }
                 }
 
                 var outPath = TempPathFrom(item.Path, "_comp");
-                var r = FFApi.Compress(srcPath, outPath);
-                Debug.WriteLine(r);
-                if(r.Result && r.After.Size<r.Before.Size) {
+                var comp = FFApi.Compress(srcPath, outPath);
+                var result = new FFApi.ConvertResult(comp.Result, originalInfo ?? comp.Before, comp.After, comp.Exception);
+                Debug.WriteLine(result.ToString());
+                if(comp.Result && comp.After.Size<comp.Before.Size) {
                     File.Delete(item.Path);
                     File.Move(outPath, item.Path);
-                    item.Size = r.After.Size;
-                    item.Duration = (ulong)r.After.Video.Duration.TotalMilliseconds;
+                    item.Size = comp.After.Size;
+                    item.Duration = (ulong)comp.After.Video.Duration.TotalMilliseconds;
                 } else if(trimmed) {
                     File.Delete(srcPath);
                     File.Move(srcPath, item.Path);
-                    item.Size = r.Before.Size;
-                    item.Duration = (ulong)r.Before.Video.Duration.TotalMilliseconds;
+                    item.Size = comp.Before.Size;
+                    item.Duration = (ulong)comp.Before.Video.Duration.TotalMilliseconds;
                 } else {
                     return;
                 }

@@ -80,6 +80,19 @@ namespace dxplayer {
                 if (path == null) return;
                 ViewModel.Dialog.SettingDialog.DxxDBPath.Value = path;
             });
+            ViewModel.Dialog.SettingDialog.RefFFMpegPathCommand.Subscribe(() => {
+                var path = FolderDialogBuilder.Create()
+               .title("Select FFMpeg Folder")
+               .Apply(it => {
+                   var cur = ViewModel.Dialog.SettingDialog.FFMpegPath.Value;
+                   if (!string.IsNullOrEmpty(cur)) {
+                       it.initialDirectory(cur);
+                   }
+               })
+               .GetFilePath(this);
+                if (path == null) return;
+                ViewModel.Dialog.SettingDialog.FFMpegPath.Value = path;
+            });
 
             ViewModel.HelpCommand.Subscribe(Help);
 

@@ -48,11 +48,13 @@ namespace dxplayer {
             public string TITLE => "Settings";
             public DialogType TYPE => DialogType.SETTINGS;
 
+            public ReactivePropertySlim<string> FFMpegPath { get; } = new ReactivePropertySlim<string>();
             public ReactivePropertySlim<string> DxxDBPath { get; } = new ReactivePropertySlim<string>();
             public ReactivePropertySlim<bool> UseServer { get; } = new ReactivePropertySlim<bool>();
             public ReactivePropertySlim<bool> PlayCountFromServer { get; } = new ReactivePropertySlim<bool>();
             public ReactivePropertySlim<int> ServerPort { get; } = new ReactivePropertySlim<int>();
             public ReactiveCommand RefDxxDBPathCommand { get; } = new ReactiveCommand();
+            public ReactiveCommand RefFFMpegPathCommand { get; } = new ReactiveCommand();
         }
 
         public SettingDialogViewModel SettingDialog { get; } = new SettingDialogViewModel();
@@ -60,6 +62,7 @@ namespace dxplayer {
             if (Completion != null) return false;
 
             SettingDialog.DxxDBPath.Value = Settings.Instance.DxxDBPath;
+            SettingDialog.FFMpegPath.Value = Settings.Instance.FFMpegPath;
             SettingDialog.UseServer.Value = Settings.Instance.UseServer;
             SettingDialog.ServerPort.Value = Settings.Instance.ServerPort;
             SettingDialog.PlayCountFromServer.Value = Settings.Instance.PlayCountFromServer;
@@ -68,6 +71,7 @@ namespace dxplayer {
                 return false;
             }
             Settings.Instance.DxxDBPath = SettingDialog.DxxDBPath.Value;
+            Settings.Instance.FFMpegPath = SettingDialog.FFMpegPath.Value;
             Settings.Instance.UseServer = SettingDialog.UseServer.Value;
             Settings.Instance.ServerPort = SettingDialog.ServerPort.Value;
             Settings.Instance.PlayCountFromServer = SettingDialog.PlayCountFromServer.Value;

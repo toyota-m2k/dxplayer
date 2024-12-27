@@ -1,7 +1,6 @@
 ﻿using dxplayer.data;
+using dxplayer.settings;
 using FFMpegCore;
-using FFMpegCore.Arguments;
-using FFMpegCore.Enums;
 using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
@@ -9,26 +8,15 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Shell;
 
 namespace dxplayer.ffmpeg {
     public class FFApi {
-        public static void Init() {
-            // FFmpeg
-            FFMpegArguments
-                .FromFileInput("input.mp4")
-                .OutputToFile("output.mp4", overwrite: false, options => {
-                    options
-                    .WithVideoFilters(filter => {
-                        filter
-                        .Scale(1280, 720);
-                    });
-                })
-                .ProcessSynchronously();
+        private static void Initialize() {
+            GlobalFFOptions.Configure(conf => {
+                conf.BinaryFolder = Settings.Instance.FFMpegPath;
+            });
         }
         public static int MAX_LENGTH = 1920;    // 長辺の最大値
         public static int CRF = 23;             // 圧縮率
@@ -61,11 +49,14 @@ namespace dxplayer.ffmpeg {
                     .Append(" --> ")
                     .Append(After.Size.ToString("N0", CultureInfo.InvariantCulture))
                     .Append("\r\n")
+                    .Append(Before.ToString())
+                    .Append(After.ToString())
                     .ToString();
             }
         }
 
         public static FFMpegArgumentProcessor CompressArguments(string inPath, string outPath, Analyzer.Analysis inputInfo) {
+            Initialize();
             var video = inputInfo.Video;
             if (video.IsEmpty) {
                 throw new Exception("No video stream found");
@@ -106,7 +97,8 @@ namespace dxplayer.ffmpeg {
             }
 
         public static async Task<ConvertResult> CompressAsync(string inPath, string outPath, Analyzer.Analysis inputInfo=null) {
-            if(inputInfo == null) {
+            Initialize();
+            if (inputInfo == null) {
                 inputInfo = await Analyzer.AnalyzeAsync(inPath);
             }
             try {
@@ -120,6 +112,7 @@ namespace dxplayer.ffmpeg {
 
         }
         public static ConvertResult Compress(string inPath, string outPath, Analyzer.Analysis inputInfo = null) {
+            Initialize();
             if (inputInfo == null) {
                 inputInfo = Analyzer.Analyze(inPath);
             }
@@ -135,18 +128,47 @@ namespace dxplayer.ffmpeg {
         }
 
         static private string TempPathFrom(string path, int num) {
-            var dir = System.IO.Path.GetDirectoryName(path);
-            var ext = System.IO.Path.GetExtension(path);
-            var name = System.IO.Path.GetFileNameWithoutExtension(path);
-            return System.IO.Path.Combine(dir, $"{name}_{num}{ext}");
+            var dir = Path.GetDirectoryName(path);
+            var ext = Path.GetExtension(path);
+            var name = Path.GetFileNameWithoutExtension(path);
+            return Path.Combine(dir, $"{name}_{num}{ext}");
         }
         static private string TempPath(string path, string name) {
-            var dir = System.IO.Path.GetDirectoryName(path);
-            var ext = System.IO.Path.GetExtension(path);
-            return System.IO.Path.Combine(dir, name);
+            var dir = Path.GetDirectoryName(path);
+            var ext = Path.GetExtension(path);
+            return Path.Combine(dir, name);
+        }
+
+        public static ConvertResult SimpleTrimming(string inPath, string outPath, PlayRange range, Analyzer.Analysis inputInfo) {
+            Initialize();
+            if (inputInfo == null) {
+                inputInfo = Analyzer.Analyze(inPath);
+            }
+            try {
+                FFMpegArguments
+                    .FromFileInput(inPath, verifyExists: true, (options) => {
+                        options.Seek(TimeSpan.FromMilliseconds(range.Start));
+                        if (range.End != 0 && range.End > range.Start) {
+                            options.WithDuration(TimeSpan.FromMilliseconds(range.End - range.Start));
+                        }
+                    })
+                    .OutputToFile(outPath, overwrite: true, (options) => {
+                        options.CopyChannel();
+                    })
+                    .Apply(it => {
+                        Debug.WriteLine(it.Arguments);
+                    })
+                    .ProcessSynchronously();
+                return ConvertResult.Success(inputInfo, Analyzer.Analyze(outPath));
+            }
+            catch (Exception e) {
+                PathUtil.safeDeleteFile(outPath);
+                return ConvertResult.Error(e, inputInfo);
+            }
         }
 
         public static ConvertResult Trimming(string inPath, string outPath, List<PlayRange> ranges, Analyzer.Analysis inputInfo) {
+            Initialize();
             if (inputInfo == null) {
                 inputInfo = Analyzer.Analyze(inPath);
             }
@@ -154,27 +176,7 @@ namespace dxplayer.ffmpeg {
                 return ConvertResult.Error(new Exception("No range specified"), inputInfo);
             }
             if(ranges.Count == 1) {
-                try {
-                    var range = ranges[0];
-                    FFMpegArguments
-                        .FromFileInput(inPath, verifyExists: true, (options) => {
-                            options.Seek(TimeSpan.FromMilliseconds(range.Start));
-                            if (range.End != 0 && range.End > range.Start) {
-                                options.WithDuration(TimeSpan.FromMilliseconds(range.End - range.Start));
-                            }
-                        })
-                        .OutputToFile(outPath, overwrite: true, (options) => {
-                            options.CopyChannel();
-                        })
-                        .Apply(it => {
-                            Debug.WriteLine(it.Arguments);
-                        })
-                        .ProcessSynchronously();
-                    return ConvertResult.Success(inputInfo, Analyzer.Analyze(outPath));
-                } catch(Exception e) {
-                    PathUtil.safeDeleteFile(outPath);
-                    return ConvertResult.Error(e, inputInfo);
-                }
+                return SimpleTrimming(inPath, outPath, ranges[0], inputInfo);
             }
 
             var tempFiles = new List<string>();
