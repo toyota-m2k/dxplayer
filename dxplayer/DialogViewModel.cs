@@ -113,7 +113,7 @@ namespace dxplayer {
 
 
             public ReadOnlyReactivePropertySlim<string> ProcessLabel { get; }
-            public ReactivePropertySlim<bool> Alive { get; }
+            public ReactivePropertySlim<bool> Alive { get; } = new ReactivePropertySlim<bool>();
 
             private ReactivePropertySlim<FFProcessId> _processId = new ReactivePropertySlim<FFProcessId>();
             FFProcessId IFFProgress.ProcessId {
@@ -169,6 +169,7 @@ namespace dxplayer {
             Title.Value = Compress.TITLE;
             Type.Value = Compress.TYPE;
             OkVisible.Value = false;
+            Compress.Alive.Value = true;
             CancelVisible.Value = true;
             CancelCommand.Subscribe(() => {
                 Compress.Alive.Value = false;
