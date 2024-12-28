@@ -19,6 +19,8 @@ namespace dxplayer {
         public ReactivePropertySlim<DialogType> Type { get; } = new ReactivePropertySlim<DialogType>(DialogType.NONE);
         public ReadOnlyReactivePropertySlim<bool> Showing { get; }
 
+        public ReactivePropertySlim<bool> OkVisible { get; } = new ReactivePropertySlim<bool>(true);
+        public ReactivePropertySlim<bool> CancelVisible { get; } = new ReactivePropertySlim<bool>(true);
         public ReactiveCommand OkCommand { get; } = new ReactiveCommand();
         public ReactiveCommand CancelCommand { get; } = new ReactiveCommand();
 
@@ -26,8 +28,6 @@ namespace dxplayer {
 
         public DialogViewModel() {
             Showing = Type.Select(c => c != DialogType.NONE).ToReadOnlyReactivePropertySlim();
-            OkCommand.Subscribe(() => Close(true));
-            CancelCommand.Subscribe(() => Close(false));
         }
 
         interface IDialogViewModel {
@@ -35,17 +35,23 @@ namespace dxplayer {
             DialogType TYPE { get; }
         }
 
-        private void Close(bool result) {
-            Completion?.TrySetResult(result);
-            Completion = null;
-            Type.Value = DialogType.NONE;
-        }
-
         private async Task<bool> Show(IDialogViewModel dv) {
             Completion = new TaskCompletionSource<bool>();
             Title.Value = dv.TITLE;
             Type.Value = dv.TYPE;
+            OkVisible.Value = true;
+            CancelVisible.Value = true;
+            OkCommand.Subscribe(() => Close(true));
+            CancelCommand.Subscribe(() => Close(false));
             return await Completion.Task;
+        }
+
+        private void Close(bool result) {
+            Completion?.TrySetResult(result);
+            Completion = null;
+            Type.Value = DialogType.NONE;
+            OkCommand.Dispose();
+            CancelCommand.Dispose();
         }
 
         #region Settting Dialog
@@ -107,6 +113,7 @@ namespace dxplayer {
 
 
             public ReadOnlyReactivePropertySlim<string> ProcessLabel { get; }
+            public ReactivePropertySlim<bool> Alive { get; }
 
             private ReactivePropertySlim<FFProcessId> _processId = new ReactivePropertySlim<FFProcessId>();
             FFProcessId IFFProgress.ProcessId {
@@ -161,12 +168,18 @@ namespace dxplayer {
             Compress.SetItemList(items);
             Title.Value = Compress.TITLE;
             Type.Value = Compress.TYPE;
-            for(int i = 0; i < items.Count; i++) {
+            OkVisible.Value = false;
+            CancelVisible.Value = true;
+            CancelCommand.Subscribe(() => {
+                Compress.Alive.Value = false;
+            });
+            for(int i = 0; Compress.Alive.Value && i < items.Count; i++) {
                 Compress.CurrentItemIndex.Value = i;
                 var item = items[i];
                 await item.Compress(Compress);
             }
             Type.Value = DialogType.NONE;
+            CancelCommand.Dispose();
         }
         public async Task ShowCompressProgress(params PlayItem[] items) {
             await ShowCompressProgress(items.ToList());

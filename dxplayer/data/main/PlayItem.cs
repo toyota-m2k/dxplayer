@@ -280,9 +280,34 @@ namespace dxplayer.data.main
             return System.IO.Path.Combine(dir, $"{name}{suffix}{ext}");
         }
 
+        private double calcBitRateFactor(FFAnalyzer.Analysis info) {
+            var video = info.Video;
+            return video.BitRate / (video.Width * video.Height * video.FrameRate / 30);
+        }
+
         public async Task<bool> Compress(IFFProgress progress, bool forceCompress=false) {
             var inputInfo = FFAnalyzer.Analyze(Path);
             if (inputInfo.Video == null) return false;
+
+
+            //var video = inputInfo.Video;
+            //var w = video.Width;
+            //var h = video.Height;
+            //var size = inputInfo.Size;
+            //var duration = inputInfo.Duration;
+            //var bitrate = video.BitRate;
+            //var framerate = video.FrameRate / 30.0;
+            //var s = (long)w * (long)h;
+            //var da = s * duration.TotalSeconds * framerate;
+            //var eff = (double)da / (double)size;    // １バイト当たりの情報量
+            //var brf = (double)bitrate / ((double)s*framerate);         // １ピクセルあたりのビットレート
+            //var rbr = 2.0 * s * framerate;
+
+            //Debug.WriteLine($"{Name}: {w}x{h} bitrate={bitrate} (rbr={rbr}: efficient={eff} / bitrate-factor={brf}");
+            //return true;
+
+
+
             var chapterEditor = new ChapterEditor();
             var trimmed = false;
             ConvertResult result = null;
@@ -307,6 +332,7 @@ namespace dxplayer.data.main
             }
             if (!result.Result) return false;
             Debug.WriteLine(result.ToString());
+            Debug.WriteLine($"BitRateFactor: {calcBitRateFactor(result.Before)} --> {calcBitRateFactor(result.After)}");
 
             File.Delete(this.Path);
             File.Move(outPath, this.Path);

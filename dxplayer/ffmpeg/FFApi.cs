@@ -13,6 +13,14 @@ using System.Threading.Tasks;
 using static dxplayer.ffmpeg.FFApi;
 
 namespace dxplayer.ffmpeg {
+    /**
+     * FFMpegCoreライブラリを使った動画ファイル操作API
+     * 
+     * - Compress:  CRF/FPS/Sizeを指定して動画ファイルを圧縮
+     * - Extract:   動画から指定範囲を抽出。同時にCompress可。
+     * - Combine:   複数の動画を結合（ただし、-c copyを使用するので同じタイプに限る。Compress不可）
+     * - Trimming:  PlayRanges（の配列）を使って、動画を分割してつなぎ合わせる。Compress可。
+     */
     public static class FFApi {
         public static int MAX_LENGTH => FFConfig.MaxLengthInPixel;    // 長辺の最大値
         public static int MAX_FPS => FFConfig.MaxFrameRate;
@@ -54,6 +62,20 @@ namespace dxplayer.ffmpeg {
             }
         }
 
+        #region Utilities
+
+        private static string TempPathFrom(string path, int num) {
+            var dir = Path.GetDirectoryName(path);
+            var ext = Path.GetExtension(path);
+            var name = Path.GetFileNameWithoutExtension(path);
+            return Path.Combine(dir, $"{name}_{num}{ext}");
+        }
+        private static string TempPath(string path, string name) {
+            var dir = Path.GetDirectoryName(path);
+            var ext = Path.GetExtension(path);
+            return Path.Combine(dir, name);
+        }
+
         /**
          * MAX_LENGTHに収まる映像サイズを計算する。
          * @return -vf scale用のSize /すでにMAX_LENGTH以下なら null
@@ -88,6 +110,73 @@ namespace dxplayer.ffmpeg {
             return 0;
         }
 
+        private const double BITRATE_FACTOR = 2.0;  // 俺様が勝手に作ったパラメーターｗ
+        private static int calcRecomendedBitRate(FFAnalyzer.Analysis inputInfo, Size? newSize) {
+            // 実験の結果、ピクセルあたりのビットレート、
+            // bitRate / (width*height*frameRate/30)
+            // が、2.0くらいにすれば、十分だったので、これを超える場合は無駄に大きいビットレートとして制限する。
+            var video = inputInfo.Video;
+            if (video == null) return 0;
+            var recomended = BITRATE_FACTOR * video.Width * video.Height * video.FrameRate / 30;
+            if (video.BitRate < recomended) return 0;
+            if (newSize == null) return (int)recomended;
+            return (int)(BITRATE_FACTOR * newSize.Value.Width * newSize.Value.Height * video.FrameRate / 30);
+        }
+
+        private static string TimeSpanText(TimeSpan ts) {
+            return ts.ToString(@"hh\:mm\:ss");
+        }
+        #endregion  // Utilities
+
+        #region Progress
+
+        /**
+         * FFProcessId の更新を通知
+         */
+        private static void ProgressProcess(IFFProgress progress, FFProcessId id, double percent = 0, string message = "") {
+            if (progress != null) {
+                progress.ProcessId = id;
+                progress.Percent = percent;
+                progress.ProgressMessage = message;
+            }
+        }
+
+
+        private static void TimeSpanProgress(string label, IFFProgress progress, TimeSpan current, TimeSpan total) {
+            string currentText, totalText;
+            if (total.TotalMinutes > 60) {
+                currentText = current.ToString(@"hh\:mm\:ss");
+                totalText = total.ToString(@"hh\:mm\:ss");
+            }
+            else {
+                currentText = current.ToString(@"mm\:ss");
+                totalText = total.ToString(@"mm\:ss");
+            }
+            var percent = (total.Ticks > 0) ? Math.Min(100, (double)current.Ticks * 100 / (double)total.Ticks) : 0;
+            var percentText = percent.ToString("F1");
+            var progressMessage = $"{currentText}/{totalText} ({percentText}%)";
+            //Debug.WriteLine($"{label}: {progressMessage}");
+            if (progress != null) {
+                progress.Percent = percent;
+                progress.ProgressMessage = progressMessage;
+            }
+        }
+        private static void CountProgress(string label, IFFProgress progress, int current, int total) {
+            var percent = (double)current * 100 / (double)total;
+            var progressMessage = $"{current}/{total} ({Math.Round(percent)}%)";
+            Debug.WriteLine($"{label}: {progressMessage}");
+            if (progress != null) {
+                progress.Percent = percent;
+                progress.ProgressMessage = progressMessage;
+            }
+        }
+
+
+
+        #endregion // Progress
+
+        #region Compression
+
         /**
          * 動画ファイル圧縮用Argumentの生成
          */
@@ -121,18 +210,6 @@ namespace dxplayer.ffmpeg {
                 });
         }
 
-        /**
-         * FFProcessId の更新を通知
-         */
-
-        private static void ProgressProcess(IFFProgress progress, FFProcessId id, double percent=0, string message="") {
-            if (progress != null) {
-                progress.ProcessId = id;
-                progress.Percent = percent;
-                progress.ProgressMessage = message;
-            }
-        }
-
         public static async Task<ConvertResult> CompressAsync(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo=null) {
             FFConfig.Configure();
             if (inputInfo == null) {
@@ -164,18 +241,9 @@ namespace dxplayer.ffmpeg {
                 return ConvertResult.Error(e, inputInfo);
             }
         }
+        #endregion // Compression
 
-        private static string TempPathFrom(string path, int num) {
-            var dir = Path.GetDirectoryName(path);
-            var ext = Path.GetExtension(path);
-            var name = Path.GetFileNameWithoutExtension(path);
-            return Path.Combine(dir, $"{name}_{num}{ext}");
-        }
-        private static string TempPath(string path, string name) {
-            var dir = Path.GetDirectoryName(path);
-            var ext = Path.GetExtension(path);
-            return Path.Combine(dir, name);
-        }
+        #region Extraction
 
         public enum ExtractOption {
             QUICK,              // -c copy
@@ -256,42 +324,10 @@ namespace dxplayer.ffmpeg {
             }
         }
 
-        //public static ConvertResult SimpleTrimming(string inPath, string outPath, PlayRange range, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
-        //    FFConfig.Configure();
-        //    if (inputInfo == null) {
-        //        ProgressProcess(progress, FFProcessId.ANALYZING);
-        //        inputInfo = FFAnalyzer.Analyze(inPath);
-        //    }
-        //    try {
-        //        ProgressProcess(progress, FFProcessId.TRIMMING);
-        //        SimpleTrimmingArguments(inPath, outPath, range)
-        //            .ProcessSynchronously();
-        //        return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
-        //    }
-        //    catch (Exception e) {
-        //        PathUtil.safeDeleteFile(outPath);
-        //        return ConvertResult.Error(e, inputInfo);
-        //    }
-        //}
-        //public static async Task<ConvertResult> SimpleTrimmingAsync(string inPath, string outPath, PlayRange range, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
-        //    FFConfig.Configure();
-        //    if (inputInfo == null) {
-        //        ProgressProcess(progress, FFProcessId.ANALYZING);
-        //        inputInfo = FFAnalyzer.Analyze(inPath);
-        //    }
-        //    try {
-        //        ProgressProcess(progress, FFProcessId.TRIMMING);
-        //        await SimpleTrimmingArguments(inPath, outPath, range)
-        //            .ProcessAsynchronously();
-        //        return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
-        //    }
-        //    catch (Exception e) {
-        //        PathUtil.safeDeleteFile(outPath);
-        //        return ConvertResult.Error(e, inputInfo);
-        //    }
-        //}
+        #endregion
 
-        
+        #region Combination
+
         private static FFMpegArgumentProcessor CombineArguments(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
             return FFMpegArguments.FromDemuxConcatInput(files)
                 .OutputToFile(outPath, overwrite:true, (options) => {
@@ -337,36 +373,9 @@ namespace dxplayer.ffmpeg {
             }
         }
 
-        private static string TimeSpanText(TimeSpan ts) {
-            return ts.ToString(@"hh\:mm\:ss");
-        }
-        private static void TimeSpanProgress(string label, IFFProgress progress, TimeSpan current, TimeSpan total) {
-            string currentText, totalText;
-            if(total.TotalMinutes > 60) {
-                currentText = current.ToString(@"hh\:mm\:ss");
-                totalText = total.ToString(@"hh\:mm\:ss");
-            } else {
-                currentText = current.ToString(@"mm\:ss");
-                totalText = total.ToString(@"mm\:ss");
-            }
-            var percent = (total.Ticks>0) ? Math.Min(100, (double)current.Ticks * 100 / (double)total.Ticks) : 0;
-            var percentText = percent.ToString("F1");
-            var progressMessage = $"{currentText}/{totalText} ({percentText}%)";
-            //Debug.WriteLine($"{label}: {progressMessage}");
-            if (progress != null) {
-                progress.Percent = percent;
-                progress.ProgressMessage = progressMessage;
-            }
-        }
-        private static void CountProgress(string label, IFFProgress progress, int current, int total) {
-            var percent = (double)current * 100 / (double)total;
-            var progressMessage = $"{current}/{total} ({Math.Round(percent)}%)";
-            Debug.WriteLine($"{label}: {progressMessage}");
-            if (progress != null) {
-                progress.Percent = percent;
-                progress.ProgressMessage = progressMessage;
-            }
-        }
+        #endregion
+
+        #region Trimming with Ranges
 
         public static ConvertResult Trimming(string inPath, string outPath, List<PlayRange> ranges, ExtractOption extractOption, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
             FFConfig.Configure();
@@ -468,5 +477,6 @@ namespace dxplayer.ffmpeg {
                 }
             }
         }
+        #endregion
     }
 }
