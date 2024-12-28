@@ -288,16 +288,22 @@ namespace dxplayer.data.main
             ConvertResult result = null;
             var outPath = TempPathFrom(this.Path, "_comp");
             chapterEditor.OnMediaOpened(this);
-            if (chapterEditor.DisabledRanges.Value?.FirstOrDefault() != null) {
+            var disabled = chapterEditor.DisabledRanges.Value;
+            if (disabled!=null && disabled.Count>0) {
                 // トリミングが必要
+                Debug.WriteLine($"Trimming:{ID} {Name}");
                 trimmed = true;
                 var enabledRange = chapterEditor.GetEnabledRanges().ToList();
-                result = await FFApi.TrimmingAsync(this.Path, outPath, enabledRange, FFApi.ExtractOption.ACCURATE_COMPRESS, progress, null);
+                result = await FFApi.TrimmingAsync(this.Path, outPath, enabledRange, FFApi.ExtractOption.ACCURATE_COMPRESS, progress, inputInfo);
             } else {
-                if(!forceCompress && Math.Max(inputInfo.Video.Width,inputInfo.Video.Height)<=FFApi.MAX_LENGTH) {
+                if(!forceCompress && Math.Max(inputInfo.Video.Width,inputInfo.Video.Height)<=FFApi.MAX_LENGTH && inputInfo.Video.FrameRate<(double)FFApi.MAX_FPS) {
+                    // 一定以下の画像サイズなら処理しない
+                    Debug.WriteLine($"Skipped:{ID} {Name}");
+                    Debug.WriteLine(inputInfo.ToString());
                     return true;    // Compress不要
                 }
-                result = await FFApi.CompressAsync(this.Path, outPath, progress);
+                Debug.WriteLine($"Compressing:{ID} {Name}");
+                result = await FFApi.CompressAsync(this.Path, outPath, progress, inputInfo);
             }
             if (!result.Result) return false;
             Debug.WriteLine(result.ToString());

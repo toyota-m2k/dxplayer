@@ -15,6 +15,7 @@ using static dxplayer.ffmpeg.FFApi;
 namespace dxplayer.ffmpeg {
     public static class FFApi {
         public static int MAX_LENGTH => FFConfig.MaxLengthInPixel;    // 長辺の最大値
+        public static int MAX_FPS => FFConfig.MaxFrameRate;
         public static int CRF = FFConfig.CRF;                         // 圧縮率
 
 
@@ -53,6 +54,10 @@ namespace dxplayer.ffmpeg {
             }
         }
 
+        /**
+         * MAX_LENGTHに収まる映像サイズを計算する。
+         * @return -vf scale用のSize /すでにMAX_LENGTH以下なら null
+         */
         private static Size? calcVideoSizeForCompress(FFAnalyzer.Analysis inputInfo) {
             var video = inputInfo.Video;
             if (video.IsEmpty) {
@@ -72,9 +77,24 @@ namespace dxplayer.ffmpeg {
             return null;
         }
 
+        private static int calcFrameRateForCompress(FFAnalyzer.Analysis inputInfo) {
+            var video = inputInfo.Video;
+            if (video.IsEmpty) {
+                return 0;
+            }
+            if(video.FrameRate>(double)MAX_FPS) {
+                return MAX_FPS;
+            }
+            return 0;
+        }
+
+        /**
+         * 動画ファイル圧縮用Argumentの生成
+         */
         public static FFMpegArgumentProcessor CompressArguments(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
             FFConfig.Configure();
             Size? size = calcVideoSizeForCompress(inputInfo);
+            int frameRate = calcFrameRateForCompress(inputInfo);
             var duration = inputInfo.Duration;
 
             return FFMpegArguments
@@ -87,6 +107,10 @@ namespace dxplayer.ffmpeg {
                             .Scale(size.Value);
                         });
                     }
+                    if (frameRate>0) {
+                        options
+                        .WithFramerate(frameRate);
+                    }
                     options
                     .WithConstantRateFactor(CRF)
                     .WithFastStart()
@@ -95,7 +119,11 @@ namespace dxplayer.ffmpeg {
                 .NotifyOnProgress((TimeSpan s) => {
                     TimeSpanProgress("Compressing", progress, s, duration);
                 });
-            }
+        }
+
+        /**
+         * FFProcessId の更新を通知
+         */
 
         private static void ProgressProcess(IFFProgress progress, FFProcessId id, double percent=0, string message="") {
             if (progress != null) {
@@ -137,13 +165,13 @@ namespace dxplayer.ffmpeg {
             }
         }
 
-        static private string TempPathFrom(string path, int num) {
+        private static string TempPathFrom(string path, int num) {
             var dir = Path.GetDirectoryName(path);
             var ext = Path.GetExtension(path);
             var name = Path.GetFileNameWithoutExtension(path);
             return Path.Combine(dir, $"{name}_{num}{ext}");
         }
-        static private string TempPath(string path, string name) {
+        private static string TempPath(string path, string name) {
             var dir = Path.GetDirectoryName(path);
             var ext = Path.GetExtension(path);
             return Path.Combine(dir, name);
@@ -177,6 +205,11 @@ namespace dxplayer.ffmpeg {
                                         .Scale(size.Value);
                                     });
                                 }
+                                int frameRate = calcFrameRateForCompress(inputInfo);
+                                if (frameRate > 0) {
+                                    options
+                                    .WithFramerate(frameRate);
+                                }
                                 options
                                 .WithConstantRateFactor(CRF)
                                 .WithFastStart();
@@ -186,7 +219,8 @@ namespace dxplayer.ffmpeg {
                         }
                     })
                     .NotifyOnProgress(ts => {
-                        TimeSpanProgress("Extracting", progress, ts + initial, total);
+                        Debug.WriteLine($"ts={TimeSpanText(ts)} range=({TimeSpanText(range.StartAsTimeSpan)} - {TimeSpanText(range.TrueEndAsTimeSpan(inputInfo.DurationMs))}) progress=({TimeSpanText(initial + ts)}/{TimeSpanText(total)}/{TimeSpanText(range.TrueSpanAsTimeSpan(inputInfo.DurationMs))})");
+                        TimeSpanProgress("Extracting", progress, initial + ts, total);
                     })
                     .Apply(it => {
                         Debug.WriteLine(it.Arguments);
@@ -318,7 +352,7 @@ namespace dxplayer.ffmpeg {
             var percent = (total.Ticks>0) ? Math.Min(100, (double)current.Ticks * 100 / (double)total.Ticks) : 0;
             var percentText = percent.ToString("F1");
             var progressMessage = $"{currentText}/{totalText} ({percentText}%)";
-            Debug.WriteLine($"{label}: {progressMessage}");
+            //Debug.WriteLine($"{label}: {progressMessage}");
             if (progress != null) {
                 progress.Percent = percent;
                 progress.ProgressMessage = progressMessage;
@@ -357,10 +391,10 @@ namespace dxplayer.ffmpeg {
                     var tempPath = TempPathFrom(outPath, i);
                     tempFiles.Add(tempPath);
                     var range = ranges[i];
-                    initial += TimeSpan.FromMilliseconds(range.TrueSpan((ulong)inputInfo.DurationMs));
                     if (!Extract(inPath, tempPath, range, extractOption, progress, initial, totalDuration, inputInfo).Result) {
                         throw new Exception($"Failed to split {i}");
                     }
+                    initial += TimeSpan.FromMilliseconds(range.TrueSpan((ulong)inputInfo.DurationMs));
                     //CountProgress("Splitting:", progress, i + 1, ranges.Count);
                 }
 
@@ -407,10 +441,10 @@ namespace dxplayer.ffmpeg {
                     var tempPath = TempPathFrom(outPath, i);
                     tempFiles.Add(tempPath);
                     var range = ranges[i];
-                    initial += TimeSpan.FromMilliseconds(range.TrueSpan((ulong)inputInfo.DurationMs));
                     if (!(await ExtractAsync(inPath, tempPath, range, extractOption, progress, initial, totalDuration, inputInfo)).Result) {
                         throw new Exception($"Failed to split {i}");
                     }
+                    initial += range.TrueSpanAsTimeSpan((ulong)inputInfo.DurationMs);
                     // CountProgress("Splitting:", progress, i + 1, ranges.Count);
                 }
 
