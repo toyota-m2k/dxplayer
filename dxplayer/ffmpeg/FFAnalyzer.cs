@@ -124,15 +124,16 @@ namespace dxplayer.ffmpeg {
             public IVideoInfo Video { get; }
             public IAudioInfo Audio { get; }
             public bool IsEmpty => Video.IsEmpty && Audio.IsEmpty;
-            public long DurationMs {
+            public ulong DurationMs {
                 get {
                     if(Video!=null && Audio!=null) {
-                        return Math.Max((long)Video.Duration.TotalMilliseconds, (long)Audio.Duration.TotalMilliseconds);
+                        return Math.Max((ulong)Video.Duration.TotalMilliseconds, (ulong)Audio.Duration.TotalMilliseconds);
                     } else {
-                        return (long)(Video?.Duration.TotalMilliseconds ?? Audio?.Duration.TotalMilliseconds ?? 0);
+                        return (ulong)(Video?.Duration.TotalMilliseconds ?? Audio?.Duration.TotalMilliseconds ?? 0);
                     }
                 }
             }
+            public TimeSpan Duration => TimeSpan.FromMilliseconds(DurationMs);
 
             private Analysis(long size, IVideoInfo video, IAudioInfo audio) {
                 Size = size;
@@ -152,11 +153,11 @@ namespace dxplayer.ffmpeg {
 
             public override string ToString() {
                 StringBuilder sb = new StringBuilder();
-                sb.Append("-------------------------------------\r\n");
                 sb.Append("Size:     :").Append(Size.ToString("N0", CultureInfo.InvariantCulture)).Append("\r\n");
+                sb.Append("-------------------r\n");
                 sb.Append(Video.ToString());
+                sb.Append("-------------------r\n");
                 sb.Append(Audio.ToString());
-                sb.Append("-------------------------------------\r\n");
                 return sb.ToString();
             }
             public static Analysis Empty => new Analysis(0, VideoInfo.Empty, AudioInfo.Empty);

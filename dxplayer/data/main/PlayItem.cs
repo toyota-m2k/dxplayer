@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static dxplayer.ffmpeg.FFApi;
 
 namespace dxplayer.data.main
 {
@@ -279,53 +280,40 @@ namespace dxplayer.data.main
             return System.IO.Path.Combine(dir, $"{name}{suffix}{ext}");
         }
 
-        public async Task<bool> Compress(IFFProgress progress) {
-            var srcPath = this.Path;
+        public async Task<bool> Compress(IFFProgress progress, bool forceCompress=false) {
+            var inputInfo = FFAnalyzer.Analyze(Path);
+            if (inputInfo.Video == null) return false;
             var chapterEditor = new ChapterEditor();
             var trimmed = false;
-            FFAnalyzer.Analysis originalInfo = null;
+            ConvertResult result = null;
+            var outPath = TempPathFrom(this.Path, "_comp");
             chapterEditor.OnMediaOpened(this);
             if (chapterEditor.DisabledRanges.Value?.FirstOrDefault() != null) {
                 // トリミングが必要
+                trimmed = true;
                 var enabledRange = chapterEditor.GetEnabledRanges().ToList();
-                var trimFile = TempPathFrom(this.Path, "_trim");
-                var trim = await FFApi.TrimmingAsync(this.Path, trimFile, enabledRange, progress, null);
-                if (trim.Result) {
-                    trimmed = true;
-                    srcPath = trimFile;
-                    originalInfo = trim.Before;
+                result = await FFApi.TrimmingAsync(this.Path, outPath, enabledRange, FFApi.ExtractOption.ACCURATE_COMPRESS, progress, null);
+            } else {
+                if(!forceCompress && Math.Max(inputInfo.Video.Width,inputInfo.Video.Height)<=FFApi.MAX_LENGTH) {
+                    return true;    // Compress不要
                 }
-                else {
-                    return false;
-                }
+                result = await FFApi.CompressAsync(this.Path, outPath, progress);
             }
-
-            var outPath = TempPathFrom(this.Path, "_comp");
-            var comp = await FFApi.CompressAsync(srcPath, outPath, progress);
-            var result = new FFApi.ConvertResult(comp.Result, originalInfo ?? comp.Before, comp.After, comp.Exception);
+            if (!result.Result) return false;
             Debug.WriteLine(result.ToString());
-            if (comp.Result && comp.After.Size < comp.Before.Size) {
-                File.Delete(this.Path);
-                File.Move(outPath, this.Path);
-                this.Size = comp.After.Size;
-                this.Duration = (ulong)comp.After.Video.Duration.TotalMilliseconds;
-            }
-            else if (trimmed) {
-                File.Delete(srcPath);
-                File.Move(srcPath, this.Path);
-                this.Size = comp.Before.Size;
-                this.Duration = (ulong)comp.Before.Video.Duration.TotalMilliseconds;
-            }
-            else {
-                return false;
-            }
+
+            File.Delete(this.Path);
+            File.Move(outPath, this.Path);
+            this.Size = result.After.Size;
+            this.Duration = result.After.DurationMs;
+
             if (trimmed) {
                 // トリミングされたら、チャプター情報 と Triming情報をクリア
                 App.Instance.DB.ChapterTable.DeleteChaptersOfOwner(this.ID);
                 this.TrimStart = 0;
                 this.TrimEnd = 0;
             }
-            App.MainWindow.UpdateList();
+            //App.MainWindow.UpdateList();
             return true;
         }
 

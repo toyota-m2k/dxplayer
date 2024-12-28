@@ -11,7 +11,7 @@ namespace dxplayer.ffmpeg {
         private static string FFMpegPath = null;
         private static Func<string> FFMpegPathResolver { get; set; } = null;
 
-        public static int MaxLengthInPixel { get; private set; } = 1920;
+        public static int MaxLengthInPixel { get; private set; } = 1440 /*HD*/; // 1920 FHD;
         public static int CRF { get; private set; } = 23;
         /**
          * FFMpegPathを取得するための関数を設定します。

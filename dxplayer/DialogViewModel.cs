@@ -144,7 +144,6 @@ namespace dxplayer {
                 TargetItemName = CurrentItem.Select(c => c?.Name ?? "").ToReadOnlyReactivePropertySlim();
                 ProcessLabel = _processId.Select(c => {
                     switch (c) {
-                        case FFProcessId.ANALYZING: return "Analyzing...";
                         case FFProcessId.TRIMMING: return "Trimming...";
                         case FFProcessId.SPLITTING: return "Splitting...";
                         case FFProcessId.COMBINING: return "Combining...";
