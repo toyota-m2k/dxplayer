@@ -118,5 +118,13 @@ namespace dxplayer.data {
             Update();
             updated.ResetModifiedFlag();
         }
+
+        public void DeleteChaptersOfOwner(long owner) {
+            var entries = Table.Where((c) => c.Owner == owner);
+            foreach (var e in entries) {
+                Table.DeleteOnSubmit(e);
+            }
+            Update();
+        }
     }
 }

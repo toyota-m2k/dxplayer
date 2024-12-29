@@ -1,4 +1,6 @@
-﻿namespace dxplayer.data {
+﻿using System;
+
+namespace dxplayer.data {
     public interface IPlayRange {
         ulong Start { get; }
         ulong End { get; }
@@ -57,6 +59,10 @@
             var end = TrueEnd(duration);
             return (end > Start) ? end - Start : 0;
         }
+
+        public TimeSpan StartAsTimeSpan => TimeSpan.FromMilliseconds(Start);
+        public TimeSpan TrueEndAsTimeSpan(ulong duration) { return TimeSpan.FromMilliseconds(TrueEnd(duration)); }
+        public TimeSpan TrueSpanAsTimeSpan(ulong duration) { return TimeSpan.FromMilliseconds(TrueSpan(duration)); }
 
         public void AdjustTrueEnd(ulong duration) {
             if(End==0) {

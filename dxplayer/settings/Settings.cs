@@ -1,4 +1,5 @@
-﻿using dxplayer.misc;
+﻿using dxplayer.ffmpeg;
+using dxplayer.misc;
 using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ namespace dxplayer.settings {
         public SortInfo SortInfo { get; set; } = new SortInfo();
         public MRU MRU { get; set; } = new MRU();
         public string DxxDBPath { get; set; } = "";
+        public string FFMpegPath { get; set; } = "";
         public string LastPlayingPath { get; set; } = "";
         public ulong LastPlayingPos { get; set; } = 0;
         public bool UseServer { get; set; } = false;
@@ -28,6 +30,9 @@ namespace dxplayer.settings {
             get {
                 if (sInstance == null) {
                     sInstance = Deserialize();
+                    FFConfig.Initialize(() => {
+                        return sInstance.FFMpegPath;
+                    });
                 }
                 return sInstance;
             }

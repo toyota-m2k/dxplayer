@@ -317,6 +317,24 @@ namespace dxplayer.data {
             //    yield return new PlayRange(trimEnd, 0);
             //}
         }
+        public IEnumerable<PlayRange> GetEnabledRanges(PlayRange trimming, ulong duration = 0) {
+            var chap = GetChapterPositionAwareOfTrimming(trimming);
+            ulong prev = 0;
+            foreach (var (pos, skip) in chap) {
+                if (!skip) {
+                    prev = pos;
+                }
+                else if (prev != pos) {
+                    //string name = Values.FirstOrDefault(c => c.Position == prev)?.Label?.Trim();
+                    string name = GetChapterAt(prev)?.Label?.Trim();
+                    yield return new PlayRange(prev, pos);
+                    prev = 0;
+                }
+            }
+            if (prev > 0) {
+                yield return new PlayRange(prev, duration);
+            }
+        }
 
     }
 }

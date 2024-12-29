@@ -1,5 +1,6 @@
 ﻿using dxplayer.data.dxx;
 using dxplayer.data.wf;
+using dxplayer.ffmpeg;
 using dxplayer.misc;
 using dxplayer.player;
 using io.github.toyota32k.toolkit.utils;
@@ -8,11 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Data.Linq.Mapping;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static dxplayer.ffmpeg.FFApi;
 
 namespace dxplayer.data.main
 {
@@ -50,7 +54,10 @@ namespace dxplayer.data.main
 
         [Column(Name = "size", CanBeNull = false)]
         private long size = 0;
-        public long Size => size;
+        public long Size {
+            get => size;
+            private set => setProp(callerName(), ref size, value);
+        }
 
         [Column(Name = "mark", CanBeNull = true)]
         private string mark = "";
@@ -259,10 +266,147 @@ namespace dxplayer.data.main
 
         public class CopyItemPathCommandImpl:SimpleCommand {
             public CopyItemPathCommandImpl(PlayItem item) : base(() => {
+                var anal = FFAnalyzer.Analyze(item.Path).ToString();
+                Debug.WriteLine(anal);
                 Clipboard.SetText(item.Path);
             }) { }
         }
         public CopyItemPathCommandImpl CopyItemPathCommand => new CopyItemPathCommandImpl(this);
+
+        static private string TempPathFrom(string path, string suffix) {
+            var dir = System.IO.Path.GetDirectoryName(path);
+            var ext = System.IO.Path.GetExtension(path);
+            var name = System.IO.Path.GetFileNameWithoutExtension(path);
+            return System.IO.Path.Combine(dir, $"{name}{suffix}{ext}");
+        }
+
+        private double calcBitRateFactor(FFAnalyzer.Analysis info) {
+            var video = info.Video;
+            return video.BitRate / (video.Width * video.Height * video.FrameRate / 30);
+        }
+
+        public async Task<bool> Compress(IFFProgress progress, IStatusBar statusBar, bool forceCompress=false) {
+            var inputInfo = FFAnalyzer.Analyze(Path);
+            if (inputInfo.Video == null) {
+                if(inputInfo.IsEmpty) {
+                    statusBar.OutputStatusMessage("Cannot analyze videos. Make sure ffmpeg path.");
+                } else {
+                    statusBar.OutputStatusMessage($"Cannot analyze {Path}");
+                }
+                return false;
+            }
+
+
+            //var video = inputInfo.Video;
+            //var w = video.Width;
+            //var h = video.Height;
+            //var size = inputInfo.Size;
+            //var duration = inputInfo.Duration;
+            //var bitrate = video.BitRate;
+            //var framerate = video.FrameRate / 30.0;
+            //var s = (long)w * (long)h;
+            //var da = s * duration.TotalSeconds * framerate;
+            //var eff = (double)da / (double)size;    // １バイト当たりの情報量
+            //var brf = (double)bitrate / ((double)s*framerate);         // １ピクセルあたりのビットレート
+            //var rbr = 2.0 * s * framerate;
+
+            //Debug.WriteLine($"{Name}: {w}x{h} bitrate={bitrate} (rbr={rbr}: efficient={eff} / bitrate-factor={brf}");
+            //return true;
+
+
+
+            var chapterEditor = new ChapterEditor();
+            var trimmed = false;
+            ConvertResult result = null;
+            var outPath = TempPathFrom(this.Path, "_comp");
+            chapterEditor.OnMediaOpened(this);
+            var disabled = chapterEditor.DisabledRanges.Value;
+            if (disabled!=null && disabled.Count>0) {
+                // トリミングが必要
+                Debug.WriteLine($"Trimming:{ID} {Name}");
+                trimmed = true;
+                var enabledRange = chapterEditor.GetEnabledRanges().ToList();
+                result = await FFApi.TrimmingAsync(this.Path, outPath, enabledRange, FFApi.ExtractOption.ACCURATE_COMPRESS, progress, inputInfo);
+            } else {
+                if(!forceCompress && Math.Max(inputInfo.Video.Width,inputInfo.Video.Height)<=FFApi.MAX_LENGTH && inputInfo.Video.FrameRate<(double)FFApi.MAX_FPS) {
+                    // 一定以下の画像サイズなら処理しない
+                    Debug.WriteLine($"Skipped:{ID} {Name}");
+                    Debug.WriteLine(inputInfo.ToString());
+                    return true;    // Compress不要
+                }
+                Debug.WriteLine($"Compressing:{ID} {Name}");
+                result = await FFApi.CompressAsync(this.Path, outPath, progress, inputInfo);
+            }
+            if (!result.Result) return false;
+            Debug.WriteLine(result.ToString());
+            Debug.WriteLine($"BitRateFactor: {calcBitRateFactor(result.Before)} --> {calcBitRateFactor(result.After)}");
+
+            File.Delete(this.Path);
+            File.Move(outPath, this.Path);
+            this.Size = result.After.Size;
+            this.Duration = result.After.DurationMs;
+
+            if (trimmed) {
+                // トリミングされたら、チャプター情報 と Triming情報をクリア
+                App.Instance.DB.ChapterTable.DeleteChaptersOfOwner(this.ID);
+                this.TrimStart = 0;
+                this.TrimEnd = 0;
+            }
+            //App.MainWindow.UpdateList();
+            return true;
+        }
+
+        public class CompressItemCommandImpl:SimpleCommand {
+            public CompressItemCommandImpl(PlayItem item) : base(() => {
+                App.MainWindow.CompressItems();
+
+
+                //var srcPath = item.Path;
+                //var chapterEditor = new ChapterEditor();
+                //var trimmed = false;
+                //FFAnalyzer.Analysis originalInfo = null;
+                //chapterEditor.OnMediaOpened(item);
+                //if(chapterEditor.DisabledRanges.Value?.FirstOrDefault()!=null) {
+                //    // トリミングが必要
+                //    var enabledRange = chapterEditor.GetEnabledRanges().ToList();
+                //    var trimFile = TempPathFrom(item.Path,"_trim");
+                //    var trim = FFApi.Trimming(item.Path, trimFile, enabledRange, null, null);
+                //    if(trim.Result) {
+                //        trimmed = true;
+                //        srcPath = trimFile;
+                //        originalInfo = trim.Before;
+                //    } else {
+                //        return;
+                //    }
+                //}
+
+                //var outPath = TempPathFrom(item.Path, "_comp");
+                //var comp = FFApi.Compress(srcPath, outPath,null);
+                //var result = new FFApi.ConvertResult(comp.Result, originalInfo ?? comp.Before, comp.After, comp.Exception);
+                //Debug.WriteLine(result.ToString());
+                //if(comp.Result && comp.After.Size<comp.Before.Size) {
+                //    File.Delete(item.Path);
+                //    File.Move(outPath, item.Path);
+                //    item.Size = comp.After.Size;
+                //    item.Duration = (ulong)comp.After.Video.Duration.TotalMilliseconds;
+                //} else if(trimmed) {
+                //    File.Delete(srcPath);
+                //    File.Move(srcPath, item.Path);
+                //    item.Size = comp.Before.Size;
+                //    item.Duration = (ulong)comp.Before.Video.Duration.TotalMilliseconds;
+                //} else {
+                //    return;
+                //}
+                //if (trimmed) {
+                //    // トリミングされたら、チャプター情報 と Triming情報をクリア
+                //    App.Instance.DB.ChapterTable.DeleteChaptersOfOwner(item.ID);
+                //    item.TrimStart = 0;
+                //    item.TrimEnd = 0;
+                //}
+                //App.MainWindow.UpdateList();
+            }) { }
+        }
+        public CompressItemCommandImpl CompressItemCommand => new CompressItemCommandImpl(this);
     }
 
     public class PlayListTable : StorageTable<PlayItem> {
