@@ -1,6 +1,7 @@
 ﻿using FFMpegCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -142,8 +143,13 @@ namespace dxplayer.ffmpeg {
             }
             public static Analysis FromPath(string path) {
                 var fi = new FileInfo(path);
-                var m = FFProbe.Analyse(path);
-                return new Analysis(fi.Length, VideoInfo.FromProbe(m), AudioInfo.FromProbe(m));
+                try {
+                    var m = FFProbe.Analyse(path);
+                    return new Analysis(fi.Length, VideoInfo.FromProbe(m), AudioInfo.FromProbe(m));
+                } catch (Exception e) {
+                    Debug.WriteLine(e.Message);
+                    return Empty;
+                }
             }
             public static async Task<Analysis> FromPathAsync(string path) {
                 var fi = new FileInfo(path);

@@ -285,9 +285,16 @@ namespace dxplayer.data.main
             return video.BitRate / (video.Width * video.Height * video.FrameRate / 30);
         }
 
-        public async Task<bool> Compress(IFFProgress progress, bool forceCompress=false) {
+        public async Task<bool> Compress(IFFProgress progress, IStatusBar statusBar, bool forceCompress=false) {
             var inputInfo = FFAnalyzer.Analyze(Path);
-            if (inputInfo.Video == null) return false;
+            if (inputInfo.Video == null) {
+                if(inputInfo.IsEmpty) {
+                    statusBar.OutputStatusMessage("Cannot analyze videos. Make sure ffmpeg path.");
+                } else {
+                    statusBar.OutputStatusMessage($"Cannot analyze {Path}");
+                }
+                return false;
+            }
 
 
             //var video = inputInfo.Video;

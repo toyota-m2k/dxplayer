@@ -1,4 +1,6 @@
-﻿using dxplayer.data.main;
+﻿using dxplayer.common;
+using dxplayer.data;
+using dxplayer.data.main;
 using dxplayer.ffmpeg;
 using dxplayer.settings;
 using io.github.toyota32k.toolkit.view;
@@ -7,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using System.Windows.Controls.Primitives;
 
 namespace dxplayer {
     public class DialogViewModel : ViewModelBase {
@@ -35,14 +38,15 @@ namespace dxplayer {
             DialogType TYPE { get; }
         }
 
+        private DisposablePool commandDisposer = new DisposablePool();
         private async Task<bool> Show(IDialogViewModel dv) {
             Completion = new TaskCompletionSource<bool>();
             Title.Value = dv.TITLE;
             Type.Value = dv.TYPE;
             OkVisible.Value = true;
             CancelVisible.Value = true;
-            OkCommand.Subscribe(() => Close(true));
-            CancelCommand.Subscribe(() => Close(false));
+            commandDisposer.Add(OkCommand.Subscribe(() => Close(true)));
+            commandDisposer.Add(CancelCommand.Subscribe(() => Close(false)));
             return await Completion.Task;
         }
 
@@ -50,8 +54,7 @@ namespace dxplayer {
             Completion?.TrySetResult(result);
             Completion = null;
             Type.Value = DialogType.NONE;
-            OkCommand.Dispose();
-            CancelCommand.Dispose();
+            commandDisposer.Dispose();
         }
 
         #region Settting Dialog
@@ -163,27 +166,33 @@ namespace dxplayer {
         }
         public CompressProgressViewModel Compress { get; } = new CompressProgressViewModel();
 
-        public async Task ShowCompressProgress(List<PlayItem> items) {
+        public async Task ShowCompressProgress(IStatusBar statusBar, List<PlayItem> items) {
             if(Type.Value != DialogType.NONE) return;
             Compress.SetItemList(items);
             Title.Value = Compress.TITLE;
             Type.Value = Compress.TYPE;
             OkVisible.Value = false;
+            CancelVisible.Value = true;
             Compress.Alive.Value = true;
             CancelVisible.Value = true;
-            CancelCommand.Subscribe(() => {
+            var disposable = CancelCommand.Subscribe(() => {
                 Compress.Alive.Value = false;
+                CancelVisible.Value = false;
             });
-            for(int i = 0; Compress.Alive.Value && i < items.Count; i++) {
-                Compress.CurrentItemIndex.Value = i;
-                var item = items[i];
-                await item.Compress(Compress);
+            try {
+                for (int i = 0; Compress.Alive.Value && i < items.Count; i++) {
+                    Compress.CurrentItemIndex.Value = i;
+                    var item = items[i];
+                    await item.Compress(Compress, statusBar, forceCompress: false);
+                }
             }
-            Type.Value = DialogType.NONE;
-            CancelCommand.Dispose();
+            finally {
+                Type.Value = DialogType.NONE;
+                disposable.Dispose();
+            }
         }
-        public async Task ShowCompressProgress(params PlayItem[] items) {
-            await ShowCompressProgress(items.ToList());
+        public async Task ShowCompressProgress(IStatusBar statusBar, params PlayItem[] items) {
+            await ShowCompressProgress(statusBar, items.ToList());
         }
         #endregion
     }

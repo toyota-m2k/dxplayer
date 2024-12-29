@@ -583,7 +583,7 @@ namespace dxplayer {
 
         #region Utilities
         public void CompressItems() {
-            _ = ViewModel.Dialog.ShowCompressProgress(SelectedItems.ToList());
+            _ = ViewModel.Dialog.ShowCompressProgress(this, SelectedItems.ToList());
         }
         #endregion
         //private void OnKeyDown2(object sender, KeyEventArgs e) {
