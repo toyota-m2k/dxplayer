@@ -268,7 +268,11 @@ namespace dxplayer.data.main
             public CopyItemPathCommandImpl(PlayItem item) : base(() => {
                 var anal = FFAnalyzer.Analyze(item.Path).ToString();
                 Debug.WriteLine(anal);
-                Clipboard.SetText(item.Path);
+                try {
+                    Clipboard.SetText(item.Path);
+                } catch(Exception e) {
+                    Logger.error(e);
+                }
             }) { }
         }
         public CopyItemPathCommandImpl CopyItemPathCommand => new CopyItemPathCommandImpl(this);

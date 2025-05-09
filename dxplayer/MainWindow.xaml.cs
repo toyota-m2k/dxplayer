@@ -52,6 +52,7 @@ namespace dxplayer {
             ViewModel.AddFolderCommand.Subscribe(AddFolders);
             ViewModel.RefreshAllCommand.Subscribe(RefreshDB);
             ViewModel.PlayCommand.Subscribe(Play);
+            ViewModel.SelectDupCommand.Subscribe(SelectDuplicatedItems);
 
             ViewModel.PreviewCommand.Subscribe(Preview);
             ViewModel.CheckCommand.Subscribe(CheckItem);
@@ -219,6 +220,48 @@ namespace dxplayer {
 
         private void Preview() {
             Play(true);
+        }
+
+        private SweepDuplicationDialog mSweepDuplicationDialog = null;
+        private IListFilter mSweepDeplicationFilter = null;
+
+        private void SelectDuplicatedItems() {
+            if(mSweepDuplicationDialog == null) {
+                mSweepDuplicationDialog = new SweepDuplicationDialog();
+                mSweepDuplicationDialog.Owner = this;
+                mSweepDuplicationDialog.Model.SelectCommand.Subscribe(() => {
+                    mSweepDeplicationFilter = mSweepDuplicationDialog.Filter;
+                    UpdateList();
+                });
+                mSweepDuplicationDialog.Closed += (s, e) => {
+                    mSweepDuplicationDialog = null;
+                    mSweepDeplicationFilter = null;
+                    UpdateList();
+                };
+                mSweepDuplicationDialog.Show();
+            }
+            return;
+
+            var all = MainListView.Items;
+            if (all.Count == 0) {
+                return;
+            }
+            var list = all.ToEnumerable<PlayItem>();
+            //var dupes = list.GroupBy(c => c.Title+c.Duration).Where(g => g.Count() > 1).SelectMany(g => g);
+            var dupes = list.GroupBy(c => $"{c.Duration}+{c.Size}").Where(g => g.Count() > 1).SelectMany(g => g);
+            if (dupes.Count() == 0) {
+                FlashStatusMessage("No duplicated items found.");
+                return;
+            }
+            ViewModel.MainList.Value = new ObservableCollection<PlayItem>(dupes.Sort());
+
+            MainListView.SelectedItems.Clear();
+            var sameTitle = dupes.Where(c => !string.IsNullOrEmpty(c.Title)).GroupBy(c => c.Title + c.Duration).Where(g => g.Count() > 1)
+                .Select(c =>　c.Where(e=>!e.Checked).OrderByDescending(e=>e.Size).FirstOrDefault() ?? c.OrderByDescending(e => e.Size).First()).Where(c=>c.KeyFromName.EndsWith("hb"));
+            var sameSize = dupes.GroupBy(c => c.Size).Where(g => g.Count() > 1).Select(c => c.Where(e => !e.Checked).FirstOrDefault() ?? c.First());
+            foreach (var d in sameTitle.Concat(sameSize)) {
+                MainListView.SelectedItems.Add(d);
+            }
         }
 
         private void OnListItemDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -473,11 +516,17 @@ namespace dxplayer {
 
         public void UpdateList() {
             var list = DB.PlayListTable.List.Filter();
-            if (Settings.Instance.SortInfo.Shuffle) {
-                ViewModel.MainList.Value = Shuffle(list);
+            if (mSweepDuplicationDialog != null) {
+                list = mSweepDuplicationDialog.Filter.Filter(list);
+                ViewModel.MainList.Value = new ObservableCollection<PlayItem>(list);
             }
             else {
-                ViewModel.MainList.Value = new ObservableCollection<PlayItem>(list.Sort());
+                if (Settings.Instance.SortInfo.Shuffle) {
+                    ViewModel.MainList.Value = Shuffle(list);
+                }
+                else {
+                    ViewModel.MainList.Value = new ObservableCollection<PlayItem>(list.Sort());
+                }
             }
         }
 
@@ -603,7 +652,7 @@ namespace dxplayer {
         //    return c.Filter(s);
         //}
         public static IEnumerable<PlayItem> Filter(this IEnumerable<PlayItem> s) {
-            return Settings.Instance.ListFilter.Filter(s);
+            return (Settings.Instance.ListFilter).Filter(s);
         }
         public static IOrderedEnumerable<PlayItem> Sort(this IEnumerable<PlayItem> s) {
             return Settings.Instance.SortInfo.Sort(s);

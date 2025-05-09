@@ -266,6 +266,9 @@
     <Compile Include="settings\MRU.cs" />
     <Compile Include="settings\SortInfo.cs" />
     <Compile Include="settings\Settings.cs" />
+    <Compile Include="SweepDuplicationDialog.xaml.cs">
+      <DependentUpon>SweepDuplicationDialog.xaml</DependentUpon>
+    </Compile>
     <Page Include="KeyHelpWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -317,6 +320,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="res\TimelineSlider.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SweepDuplicationDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

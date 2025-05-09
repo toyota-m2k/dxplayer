@@ -6,7 +6,10 @@ using System.Linq;
 
 namespace dxplayer.settings
 {
-    public class ListFilter : PropertyChangeNotifier {
+    public interface IListFilter {
+        IEnumerable<PlayItem> Filter(IEnumerable<PlayItem> list);
+    }
+    public class ListFilter : PropertyChangeNotifier, IListFilter {
         public event Action FilterUpdated;
 
         private bool mEnabled = true;
