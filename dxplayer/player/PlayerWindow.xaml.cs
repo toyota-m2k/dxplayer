@@ -76,8 +76,10 @@ namespace dxplayer.player {
             App.Instance.DB.PlayListTable.Update();
         }
 
+
         protected override void OnClosed(EventArgs e) {
             base.OnClosed(e);
+            ViewModel.CommandManager.Enable(this, false);
             PlayWindowClosed?.Invoke(this);
             PlayWindowClosed = null;
             PlayItemChanged = null;

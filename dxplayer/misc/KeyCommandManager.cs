@@ -3,6 +3,7 @@ using io.github.toyota32k.toolkit.view;
 using Reactive.Bindings;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
@@ -119,7 +120,7 @@ namespace dxplayer.misc {
 
         public KeyCommandManager() : base(disposeNonPublic: true) {
             CommandFlow = ActiveKey.CombineLatest(Ctrl, Shift, (k, c, s) => {
-                //LoggerEx.debug($"key changed:{k}");
+                Debug.WriteLine($"key changed:{k} ctrl={c} shift={s}");
                 if (c && s) {
                     return ControlShiftKeyCommands.GetValue(k, misc.Command.NOP);
                 }
@@ -150,6 +151,7 @@ namespace dxplayer.misc {
         public void Enable(Window owner, bool enable) {
             if (enable) {
                 if (null == enabled) {
+                    Console.WriteLine($"{owner}:{enable}");
                     Cancel();
                     owner.AddHandler(Keyboard.PreviewKeyDownEvent, (KeyEventHandler)OnKeyDown);
                     owner.AddHandler(Keyboard.PreviewKeyUpEvent, (KeyEventHandler)OnKeyUp);
@@ -159,6 +161,7 @@ namespace dxplayer.misc {
                 }
             } else {
                 if (null != enabled) {
+                    Console.WriteLine($"{owner}:{enable}");
                     owner.RemoveHandler(Keyboard.PreviewKeyDownEvent, (KeyEventHandler)OnKeyDown);
                     owner.RemoveHandler(Keyboard.PreviewKeyUpEvent, (KeyEventHandler)OnKeyUp);
                     enabled.Dispose();
@@ -216,7 +219,7 @@ namespace dxplayer.misc {
         }
 
         public void Down(Key key) {
-            //LoggerEx.debug($"{key}");
+            Debug.WriteLine($"KeyDown: {key}");
             if (key == Key.LeftCtrl || key == Key.RightCtrl) {
                 Ctrl.Value = true;
                 //LoggerEx.debug($"Ctrl=true");
@@ -252,6 +255,7 @@ namespace dxplayer.misc {
             ActiveKey.Value = Key.None;
             Ctrl.Value = false;
             Shift.Value = false;
+            CurrentCommand = Command.NOP;
         }
 
         public IEnumerable<KeyMapHelpItem> MakeHelpMessage() {
