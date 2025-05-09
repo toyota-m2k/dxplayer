@@ -58,7 +58,7 @@ namespace dxplayer {
             ViewModel.CheckCommand.Subscribe(CheckItem);
             ViewModel.UncheckCommand.Subscribe(UncheckItem);
             ViewModel.ResetCounterCommand.Subscribe(ResetCounter);
-            ViewModel.DeleteItemCommand.Subscribe(DeleteFiles);
+            ViewModel.DeleteItemCommand.Subscribe(_=>DeleteFiles());
             ViewModel.CopyItemPathCommand.Subscribe(CopyItemPath);
             ViewModel.DecrementCounterCommand.Subscribe(DecrementCounter);
             ViewModel.ShutdownCommand.Subscribe(Shutdown);
@@ -225,13 +225,38 @@ namespace dxplayer {
         private SweepDuplicationDialog mSweepDuplicationDialog = null;
         private IListFilter mSweepDeplicationFilter = null;
 
+        private void SelectItems(IEnumerable<PlayItem> items) {
+            if (items == null) return;
+            MainListView.SelectedItems.Clear();
+            foreach (var item in items) {
+                MainListView.SelectedItems.Add(item);
+            }
+            var top = items.FirstOrDefault();
+            if (top != null) {
+                MainListView.ScrollIntoView(top);
+            }
+        }
+
         private void SelectDuplicatedItems() {
             if(mSweepDuplicationDialog == null) {
                 mSweepDuplicationDialog = new SweepDuplicationDialog();
                 mSweepDuplicationDialog.Owner = this;
-                mSweepDuplicationDialog.Model.SelectCommand.Subscribe(() => {
-                    mSweepDeplicationFilter = mSweepDuplicationDialog.Filter;
+                mSweepDeplicationFilter = mSweepDuplicationDialog.Filter;
+                mSweepDuplicationDialog.Model.Criteria.Subscribe(c => {
                     UpdateList();
+                });
+                mSweepDuplicationDialog.Model.SelectAllCommand.Subscribe(() => {
+                    SelectItems(mSweepDuplicationDialog?.Model?.SelectAll());
+                });
+                mSweepDuplicationDialog.Model.SelectPrevCommand.Subscribe(() => {
+                    SelectItems(mSweepDuplicationDialog?.Model?.SelectPrev(SelectedItem));
+                });
+                mSweepDuplicationDialog.Model.SelectNextCommand.Subscribe(() => {
+                    SelectItems(mSweepDuplicationDialog?.Model?.SelectNext(SelectedItem));
+                });
+                mSweepDuplicationDialog.Model.DeleteSelectedCommand.Subscribe(() => {
+                    DeleteFiles(silent:true);
+                    SelectItems(mSweepDuplicationDialog?.Model?.SelectNext());
                 });
                 mSweepDuplicationDialog.Closed += (s, e) => {
                     mSweepDuplicationDialog = null;
@@ -242,26 +267,26 @@ namespace dxplayer {
             }
             return;
 
-            var all = MainListView.Items;
-            if (all.Count == 0) {
-                return;
-            }
-            var list = all.ToEnumerable<PlayItem>();
-            //var dupes = list.GroupBy(c => c.Title+c.Duration).Where(g => g.Count() > 1).SelectMany(g => g);
-            var dupes = list.GroupBy(c => $"{c.Duration}+{c.Size}").Where(g => g.Count() > 1).SelectMany(g => g);
-            if (dupes.Count() == 0) {
-                FlashStatusMessage("No duplicated items found.");
-                return;
-            }
-            ViewModel.MainList.Value = new ObservableCollection<PlayItem>(dupes.Sort());
+            //var all = MainListView.Items;
+            //if (all.Count == 0) {
+            //    return;
+            //}
+            //var list = all.ToEnumerable<PlayItem>();
+            ////var dupes = list.GroupBy(c => c.Title+c.Duration).Where(g => g.Count() > 1).SelectMany(g => g);
+            //var dupes = list.GroupBy(c => $"{c.Duration}+{c.Size}").Where(g => g.Count() > 1).SelectMany(g => g);
+            //if (dupes.Count() == 0) {
+            //    FlashStatusMessage("No duplicated items found.");
+            //    return;
+            //}
+            //ViewModel.MainList.Value = new ObservableCollection<PlayItem>(dupes.Sort());
 
-            MainListView.SelectedItems.Clear();
-            var sameTitle = dupes.Where(c => !string.IsNullOrEmpty(c.Title)).GroupBy(c => c.Title + c.Duration).Where(g => g.Count() > 1)
-                .Select(c =>　c.Where(e=>!e.Checked).OrderByDescending(e=>e.Size).FirstOrDefault() ?? c.OrderByDescending(e => e.Size).First()).Where(c=>c.KeyFromName.EndsWith("hb"));
-            var sameSize = dupes.GroupBy(c => c.Size).Where(g => g.Count() > 1).Select(c => c.Where(e => !e.Checked).FirstOrDefault() ?? c.First());
-            foreach (var d in sameTitle.Concat(sameSize)) {
-                MainListView.SelectedItems.Add(d);
-            }
+            //MainListView.SelectedItems.Clear();
+            //var sameTitle = dupes.Where(c => !string.IsNullOrEmpty(c.Title)).GroupBy(c => c.Title + c.Duration).Where(g => g.Count() > 1)
+            //    .Select(c =>　c.Where(e=>!e.Checked).OrderByDescending(e=>e.Size).FirstOrDefault() ?? c.OrderByDescending(e => e.Size).First()).Where(c=>c.KeyFromName.EndsWith("hb"));
+            //var sameSize = dupes.GroupBy(c => c.Size).Where(g => g.Count() > 1).Select(c => c.Where(e => !e.Checked).FirstOrDefault() ?? c.First());
+            //foreach (var d in sameTitle.Concat(sameSize)) {
+            //    MainListView.SelectedItems.Add(d);
+            //}
         }
 
         private void OnListItemDoubleClick(object sender, MouseButtonEventArgs e) {
@@ -477,9 +502,13 @@ namespace dxplayer {
             DB.PlayListTable.Update();
         }
 
-        private void DeleteFiles() {
-            if(MessageBoxResult.OK != MessageBox.Show("Are you sure to delete selected file(s)?", "dxplayer", MessageBoxButton.OKCancel)) {
-                return;
+        private void DeleteFiles(bool silent=false) {
+            if (MainListView.SelectedItems.Count == 0) return;
+
+            if (!silent) {
+                if (MessageBoxResult.OK != MessageBox.Show("Are you sure to delete selected file(s)?", "dxplayer", MessageBoxButton.OKCancel)) {
+                    return;
+                }
             }
 
             foreach (var c in SelectedItems) {

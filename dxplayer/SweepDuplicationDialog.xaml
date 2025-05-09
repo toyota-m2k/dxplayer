@@ -21,14 +21,12 @@
             <RadioButton Content="Same Title + Duration" IsChecked="{Binding Criteria.Value, Mode=TwoWay, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=TitleDuration}" GroupName="Criteria"/>
             <RadioButton Content="Same Size + Duration" IsChecked="{Binding Criteria.Value, Mode=TwoWay, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=SizeDuration}" GroupName="Criteria"/>
             <RadioButton Content="DMM-ID" IsChecked="{Binding Criteria.Value, Mode=TwoWay, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=DMM}" GroupName="Criteria"/>
-            <TextBlock Text="Select by" FontWeight="Bold" Margin="0,10,0,10"/>
-            <RadioButton Content="Size/Duration" IsChecked="{Binding Option.Value, Mode=TwoWay, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=SizeDuration}" GroupName="Option"/>
-            <RadioButton Content="Size" IsChecked="{Binding Option.Value, Mode=TwoWay, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Size}" GroupName="Option"/>
-            <RadioButton Content="Duration" IsChecked="{Binding Option.Value, Mode=TwoWay, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=Duration}" GroupName="Option"/>
-            <RadioButton Content="DMM-ID" IsChecked="{Binding Option.Value, Mode=TwoWay, Converter={StaticResource EnumBooleanConverter}, ConverterParameter=DMM}" GroupName="Option"/>
+            <TextBlock Text="Select" FontWeight="Bold" Margin="0,10,0,10"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-                <Button Content="Select" Command="{Binding SelectCommand}" Margin="0,0,10,0"/>
-                <Button Content="Close" Command="{Binding CloseCommand}"/>
+                <Button Width="35" Content="All" Command="{Binding SelectAllCommand}" Margin="0,0,10,0"/>
+                <Button Width="35" Content="Next" Command="{Binding SelectNextCommand}" Margin="0,0,10,0"/>
+                <Button Width="35" Content="Prev" Command="{Binding SelectPrevCommand}" Margin="0,0,10,0"/>
+                <Button Width="35" Content="Del" Command="{Binding DeleteSelectedCommand}" Margin="0,0,0,0"/>
             </StackPanel>
         </StackPanel>
     </Grid>
