@@ -52,7 +52,7 @@ namespace dxplayer.server.cmd {
                         {"rating", true},
                         {"mark", false},
                         {"chapter", true},
-                        {"reputation", 1 },             // reputation (category/mark/rating) コマンド対応 1:RO /2:RW
+                        {"reputation", 2 },             // reputation (category/mark/rating) コマンド対応 1:RO /2:RW
                         {"diff", false},                // date以降の更新チェック(check)、差分リスト取得に対応
                         {"sync", false },               // 端末間同期
                         {"acceptRequest", false },        // register command をサポートする
@@ -285,7 +285,7 @@ namespace dxplayer.server.cmd {
                             }
                         }
                     };
-        public Route Categories = // category：全カテゴリリストの要求
+        public Route Categories => // category：全カテゴリリストの要求
                     new Route {
                         Name = "ytPlayer Not Supported",
                         UrlRegex = @"/ytplayer/category",
@@ -298,6 +298,63 @@ namespace dxplayer.server.cmd {
                                             {"categories", new JsonArray() }
                                         });
                             return new TextHttpResponse(request, json.ToString(), "application/json");
+                        }
+                    };
+        public Route GetReputation => // reputation: レピュテーションの取得
+                    new Route {
+                        Name = "ytPlayer Get Reputation",
+                        UrlRegex = @"/ytplayer/reputation",
+                        Method = "GET",
+                        Callable = (HttpRequest request) => {
+                            Logger.debug("YtServer: GET:Reputation");
+                            var source = DB.PlayListTable.List;
+                            if (null == source) {
+                                return HttpBuilder.ServiceUnavailable();
+                            }
+                            var id = Convert.ToInt64(QueryParser.Parse(request.Url)["id"]);
+                            var entry = source.Where((e) => e.ID == id).SingleOrDefault();
+                            if (null == entry) {
+                                return HttpBuilder.NotFound();
+                            }
+                            var json = new JsonObject(new Dictionary<string, JsonValue>() {
+                                {"cmd", "reputation"},
+                                {"id", $"{id}" },
+                                {"rating", $"{(int)entry.Rating}" },
+                            });
+                            return new TextHttpResponse(request, json.ToString(), "application/json");
+                        }
+                    };
+        public Route PutReputation => // reputation: レピュテーションの更新
+                    new Route {
+                        Name = "ytPlayer Put Reputation",
+                        UrlRegex = @"/ytplayer/reputation",
+                        Method = "PUT",
+                        Callable = (HttpRequest request) => {
+                            Logger.debug("YtServer: PUT:Reputation");
+                            if (!request.Headers.TryGetValue("Content-Type", out string type)) {
+                                return HttpBuilder.BadRequest();
+                            }
+                            try {
+                                var json = new JsonHelper(request.Content);
+                                var id = json.GetLong("id");
+                                var rating = json.GetInt("rating", -1);
+                                var source = DB.PlayListTable.List;
+                                if (null == source) {
+                                    return HttpBuilder.ServiceUnavailable();
+                                }
+                                var entry = source.Where((e) => e.ID == id).SingleOrDefault();
+                                if (null == entry) {
+                                    return HttpBuilder.NotFound();
+                                }
+                                ServerCommandCenter.Instance.RunOnMainThread(()=> {
+                                    entry.Rating = (Rating)rating;
+                                });
+                                return new TextHttpResponse(request, json.ToString(), "application/json");
+                            }
+                            catch (Exception e) {
+                                Logger.error(e);
+                                return HttpBuilder.InternalServerError();
+                            }
                         }
                     };
 

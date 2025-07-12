@@ -14,6 +14,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -555,6 +556,15 @@ namespace dxplayer {
                 }
                 else {
                     ViewModel.MainList.Value = new ObservableCollection<PlayItem>(list.Sort());
+                    var item = MainListView.SelectedItem ?? (MainListView.SelectedItems.Count > 0 ? MainListView.SelectedItems[0] : null);
+                    if (item != null) {
+                        // このハンドラ内ではスクロールしないようなので、InvokeAsyncで実行する。
+                        // Delay が必要かと思ったけど、試してみると、なくてもスクロールした。
+                        Dispatcher.InvokeAsync(() => {
+                            //await Task.Delay(10);
+                            MainListView.ScrollIntoView(item);
+                        });
+                    }
                 }
             }
         }
