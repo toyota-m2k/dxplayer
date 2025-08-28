@@ -202,6 +202,9 @@ namespace dxplayer.data.main {
          * DBに登録されているが実ファイルが消えているものがあればDBから削除する。
          */
         private void DeleteRemovedFiles(IStatusBar statusBar, string prefix) {
+            var flagged = PlayListTable.List.Where(c=> c.Flag == 1).ToList();
+            PlayListTable.DeleteAll(flagged);
+
             int count = 0;
             var items = PlayListTable.List.Where((c) => {
                 statusBar.OutputStatusMessage($"Checking ({++count}) : {c.Name}");
@@ -209,6 +212,10 @@ namespace dxplayer.data.main {
             }).ToList();
             statusBar.OutputStatusMessage($"Deleting {items.Count} items");
             PlayListTable.DeleteAll(items);
+            foreach (var item in items) {
+                ChapterTable.DeleteChaptersOfOwner(item.ID);
+            }
+
         }
 
         public async Task AddTargetFolder(string folderPath, IStatusBar statusBar) {

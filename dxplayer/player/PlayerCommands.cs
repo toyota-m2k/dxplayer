@@ -16,9 +16,11 @@ namespace dxplayer.player {
             TOGGLE_MUTE,
             CLOSE,
 
+            SEEK_FORWARD_0_2,
             SEEK_FORWARD_1,
             SEEK_FORWARD_5,
             SEEK_FORWARD_10,
+            SEEK_BACK_0_2,
             SEEK_BACK_1,
             SEEK_BACK_5,
             SEEK_BACK_10,
@@ -83,9 +85,11 @@ namespace dxplayer.player {
                 , CMD(ID.UNMUTE, "Unmute", () => viewModel.Mute.Value = false)
                 , CMD(ID.TOGGLE_MUTE, "ToggleMute", () => viewModel.Mute.Value = !viewModel.Mute.Value)
                 , CMD(ID.CLOSE, "Close", viewModel.ClosePlayerCommand, "Close Player")
+                , REP_CMD(ID.SEEK_FORWARD_0_2, "SeekForward0.2", () => viewModel.SeekRelative(200), null, "Seek forward in 0.2 sec.")
                 , REP_CMD(ID.SEEK_FORWARD_1, "SeekForward1", () => viewModel.SeekRelative(1000), null, "Seek forward in 1 sec.")
                 , REP_CMD(ID.SEEK_FORWARD_5, "SeekForward5", () => viewModel.SeekRelative(5000), null, "Seek forward in 5 sec.")
                 , REP_CMD(ID.SEEK_FORWARD_10, "SeekForward10", () => viewModel.SeekRelative(10000), null, "Seek forward in 10 sec.")
+                , REP_CMD(ID.SEEK_BACK_0_2, "SeekBack0.2", () => viewModel.SeekRelative(-200), null, "Seek backward in 0.2 sec.")
                 , REP_CMD(ID.SEEK_BACK_1, "SeekBack1", () => viewModel.SeekRelative(-1000), null, "Seek backward in 1 sec.")
                 , REP_CMD(ID.SEEK_BACK_5, "SeekBack5", () => viewModel.SeekRelative(-5000), null, "Seek backward in 5 sec.")
                 , REP_CMD(ID.SEEK_BACK_10, "SeekBack10", () => viewModel.SeekRelative(-10000), null, "Seek backward in 10 sec.")
@@ -137,8 +141,9 @@ namespace dxplayer.player {
                 , CMD(ID.HELP, "Help", viewModel.HelpCommand)
                 );
 
-            AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.Right);
+            AssignSingleKeyCommand(ID.SEEK_FORWARD_0_2, Key.Right);
             AssignSingleKeyCommand(ID.SEEK_FORWARD_1, Key.G);
+            AssignControlKeyCommand(ID.SEEK_FORWARD_0_2, Key.G);
             AssignSingleKeyCommand(ID.REPEAT_SEEK_FORWORD_1, Key.F);
             AssignSingleKeyCommand(ID.TOGGLE_REPEAT_SEEK_FORWORD_1, Key.R);
             AssignShiftKeyCommand(ID.CONTINUOUS_HIGH_SPEED, Key.F);
@@ -149,7 +154,8 @@ namespace dxplayer.player {
             AssignSingleKeyCommand(ID.MOVIE_PREV, Key.PageUp);
 
             AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.D);
-            AssignSingleKeyCommand(ID.SEEK_BACK_1, Key.Left);
+            AssignControlKeyCommand(ID.SEEK_BACK_0_2, Key.D);
+            AssignSingleKeyCommand(ID.SEEK_BACK_0_2, Key.Left);
             AssignControlKeyCommand(ID.SEEK_HEAD, Key.Left);
             AssignSingleKeyCommand(ID.SEEK_HEAD, Key.Home);
 

@@ -514,6 +514,7 @@ namespace dxplayer {
 
             foreach (var c in SelectedItems) {
                 c.Delete();
+                DB.ChapterTable.DeleteChaptersOfOwner(c.ID);
             }
             DB.PlayListTable.Update();
             UpdateList();

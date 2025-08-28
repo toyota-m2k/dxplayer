@@ -238,8 +238,10 @@ namespace dxplayer.player {
                     Position.Value = c;
                     return;
                 }
+            } else {
+                var end = ChapterEditor.Trimming.Value.End;
+                Position.Value = end <= 0 ? Duration.Value : end;
             }
-            GoForwardCommand.Execute();
         }
 
         private void PrevChapter() {
@@ -481,12 +483,21 @@ namespace dxplayer.player {
             if (delta < 0) {
                 EndRepeatSkippingMode();
             }
-            const long SAFE_MARGIN = 100;
-            var currentPos = (long)Position.Value;
+            //const long SAFE_MARGIN = 100;
+            // var currentPos = (long)Position.Value;
             var duration = (long)Duration.Value;
-            var safeDelta = Math.Min(Math.Max(delta, -currentPos), duration - currentPos - SAFE_MARGIN);
-            Position.Value = (ulong)Math.Min(duration, Math.Max(0, currentPos + safeDelta));
-            return safeDelta;
+            //var currentPos = (long)PlayerPosition;
+            var sliderPosition = (long)Position.Value;
+            //if (delta>0) {
+            //    currentPos = Math.Max(currentPos, observablePosition);
+            //} else {
+            //    currentPos = Math.Min(currentPos, observablePosition);
+            //}
+            long newPos = Math.Min(duration, Math.Max(0, sliderPosition + delta));
+            //var safeDelta = Math.Min(Math.Max(delta, -currentPos), duration - currentPos - SAFE_MARGIN);
+            Position.Value = (ulong)newPos;
+            Console.WriteLine($"SeekRelative({delta}): currentPos={sliderPosition} --> newPos={newPos}");
+            return newPos - sliderPosition;
         }
         public void SetRating(Rating rating) {
             var item = PlayList.Current.Value as PlayItem;
