@@ -8,6 +8,7 @@ using Reactive.Bindings;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls.Primitives;
 
@@ -174,16 +175,17 @@ namespace dxplayer {
             OkVisible.Value = false;
             CancelVisible.Value = true;
             Compress.Alive.Value = true;
-            CancelVisible.Value = true;
+            var cancellationTokenSource = new CancellationTokenSource();
             var disposable = CancelCommand.Subscribe(() => {
                 Compress.Alive.Value = false;
                 CancelVisible.Value = false;
+                cancellationTokenSource.Cancel();
             });
             try {
                 for (int i = 0; Compress.Alive.Value && i < items.Count; i++) {
                     Compress.CurrentItemIndex.Value = i;
                     var item = items[i];
-                    await item.Compress(Compress, statusBar, forceCompress: false);
+                    await item.Compress(Compress, cancellationTokenSource.Token, statusBar, forceCompress: false);
                 }
             }
             finally {

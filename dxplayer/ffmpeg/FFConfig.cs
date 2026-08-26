@@ -12,18 +12,21 @@ namespace dxplayer.ffmpeg {
         private static Func<string> FFMpegPathResolver { get; set; } = null;
         private const int DEFAULT_MAX_LENGTH = 1440;
         private const int DEFAULT_MAX_FPS = 30;
+        private const int DEFAULT_MAX_BITRATE = 1500 * 1000;    // 1.5 Mbps
         public static int MaxLengthInPixel { get; private set; } = DEFAULT_MAX_LENGTH /*HD*/; // 1920 FHD;
         public static int MaxFrameRate { get; private set; } = DEFAULT_MAX_FPS;
+        public static int MaxBitRate { get; private set; } = DEFAULT_MAX_BITRATE;
         public static int CRF { get; private set; } = 23;
         /**
          * FFMpegPathを取得するための関数を設定します。
          * Settingsなどから設定値を取得するデリゲートを設定しておけば、設定が変更されるたびに呼び出す必要がありません。
          * FFMpegPathと両方を指定した場合は、FFMpegPathResolverが優先されます。
          */
-        public static void Initialize(Func<string> ffmpegPathResolver, int maxLengthInPixel= DEFAULT_MAX_LENGTH, int maxFrameRate=DEFAULT_MAX_FPS, int crf=23) {
+        public static void Initialize(Func<string> ffmpegPathResolver, int maxLengthInPixel= DEFAULT_MAX_LENGTH, int maxFrameRate=DEFAULT_MAX_FPS, int maxBitRate=DEFAULT_MAX_BITRATE, int crf=23) {
             FFMpegPathResolver = ffmpegPathResolver;
             MaxLengthInPixel = maxLengthInPixel;
             MaxFrameRate = maxFrameRate;
+            MaxBitRate = maxBitRate;
             CRF = crf;
         }
         /**

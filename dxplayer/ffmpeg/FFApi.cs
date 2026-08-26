@@ -1,5 +1,7 @@
 ﻿using dxplayer.data;    // for PlayRange
 using FFMpegCore;
+using FFMpegCore.Arguments;
+using FFMpegCore.Enums;
 using io.github.toyota32k.toolkit.utils;
 using System;
 using System.Collections.Generic;
@@ -9,6 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static dxplayer.ffmpeg.FFApi;
 
@@ -24,6 +27,7 @@ namespace dxplayer.ffmpeg {
     public static class FFApi {
         public static int MAX_LENGTH => FFConfig.MaxLengthInPixel;    // 長辺の最大値
         public static int MAX_FPS => FFConfig.MaxFrameRate;
+        public static int MAX_BITRATE = FFConfig.MaxBitRate;
         public static int CRF = FFConfig.CRF;                         // 圧縮率
 
 
@@ -177,14 +181,26 @@ namespace dxplayer.ffmpeg {
 
         #region Compression
 
+        class MaxBitrateArgument : IArgument
+        {
+            private readonly int _maxBitrate;
+            public MaxBitrateArgument(int maxBitrate)
+            {
+                _maxBitrate = maxBitrate/1000;
+            }
+
+            public string Text => $"-maxrate {_maxBitrate}k -bufsize {_maxBitrate*2}k";
+        }
+
         /**
          * 動画ファイル圧縮用Argumentの生成
          */
-        public static FFMpegArgumentProcessor CompressArguments(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+        public static FFMpegArgumentProcessor CompressArguments(string inPath, string outPath, CancellationToken token, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
             FFConfig.Configure();
             Size? size = calcVideoSizeForCompress(inputInfo);
             int frameRate = calcFrameRateForCompress(inputInfo);
             var duration = inputInfo.Duration;
+            var maxBitrate = (int)Math.Min(MAX_BITRATE, inputInfo.Video.BitRate);
 
             return FFMpegArguments
                 .FromFileInput(inPath)
@@ -202,22 +218,24 @@ namespace dxplayer.ffmpeg {
                     }
                     options
                     .WithConstantRateFactor(CRF)
+                    .WithArgument(new MaxBitrateArgument(maxBitrate))
                     .WithFastStart()
                     ;
                 })
+                .CancellableThrough(token)
                 .NotifyOnProgress((TimeSpan s) => {
                     TimeSpanProgress("Compressing", progress, s, duration);
                 });
         }
 
-        public static async Task<ConvertResult> CompressAsync(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo=null) {
+        public static async Task<ConvertResult> CompressAsync(string inPath, string outPath, CancellationToken token, IFFProgress progress, FFAnalyzer.Analysis inputInfo=null) {
             FFConfig.Configure();
             if (inputInfo == null) {
                 inputInfo = await FFAnalyzer.AnalyzeAsync(inPath);
             }
             try {
                 ProgressProcess(progress, FFProcessId.COMPRESSING);
-                await CompressArguments(inPath, outPath, progress, inputInfo)
+                await CompressArguments(inPath, outPath, token, progress, inputInfo)
                 .ProcessAsynchronously();
                 return ConvertResult.Success(inputInfo, await FFAnalyzer.AnalyzeAsync(outPath));
             }
@@ -225,14 +243,14 @@ namespace dxplayer.ffmpeg {
                 return ConvertResult.Error(e, inputInfo);
             }
         }
-        public static ConvertResult Compress(string inPath, string outPath, IFFProgress progress, FFAnalyzer.Analysis inputInfo = null) {
+        public static ConvertResult Compress(string inPath, string outPath, CancellationToken token, IFFProgress progress, FFAnalyzer.Analysis inputInfo = null) {
             FFConfig.Configure();
             if (inputInfo == null) {
                 inputInfo = FFAnalyzer.Analyze(inPath);
             }
             try {
                 ProgressProcess(progress, FFProcessId.COMPRESSING);
-                CompressArguments(inPath, outPath, progress, inputInfo)
+                CompressArguments(inPath, outPath, token, progress, inputInfo)
                 .ProcessSynchronously();
                 return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
             }
@@ -251,7 +269,8 @@ namespace dxplayer.ffmpeg {
             ACCURATE_COMPRESS,  // -crf CRF -vf scale ...
         }
 
-        private static FFMpegArgumentProcessor ExtractArguments(string inPath, string outPath, PlayRange range, ExtractOption extractOption, IFFProgress progress, FFAnalyzer.Analysis inputInfo, TimeSpan initial, TimeSpan total) {
+        private static FFMpegArgumentProcessor ExtractArguments(string inPath, string outPath, PlayRange range, ExtractOption extractOption, CancellationToken token, IFFProgress progress, FFAnalyzer.Analysis inputInfo, TimeSpan initial, TimeSpan total) {
+            var maxBitrate = (int)Math.Min(MAX_BITRATE, inputInfo.Video.BitRate);
             return FFMpegArguments
                     .FromFileInput(inPath, verifyExists: true, (options) => {
                         options.Seek(TimeSpan.FromMilliseconds(range.Start));
@@ -280,12 +299,14 @@ namespace dxplayer.ffmpeg {
                                 }
                                 options
                                 .WithConstantRateFactor(CRF)
+                                .WithArgument(new MaxBitrateArgument(maxBitrate))
                                 .WithFastStart();
                                 break;
                             default:    // ExtractOption.ACCURATE
                                 break;
                         }
                     })
+                    .CancellableThrough(token)
                     .NotifyOnProgress(ts => {
                         Debug.WriteLine($"ts={TimeSpanText(ts)} range=({TimeSpanText(range.StartAsTimeSpan)} - {TimeSpanText(range.TrueEndAsTimeSpan(inputInfo.DurationMs))}) progress=({TimeSpanText(initial + ts)}/{TimeSpanText(total)}/{TimeSpanText(range.TrueSpanAsTimeSpan(inputInfo.DurationMs))})");
                         TimeSpanProgress("Extracting", progress, initial + ts, total);
@@ -295,12 +316,12 @@ namespace dxplayer.ffmpeg {
                     });
         }
 
-        private static ConvertResult Extract(string inPath, string outPath, PlayRange range, ExtractOption extractOption, IFFProgress progress, TimeSpan initial, TimeSpan total, FFAnalyzer.Analysis inputInfo) {
+        private static ConvertResult Extract(string inPath, string outPath, PlayRange range, ExtractOption extractOption, CancellationToken token, IFFProgress progress, TimeSpan initial, TimeSpan total, FFAnalyzer.Analysis inputInfo) {
             if (inputInfo == null) {
                 inputInfo = FFAnalyzer.Analyze(inPath);
             }
             try {
-                ExtractArguments(inPath, outPath, range, extractOption, progress, inputInfo, initial, total)
+                ExtractArguments(inPath, outPath, range, extractOption, token, progress, inputInfo, initial, total)
                     .ProcessSynchronously();
                 return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
             }
@@ -309,12 +330,12 @@ namespace dxplayer.ffmpeg {
                 return ConvertResult.Error(e, inputInfo);
             }
         }
-        private static async Task<ConvertResult> ExtractAsync(string inPath, string outPath, PlayRange range, ExtractOption extractOption, IFFProgress progress, TimeSpan initial, TimeSpan total, FFAnalyzer.Analysis inputInfo) {
+        private static async Task<ConvertResult> ExtractAsync(string inPath, string outPath, PlayRange range, ExtractOption extractOption, CancellationToken token, IFFProgress progress, TimeSpan initial, TimeSpan total, FFAnalyzer.Analysis inputInfo) {
             if (inputInfo == null) {
                 inputInfo = FFAnalyzer.Analyze(inPath);
             }
             try {
-                await ExtractArguments(inPath, outPath, range, extractOption, progress, inputInfo, initial, total)
+                await ExtractArguments(inPath, outPath, range, extractOption, token, progress, inputInfo, initial, total)
                     .ProcessAsynchronously();
                 return ConvertResult.Success(inputInfo, FFAnalyzer.Analyze(outPath));
             }
@@ -328,11 +349,12 @@ namespace dxplayer.ffmpeg {
 
         #region Combination
 
-        private static FFMpegArgumentProcessor CombineArguments(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
+        private static FFMpegArgumentProcessor CombineArguments(List<string> files, string outPath, CancellationToken token, IFFProgress progress, TimeSpan? totalDuration) {
             return FFMpegArguments.FromDemuxConcatInput(files)
                 .OutputToFile(outPath, overwrite:true, (options) => {
                     options.CopyChannel();
                 })
+                .CancellableThrough(token)
                 .NotifyOnProgress((TimeSpan s) => {
                     if (totalDuration.HasValue) {
                         TimeSpanProgress("Combining", progress, s, totalDuration.Value);
@@ -349,10 +371,10 @@ namespace dxplayer.ffmpeg {
                 });
         }
 
-        public static ConvertResult Combine(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
+        public static ConvertResult Combine(List<string> files, string outPath, CancellationToken token, IFFProgress progress, TimeSpan? totalDuration) {
             try {
                 ProgressProcess(progress, FFProcessId.COMBINING);
-                CombineArguments(files, outPath, progress, totalDuration)
+                CombineArguments(files, outPath, token, progress, totalDuration)
                     .ProcessSynchronously();
                 return ConvertResult.Success(FFAnalyzer.Analysis.Empty, FFAnalyzer.Analyze(outPath));
             } catch(Exception e) {
@@ -360,10 +382,10 @@ namespace dxplayer.ffmpeg {
                 return ConvertResult.Error(e, FFAnalyzer.Analyze(outPath));
             }
         }
-        public static async Task<ConvertResult> CombineAsync(List<string> files, string outPath, IFFProgress progress, TimeSpan? totalDuration) {
+        public static async Task<ConvertResult> CombineAsync(List<string> files, string outPath, CancellationToken token, IFFProgress progress, TimeSpan? totalDuration) {
             try {
                 ProgressProcess(progress, FFProcessId.COMBINING);
-                await CombineArguments(files, outPath, progress, totalDuration)
+                await CombineArguments(files, outPath, token, progress, totalDuration)
                     .ProcessAsynchronously();
                 return ConvertResult.Success(FFAnalyzer.Analysis.Empty, FFAnalyzer.Analyze(outPath));
             }
@@ -377,7 +399,7 @@ namespace dxplayer.ffmpeg {
 
         #region Trimming with Ranges
 
-        public static ConvertResult Trimming(string inPath, string outPath, List<PlayRange> ranges, ExtractOption extractOption, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+        public static ConvertResult Trimming(string inPath, string outPath, List<PlayRange> ranges, ExtractOption extractOption, CancellationToken token, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
             FFConfig.Configure();
             if (inputInfo == null) {
                 inputInfo = FFAnalyzer.Analyze(inPath);
@@ -387,7 +409,7 @@ namespace dxplayer.ffmpeg {
             }
             if(ranges.Count == 1) {
                 ProgressProcess(progress, FFProcessId.TRIMMING);
-                return Extract(inPath, outPath, ranges[0], extractOption, progress, TimeSpan.Zero, TimeSpan.FromMilliseconds(ranges[0].TrueSpan((ulong)inputInfo.DurationMs)), inputInfo);
+                return Extract(inPath, outPath, ranges[0], extractOption, token, progress, TimeSpan.Zero, TimeSpan.FromMilliseconds(ranges[0].TrueSpan((ulong)inputInfo.DurationMs)), inputInfo);
             }
 
             var totalDuration = TimeSpan.FromMilliseconds(ranges.Aggregate((ulong)0, (sum, range) => sum + range.TrueSpan((ulong)inputInfo.DurationMs)));
@@ -400,7 +422,7 @@ namespace dxplayer.ffmpeg {
                     var tempPath = TempPathFrom(outPath, i);
                     tempFiles.Add(tempPath);
                     var range = ranges[i];
-                    if (!Extract(inPath, tempPath, range, extractOption, progress, initial, totalDuration, inputInfo).Result) {
+                    if (!Extract(inPath, tempPath, range, extractOption, token, progress, initial, totalDuration, inputInfo).Result) {
                         throw new Exception($"Failed to split {i}");
                     }
                     initial += TimeSpan.FromMilliseconds(range.TrueSpan((ulong)inputInfo.DurationMs));
@@ -408,7 +430,7 @@ namespace dxplayer.ffmpeg {
                 }
 
                 // 分割したファイルを結合
-                var combineResult = Combine(tempFiles, outPath, progress, totalDuration);
+                var combineResult = Combine(tempFiles, outPath, token, progress, totalDuration);
                 if(!combineResult.Result) {
                     throw new Exception("Failed to combine files.");
                 }
@@ -427,7 +449,7 @@ namespace dxplayer.ffmpeg {
                 }
             }
         }
-        public static async Task<ConvertResult> TrimmingAsync(string inPath, string outPath, List<PlayRange> ranges, ExtractOption extractOption, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
+        public static async Task<ConvertResult> TrimmingAsync(string inPath, string outPath, List<PlayRange> ranges, ExtractOption extractOption, CancellationToken token, IFFProgress progress, FFAnalyzer.Analysis inputInfo) {
             FFConfig.Configure();
             if (inputInfo == null) {
                 inputInfo = FFAnalyzer.Analyze(inPath);
@@ -437,7 +459,7 @@ namespace dxplayer.ffmpeg {
             }
             if (ranges.Count == 1) {
                 ProgressProcess(progress, FFProcessId.TRIMMING);
-                return await ExtractAsync(inPath, outPath, ranges[0], extractOption, progress, TimeSpan.Zero, TimeSpan.FromMilliseconds(ranges[0].TrueSpan((ulong)inputInfo.DurationMs)), inputInfo);
+                return await ExtractAsync(inPath, outPath, ranges[0], extractOption, token, progress, TimeSpan.Zero, TimeSpan.FromMilliseconds(ranges[0].TrueSpan((ulong)inputInfo.DurationMs)), inputInfo);
             }
 
             var totalDuration = TimeSpan.FromMilliseconds(ranges.Aggregate((ulong)0, (sum, range) => sum + range.TrueSpan((ulong)inputInfo.DurationMs)));
@@ -450,7 +472,7 @@ namespace dxplayer.ffmpeg {
                     var tempPath = TempPathFrom(outPath, i);
                     tempFiles.Add(tempPath);
                     var range = ranges[i];
-                    if (!(await ExtractAsync(inPath, tempPath, range, extractOption, progress, initial, totalDuration, inputInfo)).Result) {
+                    if (!(await ExtractAsync(inPath, tempPath, range, extractOption, token, progress, initial, totalDuration, inputInfo)).Result) {
                         throw new Exception($"Failed to split {i}");
                     }
                     initial += range.TrueSpanAsTimeSpan((ulong)inputInfo.DurationMs);
@@ -458,7 +480,7 @@ namespace dxplayer.ffmpeg {
                 }
 
                 // 分割したファイルを結合
-                var combineResult = await CombineAsync(tempFiles, outPath, progress, totalDuration);
+                var combineResult = await CombineAsync(tempFiles, outPath, token, progress, totalDuration);
                 if (!combineResult.Result) {
                     throw new Exception("Failed to combine files.");
                 }

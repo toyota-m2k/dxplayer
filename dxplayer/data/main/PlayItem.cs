@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -289,7 +290,7 @@ namespace dxplayer.data.main
             return video.BitRate / (video.Width * video.Height * video.FrameRate / 30);
         }
 
-        public async Task<bool> Compress(IFFProgress progress, IStatusBar statusBar, bool forceCompress=false) {
+        public async Task<bool> Compress(IFFProgress progress, CancellationToken token, IStatusBar statusBar, bool forceCompress=false) {
             var inputInfo = FFAnalyzer.Analyze(Path);
             if (inputInfo.Video == null) {
                 if(inputInfo.IsEmpty) {
@@ -330,16 +331,16 @@ namespace dxplayer.data.main
                 Debug.WriteLine($"Trimming:{ID} {Name}");
                 trimmed = true;
                 var enabledRange = chapterEditor.GetEnabledRanges().ToList();
-                result = await FFApi.TrimmingAsync(this.Path, outPath, enabledRange, FFApi.ExtractOption.ACCURATE_COMPRESS, progress, inputInfo);
+                result = await FFApi.TrimmingAsync(this.Path, outPath, enabledRange, FFApi.ExtractOption.ACCURATE_COMPRESS, token, progress, inputInfo);
             } else {
-                if(!forceCompress && Math.Max(inputInfo.Video.Width,inputInfo.Video.Height)<=FFApi.MAX_LENGTH && inputInfo.Video.FrameRate<(double)FFApi.MAX_FPS) {
+                if(!forceCompress && inputInfo.Video.BitRate<FFApi.MAX_BITRATE*1.3 && Math.Max(inputInfo.Video.Width,inputInfo.Video.Height)<=FFApi.MAX_LENGTH && inputInfo.Video.FrameRate<(double)FFApi.MAX_FPS) {
                     // 一定以下の画像サイズなら処理しない
                     Debug.WriteLine($"Skipped:{ID} {Name}");
                     Debug.WriteLine(inputInfo.ToString());
                     return true;    // Compress不要
                 }
                 Debug.WriteLine($"Compressing:{ID} {Name}");
-                result = await FFApi.CompressAsync(this.Path, outPath, progress, inputInfo);
+                result = await FFApi.CompressAsync(this.Path, outPath, token, progress, inputInfo);
             }
             if (!result.Result) return false;
             Debug.WriteLine(result.ToString());
