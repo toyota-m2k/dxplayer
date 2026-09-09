@@ -324,6 +324,7 @@ namespace dxplayer.data.main
             var trimmed = false;
             ConvertResult result = null;
             var outPath = TempPathFrom(this.Path, "_comp");
+            PathUtil.safeDeleteFile(outPath);
             chapterEditor.OnMediaOpened(this);
             var disabled = chapterEditor.DisabledRanges.Value;
             if (disabled!=null && disabled.Count>0) {
